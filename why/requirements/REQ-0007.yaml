@@ -1,0 +1,14 @@
+id: REQ-0007
+name: Viewer Sessions
+description: >-
+  Requests outside the health and sign-in routes require a live session for a
+  currently allowed user ID and redirect to sign-in otherwise. A session carries
+  the user ID and expiry in an authenticated and encrypted cookie with Secure,
+  HttpOnly, SameSite=Lax and Path=/ attributes. Sessions expire after eight
+  hours and require no shared session storage. Same-origin sign-out clears the
+  session cookie from the browser.
+rationale: >-
+  A viewer can use multiple cockpit instances during a session while access
+  remains bounded in time and restricted to authorized viewers.
+decisions:
+  - DEC-0004

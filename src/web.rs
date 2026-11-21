@@ -7,7 +7,10 @@ use axum::{
 };
 use tower_http::set_header::SetResponseHeaderLayer;
 
-use crate::ledger::{LedgerClient, ReadError};
+use crate::{
+    auth::Auth,
+    ledger::{LedgerClient, ReadError},
+};
 
 const CONTENT_SECURITY_POLICY: &str = "default-src 'none'; style-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
 
@@ -77,12 +80,20 @@ impl IntoResponse for ReadError {
     }
 }
 
-pub fn router(ledger: LedgerClient) -> Router {
-    Router::new()
-        .route("/healthz", get(health))
-        .route("/readyz", get(health))
+pub fn router(ledger: LedgerClient, auth: Auth) -> Router {
+    let protected = Router::new()
         .route("/style.css", get(stylesheet))
         .fallback(not_found)
+        .with_state(ledger);
+
+    auth.protect(protected)
+        .merge(auth.sign_in_routes())
+        .route("/healthz", get(health))
+        .route("/readyz", get(health))
+        .layer(SetResponseHeaderLayer::overriding(
+            header::CACHE_CONTROL,
+            HeaderValue::from_static("no-store"),
+        ))
         .layer(SetResponseHeaderLayer::overriding(
             header::CONTENT_SECURITY_POLICY,
             HeaderValue::from_static(CONTENT_SECURITY_POLICY),
@@ -95,7 +106,6 @@ pub fn router(ledger: LedgerClient) -> Router {
             header::REFERRER_POLICY,
             HeaderValue::from_static("no-referrer"),
         ))
-        .with_state(ledger)
 }
 
 async fn health() -> &'static str {

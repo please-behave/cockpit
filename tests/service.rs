@@ -1,4 +1,4 @@
-// Verifies REQ-0001, REQ-0004 and REQ-0005.
+// Verifies REQ-0001, REQ-0004, REQ-0005 and REQ-0008.
 
 mod support;
 
@@ -56,6 +56,7 @@ fn startup_rejects_invalid_configuration_with_json_diagnostics() {
         ),
     ] {
         let mut command = support::command();
+        command.envs(support::AUTH_SETTINGS);
         if let Some(url) = ledger_url {
             command.env("COCKPIT_LEDGER_URL", url);
         }
@@ -73,11 +74,48 @@ fn startup_rejects_invalid_configuration_with_json_diagnostics() {
     }
 }
 
+#[test]
+fn startup_requires_valid_github_configuration() {
+    for (setting, invalid_value) in [
+        ("COCKPIT_GITHUB_CLIENT_ID", "bad synthetic-secret"),
+        ("COCKPIT_GITHUB_CLIENT_SECRET", "bad synthetic-secret"),
+        (
+            "COCKPIT_GITHUB_CALLBACK_URL",
+            "http://synthetic-secret.example.test/sign-in/callback",
+        ),
+        ("COCKPIT_COOKIE_KEY", "bad synthetic-secret"),
+        ("COCKPIT_GITHUB_ALLOWED_IDS", "42, synthetic-secret"),
+        ("COCKPIT_GITHUB_ALLOWED_IDS", ""),
+        ("COCKPIT_GITHUB_ALLOWED_IDS", "0"),
+        ("COCKPIT_GITHUB_ALLOWED_IDS", "18446744073709551616"),
+    ] {
+        for value in [None, Some(invalid_value)] {
+            let mut command = support::command();
+            command
+                .env("COCKPIT_LEDGER_URL", "http://127.0.0.1:8080")
+                .envs(support::AUTH_SETTINGS);
+            match value {
+                Some(value) => command.env(setting, value),
+                None => command.env_remove(setting),
+            };
+            let output = command.output().expect("run cockpit");
+            assert!(!output.status.success());
+            let stderr = String::from_utf8(output.stderr).unwrap();
+            let log: Value = serde_json::from_str(&stderr).expect("one startup error");
+            assert_eq!(log["level"], "ERROR");
+            assert!(log["fields"]["error"].as_str().unwrap().contains(setting));
+            assert!(!stderr.contains("synthetic-secret"));
+            assert!(!stderr.contains("syntheticsecret"));
+        }
+    }
+}
+
 #[tokio::test]
 async fn health_and_protective_headers_work_without_a_responding_ledger() {
     let ledger = TcpListener::bind("127.0.0.1:0").unwrap();
     let mut cockpit = RunningCockpit(
         support::command()
+            .envs(support::AUTH_SETTINGS)
             .env(
                 "COCKPIT_LEDGER_URL",
                 format!("http://{}", ledger.local_addr().unwrap()),
@@ -102,6 +140,7 @@ async fn health_and_protective_headers_work_without_a_responding_ledger() {
     let address: SocketAddr = log["fields"]["address"].as_str().unwrap().parse().unwrap();
 
     let client = Client::builder()
+        .redirect(reqwest::redirect::Policy::none())
         .no_proxy()
         .timeout(Duration::from_secs(2))
         .build()
@@ -124,16 +163,16 @@ async fn health_and_protective_headers_work_without_a_responding_ledger() {
         (
             "/style.css",
             reqwest::Method::GET,
-            StatusCode::OK,
-            "text/css",
-            "main {",
+            StatusCode::SEE_OTHER,
+            "",
+            "",
         ),
         (
             "/missing",
             reqwest::Method::GET,
-            StatusCode::NOT_FOUND,
-            "text/html",
-            "Page not found",
+            StatusCode::SEE_OTHER,
+            "",
+            "",
         ),
         (
             "/readyz",

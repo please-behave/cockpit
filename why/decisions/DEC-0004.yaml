@@ -1,0 +1,10 @@
+id: DEC-0004
+name: Allow List of Immutable Viewer IDs
+context: >-
+  An external provider can authenticate people who have no permission to view
+  cockpit data. GitHub login names can change hands.
+decision: >-
+  Admit only viewers whose immutable provider ID appears on the configured
+  allow list. For GitHub, this is the account's numeric user ID.
+rationale: >-
+  Authorization remains bound to the intended account across changes to its login name.

@@ -1,0 +1,14 @@
+id: REQ-0006
+name: GitHub Sign-In
+description: >-
+  The cockpit uses GitHub's authorization code flow with PKCE and requests no
+  scopes. It validates a browser-bound, expiring state before exchanging the
+  authorization code. The cockpit reads the authenticated numeric GitHub user
+  ID and discards the access token. A user whose ID is absent from the allow
+  list receives a plain HTTP 403 response and no session.
+rationale: >-
+  The cockpit needs a verified identity and only the information required to
+  decide whether that identity may see governance data.
+decisions:
+  - DEC-0003
+  - DEC-0004

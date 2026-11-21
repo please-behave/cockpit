@@ -1,7 +1,7 @@
 use std::{env, net::SocketAddr};
 
 use anyhow::{Context, Result, bail};
-use cockpit::{ledger::LedgerClient, web};
+use cockpit::{auth::Auth, ledger::LedgerClient, web};
 use tokio::net::TcpListener;
 
 #[tokio::main]
@@ -35,11 +35,12 @@ async fn run() -> Result<()> {
         }
     };
 
+    let auth = Auth::from_env()?;
     let listener = TcpListener::bind(bind_addr)
         .await
         .context("Cannot bind COCKPIT_BIND_ADDR")?;
     tracing::info!(address = %listener.local_addr()?, "Cockpit listening");
-    axum::serve(listener, web::router(ledger))
+    axum::serve(listener, web::router(ledger, auth))
         .await
         .context("HTTP server failed")
 }

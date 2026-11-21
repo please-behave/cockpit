@@ -1,0 +1,13 @@
+id: REQ-0008
+name: Required Sign-In Configuration
+description: >-
+  The cockpit refuses to listen without a valid GitHub OAuth client ID,
+  client secret, HTTPS callback URL, cookie key and nonempty allow list of
+  positive numeric GitHub user IDs. Diagnostics identify invalid settings
+  without disclosing their values.
+rationale: >-
+  Startup validation catches configuration errors before serving viewers and
+  protects deployment credentials.
+decisions:
+  - DEC-0003
+  - DEC-0004

@@ -1,0 +1,10 @@
+id: DEC-0003
+name: External Viewer Identity
+context: >-
+  Governance data is restricted to authorized viewers. Viewers already have
+  accounts with external identity providers.
+decision: >-
+  Viewers sign in through external identity providers. GitHub is the first
+  provider, using its OAuth authorization code flow to verify identity.
+rationale: >-
+  The cockpit can verify who is signing in without managing accounts or passwords.
