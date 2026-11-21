@@ -9,3 +9,5 @@ The cockpit of the Please Behave platform. It is a service in early development.
 > Please Behave is in early development and not ready for production use.
 
 It is released as the container image `ghcr.io/please-behave/cockpit`. The purpose and principles of Please Behave are in the [Why repository](https://github.com/please-behave/why).
+
+The cockpit keeps its [requirements, decisions and API contracts](why/README.md) alongside the code.
