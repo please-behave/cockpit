@@ -1,0 +1,8 @@
+id: DEC-0001
+name: Ledger Owns Governance Data
+context: >-
+  Viewers need the same account of reported governance runs that the platform stores.
+decision: >-
+  The cockpit reads all governance data through the ledger read API.
+rationale: >-
+  Using one source keeps storage and interpretation of the read model with the ledger.

@@ -1,0 +1,13 @@
+id: REQ-0002
+name: Read Reported Attestations
+description: >-
+  The cockpit consumes ledger:CON-0002 and ledger:CON-0003 through the configured
+  ledger URL with bounded connection and request times, preserving reported
+  values, ordering and the detail read distinction between malformed and
+  unknown identifiers.
+rationale: >-
+  Viewers need the reported evidence as held by the ledger.
+decisions:
+  - DEC-0001
+  - DEC-0002
+  - why:DEC-0002

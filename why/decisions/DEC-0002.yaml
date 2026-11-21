@@ -1,0 +1,10 @@
+id: DEC-0002
+name: Attestations Are Reported Evidence
+context: >-
+  Attestations convey outcomes reported by CI. The shared decision why:DEC-0002
+  requires preserving the evidential weight of results.
+decision: >-
+  The cockpit presents attestation outcomes as reported evidence and never
+  labels them as independently verified results.
+rationale: >-
+  Readers need to know what confidence the reported outcomes warrant.

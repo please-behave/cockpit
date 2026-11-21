@@ -1,0 +1,9 @@
+id: REQ-0001
+name: Configuration and Health
+description: >-
+  The service validates its environment configuration before listening and
+  identifies invalid settings in its startup error. GET /healthz returns 200
+  while the service is running, and GET /readyz returns 200 once configuration
+  is valid, including while the ledger is unreachable.
+rationale: >-
+  Operators need to distinguish a healthy process from a dependency outage.
