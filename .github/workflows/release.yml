@@ -57,15 +57,23 @@ jobs:
         uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
         with:
           install_args: python rust github:please-behave/cli
+      - name: Create the candidate directory
+        run: mkdir -p dist
+      - name: Set up emulation for the arm64 build
+        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+        with:
+          platforms: arm64
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: Build candidate image
         run: >-
-          docker build
-          --platform linux/amd64
-          --provenance=false
-          --sbom=false
-          --tag cockpit:candidate
+          docker buildx build
+          --platform linux/amd64,linux/arm64
+          --provenance=mode=max
+          --sbom=true
           --label "org.opencontainers.image.version=v${EXPECTED_RELEASE_VERSION}"
           --label "org.opencontainers.image.revision=${GITHUB_SHA}"
+          --output type=oci,dest=dist/cockpit.tar
           .
       - name: Validate candidate
         uses: christianpflugradt/please-behave-governance/actions/release/governance@03663cbc1c6b6cc2a2e14924b327dda470b2556c # updates/actions/release
