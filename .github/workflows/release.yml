@@ -68,16 +68,16 @@ jobs:
           --label "org.opencontainers.image.revision=${GITHUB_SHA}"
           .
       - name: Validate candidate
-        uses: christianpflugradt/please-behave-governance/actions/release/governance@9d14ea3167e2f427c67dbb976ebc8b041b2ec788 # updates/actions/release
+        uses: christianpflugradt/please-behave-governance/actions/release/governance@03663cbc1c6b6cc2a2e14924b327dda470b2556c # updates/actions/release
         with:
           target: linux-amd64
       - name: Export candidate image
-        uses: christianpflugradt/please-behave-governance/actions/release/export-image@9d14ea3167e2f427c67dbb976ebc8b041b2ec788 # updates/actions/release
+        uses: christianpflugradt/please-behave-governance/actions/release/export-image@03663cbc1c6b6cc2a2e14924b327dda470b2556c # updates/actions/release
         with:
           version: ${{ needs.plan.outputs.version }}
           images: cockpit
       - name: Record release candidate evidence
-        uses: christianpflugradt/please-behave-governance/actions/release/evidence@9d14ea3167e2f427c67dbb976ebc8b041b2ec788 # updates/actions/release
+        uses: christianpflugradt/please-behave-governance/actions/release/evidence@03663cbc1c6b6cc2a2e14924b327dda470b2556c # updates/actions/release
         with:
           operation: record
           version: ${{ needs.plan.outputs.version }}
@@ -106,12 +106,12 @@ jobs:
         with:
           install_args: python node
       - name: Verify complete release candidate evidence
-        uses: christianpflugradt/please-behave-governance/actions/release/evidence@9d14ea3167e2f427c67dbb976ebc8b041b2ec788 # updates/actions/release
+        uses: christianpflugradt/please-behave-governance/actions/release/evidence@03663cbc1c6b6cc2a2e14924b327dda470b2556c # updates/actions/release
         with:
           operation: verify
           version: ${{ needs.plan.outputs.version }}
       - name: Publish the image and the release
-        uses: christianpflugradt/please-behave-governance/actions/release/publish-image@9d14ea3167e2f427c67dbb976ebc8b041b2ec788 # updates/actions/release
+        uses: christianpflugradt/please-behave-governance/actions/release/publish-image@03663cbc1c6b6cc2a2e14924b327dda470b2556c # updates/actions/release
         with:
           version: ${{ needs.plan.outputs.version }}
           force: ${{ inputs.force }}
