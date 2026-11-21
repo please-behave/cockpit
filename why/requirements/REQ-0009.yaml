@@ -1,0 +1,17 @@
+id: REQ-0009
+name: Latest Attestations Overview
+description: >-
+  The session-protected overview shows the latest reported attestation for
+  each repository and execution-point combination returned by ledger:CON-0002.
+  It sorts rows by overall status (ERROR, FAIL, PASS), then by repository and
+  execution points. Each row shows the repository, execution points, sender,
+  the first seven characters of the commit or the whole value if shorter,
+  overall status, the reported warning and not-run counts, and the ledger
+  receipt time. Each row links to its attestation. An empty ledger has an
+  explicit empty state. The overview identifies the data as reported.
+rationale: >-
+  Viewers can see the latest reported outcome for each combination and
+  find the runs that need attention first.
+decisions:
+  - DEC-0001
+  - DEC-0002

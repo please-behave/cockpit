@@ -74,6 +74,38 @@ pub enum ReportedStatus {
     Warn,
 }
 
+impl Overall {
+    pub(crate) fn as_str(&self) -> &'static str {
+        match self {
+            Self::Pass => "PASS",
+            Self::Fail => "FAIL",
+            Self::Error => "ERROR",
+        }
+    }
+}
+
+impl ResultKind {
+    pub(crate) fn as_str(&self) -> &'static str {
+        match self {
+            Self::Check => "check",
+            Self::Review => "review",
+            Self::Integrity => "integrity",
+        }
+    }
+}
+
+impl ReportedStatus {
+    pub(crate) fn as_str(&self) -> &'static str {
+        match self {
+            Self::Pass => "PASS",
+            Self::Fail => "FAIL",
+            Self::Error => "ERROR",
+            Self::NotRun => "NOT_RUN",
+            Self::Warn => "WARN",
+        }
+    }
+}
+
 impl LedgerClient {
     pub fn new(base_url: &str) -> Result<Self> {
         let mut attestations_url =

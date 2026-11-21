@@ -149,7 +149,6 @@ impl Auth {
 
     pub(crate) fn protect(&self, router: Router) -> Router {
         router
-            .route("/", get(home))
             .merge(
                 Router::new()
                     .route("/sign-out", get(sign_out))
@@ -392,12 +391,5 @@ async fn sign_in() -> AuthPage {
     AuthPage {
         href: "/sign-in/github",
         label: "Sign in with GitHub",
-    }
-}
-
-async fn home() -> AuthPage {
-    AuthPage {
-        href: "/sign-out",
-        label: "Sign out",
     }
 }

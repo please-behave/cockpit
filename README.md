@@ -38,7 +38,10 @@ Set `COCKPIT_BIND_ADDR` to an IP address and port to override
 connections from outside its network namespace, set it to `0.0.0.0:8080`.
 
 Open `/sign-in` to sign in with GitHub. Sessions expire after eight hours,
-and **Sign out** clears the session from the current browser.
+and **Sign out** clears the session from the current browser. The overview
+shows the latest reported attestation for each repository and execution-point
+combination, with errors and failures first. Select a repository link to see
+the rules and outcomes for that attestation.
 
 `GET /healthz` checks liveness. `GET /readyz` confirms the service has loaded
 valid configuration and stays available during ledger outages. Startup errors

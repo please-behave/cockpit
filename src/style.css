@@ -10,3 +10,42 @@ main {
     margin: 4rem auto;
     padding: 0 1.25rem;
 }
+
+main.attestations {
+    max-width: 76rem;
+}
+
+nav a + a {
+    margin-inline-start: 1rem;
+}
+
+.table-scroll {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th,
+td {
+    padding: 0.65rem 0.8rem;
+    border-bottom: 1px solid #d6d6d6;
+    text-align: left;
+    vertical-align: top;
+    overflow-wrap: anywhere;
+}
+
+thead {
+    background: #eee;
+}
+
+dt {
+    font-weight: 600;
+}
+
+dd {
+    margin: 0 0 0.5rem;
+    overflow-wrap: anywhere;
+}

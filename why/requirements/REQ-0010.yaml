@@ -1,0 +1,14 @@
+id: REQ-0010
+name: Reported Attestation Detail
+description: >-
+  The session-protected detail page reads the selected attestation through
+  ledger:CON-0003 and shows its rules in reported order with their identifiers,
+  kinds and statuses. It identifies the outcomes as reported and returns
+  HTTP 404 for an unknown attestation or HTTP 400 for a malformed identifier.
+rationale: >-
+  Viewers can inspect the outcomes that make up an attestation and distinguish
+  the kinds of evidence behind them.
+decisions:
+  - DEC-0001
+  - DEC-0002
+  - why:DEC-0002
