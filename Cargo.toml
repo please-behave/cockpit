@@ -1,0 +1,6 @@
+[package]
+name = "cockpit"
+version = "0.1.0"
+edition = "2024"
+description = "The Please Behave cockpit"
+license = "PolyForm-Noncommercial-1.0.0"
