@@ -61,6 +61,8 @@ jobs:
         run: >-
           docker build
           --platform linux/amd64
+          --provenance=false
+          --sbom=false
           --tag cockpit:candidate
           --label "org.opencontainers.image.version=v${EXPECTED_RELEASE_VERSION}"
           --label "org.opencontainers.image.revision=${GITHUB_SHA}"
