@@ -79,7 +79,9 @@ while the tab is visible. Select a repository to see the rules and outcomes
 for that attestation; its back link returns to the dashboard or the
 **Attestations** page, wherever you came from. The **Attestations** page lists
 every attestation, newest first, and loads older ones in pages of 100 while you
-scroll. If the ledger is unavailable, the view shows an error with a retry
+scroll. Going back from a detail page to the **Attestations** page returns to
+the same scroll position without loading again; the page is kept in memory only
+and **Attestations** in the menu always loads fresh data. If the ledger is unavailable, the view shows an error with a retry
 action.
 
 Browser clients can use the [session-protected JSON read API](why/contracts/browser/latest.md).

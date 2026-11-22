@@ -8,9 +8,15 @@ description: >-
   older attestations exist. An attestation that arrives twice is shown once. A
   failed page keeps the loaded rows and shows an inline error with a retry
   action. Loading a page does not move the scroll position, and the loaded and
-  end states are announced to assistive technology.
+  end states are announced to assistive technology. While the detail page
+  opened from the history is shown, the router keeps the history with its
+  loaded pages in memory. Going back through the browser history attaches it
+  again at the same scroll position without a request. The menu entry
+  `Attestations`, another view or a second detail page discards it, and a kept
+  history makes no requests while detached.
 rationale: >-
   Viewers reach every attestation without waiting for the whole ledger and
   without losing their place.
 decisions:
   - DEC-0013
+  - DEC-0014

@@ -1,0 +1,15 @@
+id: DEC-0014
+name: Keep the History in Memory Across Detail Navigation
+context: >-
+  A viewer who has scrolled through many history rows and opens one attestation
+  expects to return to the same place. Reloading the pages would lose that
+  place and request every page again.
+decision: >-
+  While the detail page reached from the history is shown, the router keeps the
+  history view in memory with its loaded pages and scroll position and attaches
+  it again when the viewer goes back through the browser history. Any other
+  navigation discards it. The view is never written to browser storage and does
+  not survive a reload.
+rationale: >-
+  The data is evidence that is shown as reported and is not persisted in the
+  browser. Memory holds it only as long as the viewer can return to it.

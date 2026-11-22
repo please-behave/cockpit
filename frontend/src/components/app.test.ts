@@ -1,4 +1,4 @@
-import { afterEach, expect, test, vi } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 import { attestationPage, getAttestation, latestAttestations } from '../api/client';
 import { CockpitApp } from './app';
 import type { DetailView } from '../views/detail';
@@ -92,4 +92,102 @@ test('mounts the history at its route', async () => {
   await history.updateComplete;
   expect(history.shadowRoot!.querySelector('h1')?.textContent).toBe('Attestations');
   expect(attestationPage).toHaveBeenCalledWith({ limit: 100 }, expect.any(AbortSignal));
+});
+
+// Verifies REQ-0022.
+describe('history kept across detail navigation', () => {
+  const summaries = (count: number) => Array.from({ length: count }, (_, index) => ({
+    id: `id-${index}`,
+    overall: 'PASS' as const,
+    repository: 'github.com/acme/widget',
+    execution_points: ['check'],
+    received_at: '2026-11-22T11:18:19Z',
+    sender: 'sender',
+    commit: '0123456789abcdef',
+    warn_count: 0,
+    not_run_count: 0,
+    result_count: 1,
+  }));
+
+  async function openHistory() {
+    vi.stubGlobal('IntersectionObserver', class { observe() {} unobserve() {} disconnect() {} });
+    vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+    vi.mocked(attestationPage).mockResolvedValue(summaries(100));
+    vi.mocked(getAttestation).mockReturnValue(new Promise(() => {}));
+    window.history.replaceState(null, '', '/attestations');
+    const app = new CockpitApp();
+    document.body.append(app);
+    await app.updateComplete;
+    const history = app.shadowRoot!.querySelector<HistoryView>('pb-history')!;
+    await vi.waitFor(() => expect(history.shadowRoot!.querySelector('pb-data-table')).not.toBeNull());
+    return { app, history };
+  }
+
+  const open = async (app: CockpitApp, url: string, origin?: 'history') => {
+    window.history.pushState(origin ? { origin } : null, '', url);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+    await app.updateComplete;
+  };
+
+  const goBack = async (app: CockpitApp) => {
+    const popped = new Promise<void>(resolve => window.addEventListener('popstate', () => resolve(), { once: true }));
+    window.history.back();
+    await popped;
+    await app.updateComplete;
+  };
+
+  test('restores the loaded history at its scroll position without a request', async () => {
+    const { app, history } = await openHistory();
+    vi.mocked(attestationPage).mockClear();
+    vi.spyOn(window, 'scrollY', 'get').mockReturnValue(4200);
+
+    await open(app, '/attestations/id-3', 'history');
+    expect(app.shadowRoot!.querySelector('pb-history')).toBeNull();
+    await goBack(app);
+
+    expect(app.shadowRoot!.querySelector('pb-history')).toBe(history);
+    expect(window.scrollTo).toHaveBeenLastCalledWith(0, 4200);
+    expect(attestationPage).not.toHaveBeenCalled();
+    expect(history.shadowRoot!.querySelectorAll('pb-data-table')).toHaveLength(1);
+  });
+
+  test('aborts the requests of the kept history while it is detached', async () => {
+    const { app, history } = await openHistory();
+    const signals: AbortSignal[] = [];
+    vi.mocked(attestationPage).mockImplementation((_, signal) => {
+      signals.push(signal!);
+      return new Promise(() => {});
+    });
+    (history as unknown as { loadMore(): Promise<void> }).loadMore();
+    await vi.waitFor(() => expect(signals).toHaveLength(1));
+
+    await open(app, '/attestations/id-3', 'history');
+    expect(signals[0].aborted).toBe(true);
+  });
+
+  test.each([
+    ['the menu entry', (app: CockpitApp) => app.shadowRoot!.querySelector<HTMLAnchorElement>('a[href="/attestations"]')!.click()],
+    ['another view', (app: CockpitApp) => app.shadowRoot!.querySelector<HTMLAnchorElement>('a[href="/"]')!.click()],
+  ])('discards the kept history after %s', async (_, leave) => {
+    const { app, history } = await openHistory();
+    await open(app, '/attestations/id-3', 'history');
+    leave(app);
+    await app.updateComplete;
+    if (app.shadowRoot!.querySelector('pb-history') === null) {
+      await open(app, '/attestations');
+    }
+    const fresh = app.shadowRoot!.querySelector('pb-history')!;
+    expect(fresh).not.toBe(history);
+    await vi.waitFor(() => expect(attestationPage).toHaveBeenLastCalledWith({ limit: 100 }, expect.any(AbortSignal)));
+  });
+
+  test('discards the kept history after a second detail page', async () => {
+    const { app, history } = await openHistory();
+    await open(app, '/attestations/id-3', 'history');
+    await open(app, '/attestations/id-4');
+    await goBack(app);
+    await goBack(app);
+    const fresh = app.shadowRoot!.querySelector('pb-history')!;
+    expect(fresh).not.toBe(history);
+  });
 });

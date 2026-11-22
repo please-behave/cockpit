@@ -49,7 +49,7 @@ export abstract class CockpitView<T = never> extends LitElement {
 
   override connectedCallback() {
     super.connectedCallback();
-    void this.load();
+    if (this.data === undefined) void this.load();
     void this.updateComplete.then(() => {
       if (!this.isConnected) return;
       this.setTitle();

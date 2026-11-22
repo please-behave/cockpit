@@ -29,21 +29,25 @@ export function routeFor(path: string): Route {
 export class Router {
   constructor(
     private readonly host: HTMLElement,
-    private readonly navigate: (path: string, origin?: Origin) => void,
+    private readonly navigate: (path: string, origin?: Origin, traversal?: boolean) => void,
   ) {}
 
   connect() {
     this.host.addEventListener('click', this.click);
-    window.addEventListener('popstate', this.pop);
-    this.pop();
+    window.addEventListener('popstate', this.traverse);
+    this.pop(false);
   }
 
   disconnect() {
     this.host.removeEventListener('click', this.click);
-    window.removeEventListener('popstate', this.pop);
+    window.removeEventListener('popstate', this.traverse);
   }
 
-  private readonly pop = () => this.navigate(window.location.pathname, originOf(window.history.state));
+  private readonly traverse = () => this.pop(true);
+
+  private pop(traversal: boolean) {
+    this.navigate(window.location.pathname, originOf(window.history.state), traversal);
+  }
 
   private readonly click = (event: MouseEvent) => {
     if (event.defaultPrevented || event.button !== 0 ||
@@ -59,7 +63,7 @@ export class Router {
     event.preventDefault();
     if (url.pathname === window.location.pathname) return;
     window.history.pushState(this.stateFor(url.pathname), '', url);
-    this.pop();
+    this.pop(false);
     window.scrollTo(0, 0);
   };
 

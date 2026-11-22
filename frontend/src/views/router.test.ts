@@ -32,20 +32,20 @@ test('uses a real anchor in Shadow DOM and follows back and forward navigation',
   router.connect();
 
   try {
-    expect(navigate).toHaveBeenLastCalledWith('/', undefined);
+    expect(navigate).toHaveBeenLastCalledWith('/', undefined, false);
     link.click();
     expect(window.location.pathname).toBe(path);
-    expect(navigate).toHaveBeenLastCalledWith(path, 'dashboard');
+    expect(navigate).toHaveBeenLastCalledWith(path, 'dashboard', false);
 
     const back = new Promise<void>(resolve => window.addEventListener('popstate', () => resolve(), { once: true }));
     window.history.back();
     await back;
-    expect(navigate).toHaveBeenLastCalledWith('/', undefined);
+    expect(navigate).toHaveBeenLastCalledWith('/', undefined, true);
 
     const forward = new Promise<void>(resolve => window.addEventListener('popstate', () => resolve(), { once: true }));
     window.history.forward();
     await forward;
-    expect(navigate).toHaveBeenLastCalledWith(path, 'dashboard');
+    expect(navigate).toHaveBeenLastCalledWith(path, 'dashboard', true);
   } finally {
     router.disconnect();
   }
@@ -107,12 +107,12 @@ test.each([
 
   try {
     link.click();
-    expect(navigate).toHaveBeenLastCalledWith('/attestations/id', origin);
+    expect(navigate).toHaveBeenLastCalledWith('/attestations/id', origin, false);
     expect(window.history.state).toEqual({ origin });
     router.disconnect();
     navigate.mockClear();
     router.connect();
-    expect(navigate).toHaveBeenLastCalledWith('/attestations/id', origin);
+    expect(navigate).toHaveBeenLastCalledWith('/attestations/id', origin, false);
   } finally {
     router.disconnect();
   }
@@ -132,9 +132,9 @@ test('records no origin for a direct open or a non-detail navigation', () => {
   router.connect();
 
   try {
-    expect(navigate).toHaveBeenLastCalledWith('/attestations/first', undefined);
+    expect(navigate).toHaveBeenLastCalledWith('/attestations/first', undefined, false);
     link.click();
-    expect(navigate).toHaveBeenLastCalledWith('/attestations/second', undefined);
+    expect(navigate).toHaveBeenLastCalledWith('/attestations/second', undefined, false);
     expect(window.history.state).toBeNull();
   } finally {
     router.disconnect();

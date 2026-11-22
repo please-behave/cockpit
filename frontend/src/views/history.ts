@@ -86,11 +86,13 @@ export class HistoryView extends CockpitView<Summary[]> {
       },
       { rootMargin: '100% 0px' },
     );
+    this.watchSentinel();
   }
 
   override disconnectedCallback() {
     this.more?.abort();
     this.more = undefined;
+    this.loadingMore = false;
     this.observer?.disconnect();
     this.observer = undefined;
     this.watching = undefined;
@@ -121,6 +123,10 @@ export class HistoryView extends CockpitView<Summary[]> {
 
   protected override updated() {
     super.updated();
+    this.watchSentinel();
+  }
+
+  private watchSentinel() {
     // Observing again reports the sentinel's current position, which a page that
     // did not push it out of range needs in order to load the next page.
     const sentinel = this.renderRoot.querySelector('.sentinel');
