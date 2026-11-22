@@ -14,7 +14,7 @@ COPY --from=frontend /src/frontend/dist/sign-in.html ./frontend/dist/sign-in.htm
 COPY src ./src
 RUN cargo build --release --locked
 
-FROM gcr.io/distroless/cc-debian13:nonroot@sha256:cb87acc574abe719b6e5c547384defa2f7b1f24af9605d3f618cf852495d8be2
+FROM gcr.io/distroless/cc-debian13:nonroot@sha256:532c7a94f9e96ba9db75eb9388f4227751131c7cb0a411d1a8521af4096135de
 COPY --from=build /src/target/release/cockpit /usr/local/bin/cockpit
 USER nonroot
 ENTRYPOINT ["/usr/local/bin/cockpit"]
