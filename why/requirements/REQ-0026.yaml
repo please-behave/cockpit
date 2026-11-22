@@ -1,0 +1,22 @@
+id: REQ-0026
+name: Registered Rule Views
+description: >-
+  The Rules navigation opens a paged list of registered rules from CON-0004.
+  Each identity appears once with its name or local ID, latest version, kind
+  and any description. Its detail page uses CON-0005 and displays all
+  registered versions from greatest to smallest in numeric version order.
+  Each version shows its kind, description, registration time and, for a
+  review, its effective blocking value and prompt. The detail displays
+  known knowledge fields including purpose, problem, value, conditions and
+  their reasons, success criteria, out of scope, limitations, placement and
+  references. It tolerates absent and unfamiliar fields and renders
+  registered text as escaped plain text in both themes.
+rationale: >-
+  Viewers can understand a rule's purpose and inspect what its owner
+  registered for each version.
+decisions:
+  - DEC-0005
+  - DEC-0006
+  - why:DEC-0011
+  - why:DEC-0012
+  - why:DEC-0014

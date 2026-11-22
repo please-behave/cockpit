@@ -11,7 +11,7 @@ const REQUEST_TIMEOUT: Duration = Duration::from_secs(5);
 #[derive(Clone)]
 pub struct LedgerClient {
     client: Client,
-    attestations_url: Url,
+    base_url: Url,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -19,6 +19,8 @@ pub enum ReadError {
     InvalidId,
     InvalidQuery,
     NotFound,
+    InvalidRuleIdentity,
+    RuleNotFound,
     Unavailable,
 }
 
@@ -101,28 +103,80 @@ pub enum ReportedStatus {
     Warn,
 }
 
+// Deserialize to validate the registry response before forwarding the original bytes.
+#[allow(
+    dead_code,
+    reason = "registry fields are used only for response validation"
+)]
+mod registry {
+    use serde::Deserialize;
+
+    #[derive(Deserialize)]
+    pub(super) struct RegisteredRule {
+        #[serde(flatten)]
+        identity: RegisteredRuleSummary,
+        kind: RegisteredRuleKind,
+    }
+
+    #[derive(Deserialize)]
+    pub(super) struct RegisteredVersion {
+        #[serde(flatten)]
+        identity: RegisteredRuleSummary,
+        #[serde(flatten)]
+        kind: RegisteredVersionKind,
+        knowledge: Option<serde_json::Map<String, serde_json::Value>>,
+        digest: String,
+        commit: String,
+        registered_at: String,
+    }
+
+    #[derive(Deserialize)]
+    struct RegisteredRuleSummary {
+        source: String,
+        path: String,
+        id: String,
+        version: String,
+        name: Option<String>,
+        description: Option<String>,
+    }
+
+    #[derive(Deserialize)]
+    #[serde(rename_all = "snake_case")]
+    enum RegisteredRuleKind {
+        Check,
+        Review,
+    }
+
+    #[derive(Deserialize)]
+    #[serde(tag = "kind", rename_all = "snake_case")]
+    enum RegisteredVersionKind {
+        Check,
+        Review { blocking: bool, prompt: String },
+    }
+}
+
 #[derive(Clone, Copy)]
 enum Endpoint<'a> {
     Latest,
     List,
     Attestation(&'a str),
+    Rules,
+    RuleVersions,
 }
 
 impl LedgerClient {
     pub fn new(base_url: &str) -> Result<Self> {
-        let mut attestations_url =
-            Url::parse(base_url).context("Expected an absolute ledger URL")?;
+        let base_url = Url::parse(base_url).context("Expected an absolute ledger URL")?;
         ensure!(
-            matches!(attestations_url.scheme(), "http" | "https")
-                && attestations_url.has_host()
-                && attestations_url.username().is_empty()
-                && attestations_url.password().is_none()
-                && attestations_url.path() == "/"
-                && attestations_url.query().is_none()
-                && attestations_url.fragment().is_none(),
+            matches!(base_url.scheme(), "http" | "https")
+                && base_url.has_host()
+                && base_url.username().is_empty()
+                && base_url.password().is_none()
+                && base_url.path() == "/"
+                && base_url.query().is_none()
+                && base_url.fragment().is_none(),
             "Expected an HTTP or HTTPS origin without credentials, path, query or fragment"
         );
-        attestations_url.set_path("/v0/attestations");
 
         let client = Client::builder()
             .connect_timeout(CONNECT_TIMEOUT)
@@ -132,10 +186,7 @@ impl LedgerClient {
             .build()
             .context("Cannot initialize the ledger HTTP client")?;
 
-        Ok(Self {
-            client,
-            attestations_url,
-        })
+        Ok(Self { client, base_url })
     }
 
     pub async fn latest(&self) -> Result<Vec<Summary>, ReadError> {
@@ -175,21 +226,43 @@ impl LedgerClient {
         self.read(Endpoint::Attestation(id), None).await
     }
 
+    pub(crate) async fn rules_response(&self, query: Option<&str>) -> Result<Bytes, ReadError> {
+        let (_, body) = self
+            .read::<Vec<registry::RegisteredRule>>(Endpoint::Rules, query)
+            .await?;
+        Ok(body)
+    }
+
+    pub(crate) async fn rule_versions_response(
+        &self,
+        query: Option<&str>,
+    ) -> Result<Bytes, ReadError> {
+        let (versions, body) = self
+            .read::<Vec<registry::RegisteredVersion>>(Endpoint::RuleVersions, query)
+            .await?;
+        if versions.is_empty() {
+            tracing::warn!(reason = "empty version history", "Ledger read failed");
+            return Err(ReadError::Unavailable);
+        }
+        Ok(body)
+    }
+
     async fn read<T: DeserializeOwned>(
         &self,
         endpoint: Endpoint<'_>,
         query: Option<&str>,
     ) -> Result<(T, Bytes), ReadError> {
-        let mut url = self.attestations_url.clone();
-        let segment = match endpoint {
-            Endpoint::Latest => Some("latest"),
-            Endpoint::Attestation(id) => Some(id),
-            Endpoint::List => None,
-        };
-        if let Some(segment) = segment {
+        let mut url = self.base_url.clone();
+        url.set_path(match endpoint {
+            Endpoint::Latest => "/v0/attestations/latest",
+            Endpoint::List | Endpoint::Attestation(_) => "/v0/attestations",
+            Endpoint::Rules => "/v0/rules",
+            Endpoint::RuleVersions => "/v0/rules/detail",
+        });
+        if let Endpoint::Attestation(id) = endpoint {
             url.path_segments_mut()
                 .expect("a validated ledger URL has path segments")
-                .push(segment);
+                .push(id);
         }
         url.set_query(query);
 
@@ -207,8 +280,14 @@ impl LedgerClient {
         match (response.status(), endpoint) {
             (StatusCode::OK, _) => validated_body(response).await,
             (StatusCode::BAD_REQUEST, Endpoint::Attestation(_)) => Err(ReadError::InvalidId),
-            (StatusCode::BAD_REQUEST, Endpoint::List) => Err(ReadError::InvalidQuery),
+            (StatusCode::BAD_REQUEST, Endpoint::List | Endpoint::Rules) => {
+                Err(ReadError::InvalidQuery)
+            }
             (StatusCode::NOT_FOUND, Endpoint::Attestation(_)) => Err(ReadError::NotFound),
+            (StatusCode::BAD_REQUEST, Endpoint::RuleVersions) => {
+                Err(ReadError::InvalidRuleIdentity)
+            }
+            (StatusCode::NOT_FOUND, Endpoint::RuleVersions) => Err(ReadError::RuleNotFound),
             (status, _) => {
                 tracing::warn!(status = status.as_u16(), "Unexpected ledger status");
                 Err(ReadError::Unavailable)

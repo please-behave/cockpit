@@ -1,5 +1,5 @@
 // Verifies REQ-0004, REQ-0006, REQ-0007, REQ-0011, REQ-0012, REQ-0013,
-// REQ-0014, REQ-0015 and REQ-0024.
+// REQ-0014, REQ-0015, REQ-0024 and REQ-0025.
 
 #[path = "support/auth_settings.rs"]
 mod support;
@@ -494,6 +494,8 @@ async fn authenticated_page_requests_return_the_embedded_shell() {
         "/",
         DETAIL_PATH,
         "/attestations/invalid",
+        "/rules",
+        "/rules/detail?source=github.com%2Forg%2Frules&path=checks%2Fexample&id=example",
         "/future/view?query=1",
     ] {
         let response = site
@@ -571,6 +573,115 @@ async fn assert_api_error(response: Response, status: StatusCode, code: &str) {
         serde_json::from_str::<Value>(&response.text().await.unwrap()).unwrap(),
         json!({ "code": code })
     );
+}
+
+#[tokio::test]
+async fn browser_registry_reads_preserve_ledger_texts_order_and_encoded_queries() {
+    const IDENTITY: &str =
+        "source=github.com%2Fteam%2Frules%2Bmore&path=checks%2Fshell%26tools&id=shell";
+    const CURSOR: &str = "limit=100&before=%7B%22source%22%3A%22github.com%2Fteam%2Frules%2Bmore%22%2C%22path%22%3A%22checks%2Fshell%26tools%22%2C%22id%22%3A%22shell%22%7D";
+    const MARKUP: &str = "<img src=x onerror=alert(1)>";
+    let summary = json!({
+        "source": "github.com/team/rules+more", "path": "checks/shell&tools", "id": "shell",
+        "kind": "review", "version": "1.10", "name": MARKUP, "description": MARKUP
+    });
+    let mut latest = summary.clone();
+    latest["registered_at"] = json!("2026-11-22T09:00:00Z");
+    latest["digest"] = json!(format!("v1:sha256:{}", "a".repeat(64)));
+    latest["commit"] = json!("a".repeat(40));
+    latest["prompt"] = json!(MARKUP);
+    latest["blocking"] = json!(false);
+    latest["knowledge"] = json!({"purpose": MARKUP, "unfamiliar_field": ["retained", false]});
+    let mut first = latest.clone();
+    first["version"] = json!("1.2");
+    first.as_object_mut().unwrap().remove("knowledge");
+    let list = serde_json::to_string_pretty(&json!([summary])).unwrap();
+    let versions = serde_json::to_string_pretty(&json!([first, latest])).unwrap();
+    first.as_object_mut().unwrap().remove("prompt");
+    let malformed = json!([first]).to_string();
+    let upstream_list = list.clone();
+    let upstream_versions = versions.clone();
+    let site = TestSite::start_with_ledger(
+        Router::new()
+            .route(
+                "/v0/rules",
+                get(move |RawQuery(query): RawQuery| async move {
+                    match query.as_deref() {
+                        Some(CURSOR) => (StatusCode::OK, upstream_list),
+                        Some("limit=0") => (StatusCode::BAD_REQUEST, "upstream query error".into()),
+                        _ => panic!("unexpected registry query"),
+                    }
+                }),
+            )
+            .route(
+                "/v0/rules/detail",
+                get(move |RawQuery(query): RawQuery| async move {
+                    match query.as_deref() {
+                        Some(IDENTITY) => (StatusCode::OK, upstream_versions),
+                        Some("id=missing") => (StatusCode::NOT_FOUND, "upstream missing".into()),
+                        Some("id=invalid") => {
+                            (StatusCode::BAD_REQUEST, "upstream identity error".into())
+                        }
+                        Some("id=malformed-response") => (StatusCode::OK, malformed),
+                        Some("id=empty-response") => (StatusCode::OK, "[]".into()),
+                        _ => panic!("unexpected rule identity query"),
+                    }
+                }),
+            ),
+    )
+    .await;
+    let session = cookie_header(&cookie(&site.sign_in("allowed").await, SESSION).unwrap());
+    for (path, body) in [
+        (format!("/v0/rules?{CURSOR}"), list),
+        (format!("/v0/rules/detail?{IDENTITY}"), versions),
+    ] {
+        let unauthorized = site.get(&path).send().await.unwrap();
+        assert_api_error(unauthorized, StatusCode::UNAUTHORIZED, "unauthorized").await;
+        let response = site
+            .get(&path)
+            .header(header::COOKIE, &session)
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_api_headers(&response);
+        assert_eq!(response.text().await.unwrap(), body);
+    }
+    for (path, status, code) in [
+        (
+            "/v0/rules?limit=0",
+            StatusCode::BAD_REQUEST,
+            "invalid_query",
+        ),
+        (
+            "/v0/rules/detail?id=invalid",
+            StatusCode::BAD_REQUEST,
+            "invalid_rule_identity",
+        ),
+        (
+            "/v0/rules/detail?id=missing",
+            StatusCode::NOT_FOUND,
+            "rule_not_found",
+        ),
+        (
+            "/v0/rules/detail?id=malformed-response",
+            StatusCode::SERVICE_UNAVAILABLE,
+            "ledger_unavailable",
+        ),
+        (
+            "/v0/rules/detail?id=empty-response",
+            StatusCode::SERVICE_UNAVAILABLE,
+            "ledger_unavailable",
+        ),
+    ] {
+        let response = site
+            .get(path)
+            .header(header::COOKIE, &session)
+            .send()
+            .await
+            .unwrap();
+        assert_api_error(response, status, code).await;
+    }
 }
 
 #[tokio::test]

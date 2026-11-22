@@ -20,6 +20,8 @@ pub(super) fn router(ledger: LedgerClient, auth: &Auth) -> Router {
         .route("/v0/attestations", get(list))
         .route("/v0/attestations/latest", get(latest))
         .route("/v0/attestations/{id}", get(attestation))
+        .route("/v0/rules", get(rules))
+        .route("/v0/rules/detail", get(rule_versions))
         .method_not_allowed_fallback(|| async { ApiError::MethodNotAllowed })
         .with_state(ledger)
         .layer(middleware::from_fn_with_state(
@@ -73,6 +75,22 @@ async fn attestation(
     Ok(json_response(StatusCode::OK, body))
 }
 
+async fn rules(
+    State(ledger): State<LedgerClient>,
+    RawQuery(query): RawQuery,
+) -> Result<Response, ApiError> {
+    let body = ledger.rules_response(query.as_deref()).await?;
+    Ok(json_response(StatusCode::OK, body))
+}
+
+async fn rule_versions(
+    State(ledger): State<LedgerClient>,
+    RawQuery(query): RawQuery,
+) -> Result<Response, ApiError> {
+    let body = ledger.rule_versions_response(query.as_deref()).await?;
+    Ok(json_response(StatusCode::OK, body))
+}
+
 enum ApiError {
     Unauthorized,
     MethodNotAllowed,
@@ -101,6 +119,13 @@ impl IntoResponse for ApiError {
             }
             Self::Ledger(ReadError::NotFound) => {
                 (StatusCode::NOT_FOUND, r#"{"code":"attestation_not_found"}"#)
+            }
+            Self::Ledger(ReadError::InvalidRuleIdentity) => (
+                StatusCode::BAD_REQUEST,
+                r#"{"code":"invalid_rule_identity"}"#,
+            ),
+            Self::Ledger(ReadError::RuleNotFound) => {
+                (StatusCode::NOT_FOUND, r#"{"code":"rule_not_found"}"#)
             }
             Self::Ledger(ReadError::Unavailable) => (
                 StatusCode::SERVICE_UNAVAILABLE,

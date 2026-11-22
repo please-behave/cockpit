@@ -7,7 +7,7 @@ import '../components/pb-short-name';
 import '../components/pb-status-pill';
 import '../components/pb-time';
 import { CockpitView, reportedEvidence } from './cockpit-view';
-import type { Origin } from './router';
+import { rulePath, type Origin } from './router';
 
 const columns: DataTableColumn[] = [
   { label: 'Rule' },
@@ -66,7 +66,10 @@ export class DetailView extends CockpitView<Attestation> {
           ${result.rule ? html`
             <div>Source <code>${result.rule.source}</code></div>
             <div>Path <code>${result.rule.path}</code></div>
-            ${result.rule.version ? html`<div>Version <code>${result.rule.version}</code></div>` : nothing}
+            ${result.rule.version ? html`<div>Version ${result.verification.status === 'verified'
+              || result.verification.reason === 'mismatch'
+              ? html`<a data-route href=${rulePath(result.rule, result.rule.version)}><code>${result.rule.version}</code></a>`
+              : html`<code>${result.rule.version}</code>`}</div>` : nothing}
           ` : nothing}
         `,
         result.kind,

@@ -1,7 +1,11 @@
+import type { RuleIdentity } from '../api/client';
+
 export type Route =
   | { view: 'dashboard' }
   | { view: 'history' }
   | { view: 'detail'; id: string }
+  | { view: 'rules'; search: string }
+  | { view: 'rule'; search: string }
   | { view: 'not-found' };
 
 export type Origin = 'dashboard' | 'history';
@@ -11,9 +15,14 @@ export function originOf(state: unknown): Origin | undefined {
   return origin === 'dashboard' || origin === 'history' ? origin : undefined;
 }
 
-export function routeFor(path: string): Route {
+export function routeFor(location: string): Route {
+  const query = location.indexOf('?');
+  const path = query === -1 ? location : location.slice(0, query);
+  const search = query === -1 ? '' : location.slice(query);
   if (path === '/') return { view: 'dashboard' };
   if (path === '/attestations') return { view: 'history' };
+  if (path === '/rules') return { view: 'rules', search };
+  if (path === '/rules/detail') return { view: 'rule', search };
   const detail = /^\/attestations\/([^/]+)$/.exec(path);
   if (detail) {
     try {
@@ -24,6 +33,12 @@ export function routeFor(path: string): Route {
     }
   }
   return { view: 'not-found' };
+}
+
+export function rulePath({ source, path, id }: RuleIdentity, version?: string): string {
+  const query = new URLSearchParams({ source, path, id });
+  if (version !== undefined) query.set('version', version);
+  return `/rules/detail?${query}`;
 }
 
 export class Router {
@@ -46,7 +61,7 @@ export class Router {
   private readonly traverse = () => this.pop(true);
 
   private pop(traversal: boolean) {
-    this.navigate(window.location.pathname, originOf(window.history.state), traversal);
+    this.navigate(window.location.pathname + window.location.search, originOf(window.history.state), traversal);
   }
 
   private readonly click = (event: MouseEvent) => {
@@ -61,7 +76,7 @@ export class Router {
     if (url.origin !== window.location.origin || url.hash) return;
 
     event.preventDefault();
-    if (url.pathname === window.location.pathname) return;
+    if (url.pathname === window.location.pathname && url.search === window.location.search) return;
     window.history.pushState(this.stateFor(url.pathname), '', url);
     this.pop(false);
     window.scrollTo(0, 0);

@@ -5,6 +5,8 @@ import '../views/dashboard';
 import '../views/detail';
 import '../views/history';
 import '../views/not-found';
+import '../views/rule';
+import '../views/rules';
 import './app-shell';
 
 export class CockpitApp extends LitElement {
@@ -60,6 +62,8 @@ export class CockpitApp extends LitElement {
       case 'dashboard': return html`<pb-dashboard></pb-dashboard>`;
       case 'history': return this.restored ?? html`<pb-history></pb-history>`;
       case 'detail': return html`<pb-attestation .attestationId=${route.id} .origin=${this.origin}></pb-attestation>`;
+      case 'rules': return html`<pb-rules .search=${route.search}></pb-rules>`;
+      case 'rule': return html`<pb-rule .search=${route.search}></pb-rule>`;
       case 'not-found': return html`<pb-not-found></pb-not-found>`;
     }
   }
@@ -69,6 +73,7 @@ export class CockpitApp extends LitElement {
       <pb-app-shell>
         <a slot="navigation" data-route href="/">Dashboard</a>
         <a slot="navigation" data-route href="/attestations">Attestations</a>
+        <a slot="navigation" data-route href="/rules">Rules</a>
         ${keyed(this.path, this.view())}
       </pb-app-shell>
     `;

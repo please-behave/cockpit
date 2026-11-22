@@ -124,6 +124,15 @@ export abstract class CockpitView<T = never> extends LitElement {
       case 'attestation_not_found':
         return html`<pb-error-state heading="Attestation not found"
           message="There is no attestation with that identifier."></pb-error-state>`;
+      case 'invalid_rule_identity':
+        return html`<pb-error-state heading="Invalid rule identity"
+          message="The registered rule address is malformed."></pb-error-state>`;
+      case 'rule_not_found':
+        return html`<pb-error-state heading="Registered rule not found"
+          message="There are no registered versions for this rule."></pb-error-state>`;
+      case 'invalid_query':
+        return html`<pb-error-state heading="Invalid page"
+          message="The page cursor is invalid."></pb-error-state>`;
       case 'ledger_unavailable':
         return html`<pb-error-state heading="Ledger unavailable"
           message="Cockpit could not load data from the ledger." retryable
@@ -131,7 +140,7 @@ export abstract class CockpitView<T = never> extends LitElement {
       case 'unauthorized':
         return html`<p role="status">Redirecting to sign-in…</p>`;
       default:
-        return html`<pb-error-state heading="Unable to load attestations"
+        return html`<pb-error-state heading="Unable to load data"
           message="The request did not complete." retryable @retry=${this.retry}></pb-error-state>`;
     }
   }

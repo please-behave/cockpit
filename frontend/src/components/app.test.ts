@@ -40,7 +40,7 @@ test('pb-app renders its content in the application shell', async () => {
   expect(root.querySelector('header nav slot')?.getAttribute('name')).toBe('navigation');
   expect(root.querySelector('header slot[name="last-updated"]')).not.toBeNull();
   expect([...app.shadowRoot!.querySelectorAll('a[slot=navigation]')].map(link => [link.textContent, link.getAttribute('href')]))
-    .toEqual([['Dashboard', '/'], ['Attestations', '/attestations']]);
+    .toEqual([['Dashboard', '/'], ['Attestations', '/attestations'], ['Rules', '/rules']]);
   expect(root.querySelector('header a.sign-out')?.getAttribute('href')).toBe('/sign-out');
   expect(root.querySelector('main slot')).not.toBeNull();
 

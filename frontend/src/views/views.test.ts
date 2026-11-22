@@ -52,7 +52,7 @@ function mountDetail(id: string, origin?: Origin) {
   return view;
 }
 
-// Verifies REQ-0004, REQ-0010, REQ-0017, REQ-0018 and REQ-0024.
+// Verifies REQ-0004, REQ-0010, REQ-0017, REQ-0018, REQ-0024 and REQ-0027.
 test.each(['light', 'dark'])('detail presents reported results and verification in the %s theme', async theme => {
   document.documentElement.setAttribute('data-theme', theme);
   const repository = 'org/<img src=x>';
@@ -110,6 +110,12 @@ test.each(['light', 'dark'])('detail presents reported results and verification 
   expect(rows.map(row => [...row.cells[0].querySelectorAll('code')].map(field => field.textContent)))
     .toEqual([[rule.source, rule.path, '1.2'], [], [rule.source, rule.path, '2.0'], [rule.source, rule.path]]);
   expect(rows[1].cells[0].querySelector('div')).toBeNull();
+  expect(rows.map(row => {
+    const link = row.cells[0].querySelector('a');
+    return link ? Object.fromEntries(new URL(link.href).searchParams) : null;
+  })).toEqual([
+    { ...rule, version: '1.2' }, null, { ...rule, version: '2.0' }, null,
+  ]);
   expect(table.querySelector('img, script, [onerror]')).toBeNull();
 
   const verification = rows.map(row => row.cells[3].querySelector<StatusPill>('pb-status-pill')!);
