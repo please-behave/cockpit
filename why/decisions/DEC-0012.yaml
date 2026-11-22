@@ -1,0 +1,13 @@
+id: DEC-0012
+name: Keep the Dashboard Sort Order in the URL
+context: >-
+  Viewers choose between the newest attestation first and the repository name.
+  The choice must survive a reload and be shareable, and browser storage is
+  not used.
+decision: >-
+  The sort choice is the query parameter sort. The default order, newest
+  attestation first, omits it. Changing it replaces the current history entry
+  instead of adding one.
+rationale: >-
+  The address carries the view state without storage and without cluttering
+  the browser history.

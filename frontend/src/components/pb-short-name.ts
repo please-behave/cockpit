@@ -4,6 +4,11 @@ export function shortName(value: string) {
   return value.slice(value.lastIndexOf('/') + 1);
 }
 
+export function ownerName(value: string) {
+  const segments = value.split('/');
+  return segments.length > 1 ? segments[segments.length - 2] : '';
+}
+
 export class ShortName extends LitElement {
   static override properties = { value: { type: String } };
 

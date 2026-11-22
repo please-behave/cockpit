@@ -1,11 +1,11 @@
-import { css, html, LitElement, nothing, type TemplateResult } from 'lit';
+import { css, html, LitElement, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 import { ApiError } from '../api/client';
 import '../components/pb-error-state';
 
 export const reportedEvidence = html`<p>These outcomes are shown as reported to the ledger.</p>`;
 
 export abstract class CockpitView<T = never> extends LitElement {
-  static override styles = css`
+  static override styles: CSSResultGroup = css`
     @layer tokens, base, components, utilities;
 
     @layer base {
@@ -40,6 +40,8 @@ export abstract class CockpitView<T = never> extends LitElement {
   private request?: AbortController;
   private data?: T;
   private error?: ApiError;
+  private refreshing = false;
+  private stale = false;
 
   protected abstract heading(data?: T): string;
   protected abstract content(data?: T): TemplateResult;
@@ -60,23 +62,33 @@ export abstract class CockpitView<T = never> extends LitElement {
     super.disconnectedCallback();
   }
 
-  async load() {
+  /** A refresh keeps the data on screen and reports a failure as a notice. */
+  async load(refresh = false) {
     if (!this.read || !this.isConnected) return;
     this.dispose();
     const request = new AbortController();
     this.request = request;
-    this.error = undefined;
+    this.refreshing = refresh && this.data !== undefined;
+    if (!this.refreshing) this.error = undefined;
     this.requestUpdate();
     try {
       const data = await this.read(request.signal);
-      if (!request.signal.aborted) this.data = data;
+      if (!request.signal.aborted) {
+        this.data = data;
+        this.stale = false;
+      }
     } catch (error) {
       if (request.signal.aborted) return;
-      this.data = undefined;
-      this.error = error instanceof ApiError ? error : new ApiError('request_failed');
+      if (this.refreshing) {
+        this.stale = true;
+      } else {
+        this.data = undefined;
+        this.error = error instanceof ApiError ? error : new ApiError('request_failed');
+      }
     } finally {
       if (!request.signal.aborted) {
         this.request = undefined;
+        this.refreshing = false;
         this.requestUpdate();
       }
     }
@@ -129,7 +141,8 @@ export abstract class CockpitView<T = never> extends LitElement {
       <h1 tabindex="-1">${this.heading(this.data)}</h1>
       ${this.content(this.data)}
       ${this.error ? this.renderError(this.error) : nothing}
-      ${this.request ? html`<p role="status">Loading…</p>` : nothing}
+      ${this.stale ? html`<p role="status">The data could not be refreshed. Showing the last data received.</p>` : nothing}
+      ${this.request && !this.refreshing ? html`<p role="status">Loading…</p>` : nothing}
     `;
   }
 }

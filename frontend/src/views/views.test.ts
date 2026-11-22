@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from 'vitest';
-import { ApiError, getAttestation, latestAttestations, type Summary } from '../api/client';
+import { ApiError, getAttestation, type Summary } from '../api/client';
 import type { DataTable } from '../components/pb-data-table';
 import type { DefinitionList } from '../components/pb-definition-list';
 import type { ErrorState } from '../components/pb-error-state';
@@ -7,15 +7,13 @@ import type { ShortName } from '../components/pb-short-name';
 import type { CockpitTime } from '../components/pb-time';
 import type { StatusPill } from '../components/pb-status-pill';
 import { DetailView } from './detail';
-import { OverviewView } from './overview';
+import { DashboardView } from './dashboard';
 
 vi.mock(import('../api/client'), async original => ({
   ...await original(),
   getAttestation: vi.fn(),
-  latestAttestations: vi.fn(),
 }));
 
-const latest = vi.mocked(latestAttestations);
 const detail = vi.mocked(getAttestation);
 const receipt = '2026-11-22T11:18:19Z';
 
@@ -38,7 +36,7 @@ afterEach(() => {
   vi.resetAllMocks();
 });
 
-async function tableRoot(view: OverviewView | DetailView) {
+async function tableRoot(view: DetailView) {
   const table = view.shadowRoot!.querySelector<DataTable>('pb-data-table')!;
   await table.updateComplete;
   return table.shadowRoot!;
@@ -50,87 +48,6 @@ function mountDetail(id: string) {
   document.body.append(view);
   return view;
 }
-
-// Verifies REQ-0007 and REQ-0009.
-test('overview has a loading state, then an explicit empty state without a table', async () => {
-  let complete!: (summaries: Summary[]) => void;
-  const pending = new Promise<Summary[]>(resolve => { complete = resolve; });
-  latest.mockReturnValue(pending);
-  const view = new OverviewView();
-  document.body.append(view);
-  await view.updateComplete;
-  const root = view.shadowRoot!;
-  expect(root.querySelector('[role=status]')?.textContent).toBe('Loading…');
-  expect(root.activeElement).toBe(root.querySelector('h1'));
-  expect(document.title).toBe('Latest attestations | Please Behave');
-
-  complete([]);
-  await pending;
-  await view.updateComplete;
-  const empty = root.querySelector('pb-empty-state')!;
-  expect(empty.getAttribute('message')).toBe('No attestations have been reported yet.');
-  expect(root.querySelector('[role=status], pb-data-table')).toBeNull();
-});
-
-test('overview orders rows, escapes reported values, and reuses rows and links on load', async () => {
-  const hostile = 'a/<script>alert(1)</script>';
-  const report = summary('first?query', 'ERROR', hostile, ['deploy']);
-  const summaries = [
-    summary('pass', 'PASS', 'a/pass'),
-    summary('fail', 'FAIL', 'a/fail'),
-    summary('last-error', 'ERROR', 'z/error'),
-    report,
-    summary('earlier', 'ERROR', hostile, ['check']),
-    { ...summary('short', 'ERROR', hostile, ['check', 'release']), commit: 'c0' },
-  ];
-  latest.mockResolvedValue(summaries);
-  const view = new OverviewView();
-  document.body.append(view);
-  await vi.waitFor(() => expect(view.shadowRoot?.querySelector('pb-data-table')).not.toBeNull());
-  const table = await tableRoot(view);
-  const links = [...table.querySelectorAll<HTMLAnchorElement>('tbody a')];
-  expect(links.map(link => link.getAttribute('href'))).toEqual([
-    '/attestations/earlier', '/attestations/short', '/attestations/first%3Fquery',
-    '/attestations/last-error', '/attestations/fail', '/attestations/pass',
-  ]);
-  expect(links[2].textContent).toBe(hostile);
-  expect(table.querySelector('script, img')).toBeNull();
-  const row = links[2].closest('tr')!;
-  expect([...row.cells].map(cell => cell.textContent)).toEqual([
-    hostile, 'deploy', report.sender, '0123456', '', '2', '3', '',
-  ]);
-  expect(links[1].closest('tr')?.querySelector('code')?.textContent).toBe('c0');
-  expect(row.querySelector<CockpitTime>('pb-time')?.value).toBe(receipt);
-  expect(row.querySelector<StatusPill>('pb-status-pill')?.status).toBe('ERROR');
-  expect(view.shadowRoot!.textContent).toContain('shown as reported');
-  expect(summaries[0].id).toBe('pass');
-
-  links[2].focus();
-  latest.mockResolvedValue(summaries.map(value => ({ ...value, warn_count: 4 })));
-  await view.load();
-  await view.updateComplete;
-  await tableRoot(view);
-  expect(links[2].closest('tr')).toBe(row);
-  expect(table.activeElement).toBe(links[2]);
-  expect(row.cells[5].textContent).toBe('4');
-});
-
-// Verifies REQ-0003.
-test('overview shows a ledger error without upstream details and retries', async () => {
-  latest.mockRejectedValueOnce(new ApiError('ledger_unavailable')).mockResolvedValueOnce([]);
-  const view = new OverviewView();
-  document.body.append(view);
-  await vi.waitFor(() => expect(view.shadowRoot?.querySelector('pb-error-state')).not.toBeNull());
-  const error = view.shadowRoot!.querySelector<ErrorState>('pb-error-state')!;
-  await error.updateComplete;
-  expect(error.heading).toBe('Ledger unavailable');
-  expect(error.message).toBe('Cockpit could not load data from the ledger.');
-
-  error.shadowRoot!.querySelector('button')!.click();
-  await vi.waitFor(() => expect(view.shadowRoot!.querySelector('pb-empty-state')).not.toBeNull());
-  expect(latest).toHaveBeenCalledTimes(2);
-  expect(view.shadowRoot!.activeElement).toBe(view.shadowRoot!.querySelector('h1'));
-});
 
 // Verifies REQ-0004, REQ-0010, REQ-0017 and REQ-0018.
 test('detail presents evidence as reported and preserves rule order', async () => {

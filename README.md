@@ -70,11 +70,14 @@ Set `COCKPIT_BIND_ADDR` to an IP address and port to override
 connections from outside its network namespace, set it to `0.0.0.0:8080`.
 
 Open `/sign-in` to sign in with GitHub. Sessions expire after eight hours,
-and **Sign out** clears the session from the current browser. The overview
-shows the latest reported attestation for each repository and execution-point
-combination, with errors and failures first. Select a repository link to see
-the rules and outcomes for that attestation. If the ledger is unavailable, the
-view shows an error with a retry action.
+and **Sign out** clears the session from the current browser. The dashboard
+shows one tile for the latest reported attestation of each repository and
+execution-point combination, with a header counting the tiles that pass and
+those that do not. Sort the tiles by last attestation or by name. The sort
+choice is the `sort` query parameter. The dashboard refreshes every minute
+while the tab is visible. Select a repository to see the rules and outcomes
+for that attestation. If the ledger is unavailable, the view shows an error
+with a retry action.
 
 Browser clients can use the [session-protected JSON read API](why/contracts/browser/latest.md).
 

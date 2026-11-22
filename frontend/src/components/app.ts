@@ -1,9 +1,9 @@
 import { html, LitElement } from 'lit';
 import { keyed } from 'lit/directives/keyed.js';
 import { routeFor, Router } from '../views/router';
+import '../views/dashboard';
 import '../views/detail';
 import '../views/not-found';
-import '../views/overview';
 import './app-shell';
 
 export class CockpitApp extends LitElement {
@@ -25,7 +25,7 @@ export class CockpitApp extends LitElement {
   private view() {
     const route = routeFor(this.path);
     switch (route.view) {
-      case 'overview': return html`<pb-overview></pb-overview>`;
+      case 'dashboard': return html`<pb-dashboard></pb-dashboard>`;
       case 'detail': return html`<pb-attestation .attestationId=${route.id}></pb-attestation>`;
       case 'not-found': return html`<pb-not-found></pb-not-found>`;
     }
@@ -34,7 +34,7 @@ export class CockpitApp extends LitElement {
   override render() {
     return html`
       <pb-app-shell>
-        <a slot="navigation" data-route href="/">Overview</a>
+        <a slot="navigation" data-route href="/">Dashboard</a>
         ${keyed(this.path, this.view())}
       </pb-app-shell>
     `;

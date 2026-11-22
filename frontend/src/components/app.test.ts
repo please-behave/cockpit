@@ -2,7 +2,7 @@ import { afterEach, expect, test, vi } from 'vitest';
 import { getAttestation, latestAttestations } from '../api/client';
 import { CockpitApp } from './app';
 import type { DetailView } from '../views/detail';
-import type { OverviewView } from '../views/overview';
+import type { DashboardView } from '../views/dashboard';
 import { CockpitAppShell } from './app-shell';
 
 vi.mock(import('../api/client'), async original => ({
@@ -24,9 +24,9 @@ test('pb-app renders its content in the application shell', async () => {
   document.body.append(app);
   await (app as CockpitApp).updateComplete;
 
-  const overview = app.shadowRoot!.querySelector<OverviewView>('pb-overview')!;
-  await overview.updateComplete;
-  expect(overview.shadowRoot?.querySelector('h1')?.textContent).toBe('Latest attestations');
+  const dashboard = app.shadowRoot!.querySelector<DashboardView>('pb-dashboard')!;
+  await dashboard.updateComplete;
+  expect(dashboard.shadowRoot?.querySelector('h1')?.textContent).toBe('Dashboard');
   const shell = app.shadowRoot?.querySelector('pb-app-shell') as CockpitAppShell;
   expect(shell).toBeInstanceOf(CockpitAppShell);
   await shell.updateComplete;
@@ -36,6 +36,7 @@ test('pb-app renders its content in the application shell', async () => {
   expect(root.querySelector('header source')?.getAttribute('srcset')).toContain('logo-dark.svg');
   expect(root.querySelector('header nav slot')?.getAttribute('name')).toBe('navigation');
   expect(root.querySelector('header slot[name="last-updated"]')).not.toBeNull();
+  expect(app.shadowRoot!.querySelector('a[slot=navigation]')?.textContent).toBe('Dashboard');
   expect(root.querySelector('header a')?.getAttribute('href')).toBe('/sign-out');
   expect(root.querySelector('main slot')).not.toBeNull();
 
@@ -69,9 +70,9 @@ test('mounts a deep link, disposes it on history navigation and focuses the next
   vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
   missing.shadowRoot!.querySelector('a')!.click();
   await app.updateComplete;
-  const overview = app.shadowRoot!.querySelector<OverviewView>('pb-overview')!;
-  await overview.updateComplete;
+  const dashboard = app.shadowRoot!.querySelector<DashboardView>('pb-dashboard')!;
+  await dashboard.updateComplete;
   expect(window.location.pathname).toBe('/');
   expect(latestAttestations).toHaveBeenCalled();
-  expect(overview.shadowRoot!.activeElement?.textContent).toBe('Latest attestations');
+  expect(dashboard.shadowRoot!.activeElement?.textContent).toBe('Dashboard');
 });

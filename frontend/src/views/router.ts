@@ -1,10 +1,10 @@
 export type Route =
-  | { view: 'overview' }
+  | { view: 'dashboard' }
   | { view: 'detail'; id: string }
   | { view: 'not-found' };
 
 export function routeFor(path: string): Route {
-  if (path === '/') return { view: 'overview' };
+  if (path === '/') return { view: 'dashboard' };
   const detail = /^\/attestations\/([^/]+)$/.exec(path);
   if (detail) {
     try {
@@ -48,7 +48,7 @@ export class Router {
     if (url.origin !== window.location.origin || url.hash) return;
 
     event.preventDefault();
-    if (url.href === window.location.href) return;
+    if (url.pathname === window.location.pathname) return;
     window.history.pushState(null, '', url);
     this.pop();
     window.scrollTo(0, 0);

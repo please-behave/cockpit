@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from 'vitest';
-import { ShortName, shortName } from './pb-short-name';
+import { ownerName, ShortName, shortName } from './pb-short-name';
 
 afterEach(() => document.body.replaceChildren());
 
@@ -34,4 +34,11 @@ test('renders nothing for an empty value', async () => {
   await element.updateComplete;
 
   expect(element.shadowRoot!.querySelector('span')).toBeNull();
+});
+
+// Verifies REQ-0019.
+test('names the owner as the segment before the shortened name', () => {
+  expect(ownerName('github.com/acme/widget')).toBe('acme');
+  expect(ownerName('acme/widget')).toBe('acme');
+  expect(ownerName('widget')).toBe('');
 });

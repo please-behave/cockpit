@@ -1,0 +1,12 @@
+id: DEC-0010
+name: One Dashboard Tile per Repository Head
+context: >-
+  The ledger returns the newest attestation for each combination of repository
+  and execution points. A repository can report several combinations, and
+  their outcomes are independent.
+decision: >-
+  The dashboard shows one tile per combination as the ledger delivers it and
+  never merges the combinations of a repository. The tile is the head of its
+  combination.
+rationale: >-
+  A combined status for a repository would hide which execution points fail.

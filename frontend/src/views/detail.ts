@@ -28,7 +28,7 @@ export class DetailView extends CockpitView<Attestation> {
 
   protected override content(attestation?: Attestation) {
     return html`
-      <p><a data-route href="/">Back to overview</a></p>
+      <p><a data-route href="/">Back to dashboard</a></p>
       ${reportedEvidence}
       ${attestation ? this.results(attestation) : nothing}
     `;

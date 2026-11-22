@@ -7,7 +7,7 @@ class NotFoundView extends CockpitView {
   }
 
   protected override content() {
-    return html`<p>There is no page at this address.</p><p><a data-route href="/">Back to overview</a></p>`;
+    return html`<p>There is no page at this address.</p><p><a data-route href="/">Back to dashboard</a></p>`;
   }
 }
 

@@ -1,0 +1,13 @@
+id: DEC-0011
+name: Build External Links Only from Verified Repository Values
+context: >-
+  The repository value is a claim of the sender. Turning it into a link target
+  could send viewers to a destination the sender chose.
+decision: >-
+  The cockpit links a commit to github.com only when the repository value is
+  exactly github.com/<owner>/<name> and the commit is a hexadecimal identifier.
+  A single shared function builds the link. For any other value the commit is
+  plain text, and external links open in a new tab without referrer or opener.
+rationale: >-
+  The link target stays under the cockpit's control while viewers still reach
+  the commit for the common case.

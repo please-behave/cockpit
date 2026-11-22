@@ -16,3 +16,4 @@ rationale: >-
 decisions:
   - DEC-0001
   - DEC-0002
+obsolete: true

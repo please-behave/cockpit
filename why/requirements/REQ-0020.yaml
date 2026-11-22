@@ -1,0 +1,13 @@
+id: REQ-0020
+name: Dashboard Refresh
+description: >-
+  While the browser tab is visible, the dashboard reads the latest attestations
+  again every 60 seconds and when the tab becomes visible after it was hidden
+  for longer than that. It does nothing while the tab is hidden. A failed
+  refresh keeps the tiles, the keyboard focus and the sort choice and shows a
+  notice. Tiles are identified by repository and execution points.
+rationale: >-
+  The dashboard stays current without a reload and without interrupting the
+  viewer.
+decisions:
+  - DEC-0001

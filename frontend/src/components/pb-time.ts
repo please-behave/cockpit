@@ -5,6 +5,10 @@ const localTime = new Intl.DateTimeFormat(undefined, {
   timeStyle: 'long',
 });
 
+export function formatTime(date: Date) {
+  return localTime.format(date);
+}
+
 export class CockpitTime extends LitElement {
   static override properties = { value: { type: String } };
 
@@ -27,7 +31,7 @@ export class CockpitTime extends LitElement {
     const date = new Date(this.value);
     if (Number.isNaN(date.getTime())) return html`<span>${this.value}</span>`;
 
-    return html`<time datetime=${this.value} title=${this.value}>${localTime.format(date)}</time>`;
+    return html`<time datetime=${this.value} title=${this.value}>${formatTime(date)}</time>`;
   }
 }
 
