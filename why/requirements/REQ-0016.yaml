@@ -1,0 +1,13 @@
+id: REQ-0016
+name: Accessible Reported Statuses
+description: >-
+  The cockpit never relies on color alone to convey an outcome. It displays
+  the status exactly as reported. PASS, FAIL, ERROR, WARN and NOT_RUN each
+  have visible text and a distinct symbol in addition to color. Unrecognized
+  statuses retain their reported text with neutral styling.
+rationale: >-
+  Viewers can read reported outcomes regardless of color perception and can
+  recognize values introduced by newer producers.
+decisions:
+  - DEC-0002
+  - why:DEC-0002

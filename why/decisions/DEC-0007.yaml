@@ -1,0 +1,13 @@
+id: DEC-0007
+name: Display Timestamps in Viewer Local Time
+context: >-
+  The ledger returns receipt times as RFC 3339 UTC timestamps. Viewers need to
+  read them at a glance and correlate them with the original evidence.
+decision: >-
+  Display valid timestamps in the browser's locale and default time zone with
+  a medium date and a long time, including seconds and a time zone label.
+  Preserve the original value in the time element's datetime attribute and
+  tooltip. Show unparseable values as plain text.
+rationale: >-
+  Localized timestamps are familiar to viewers, while the original value
+  retains the reported instant and precision.
