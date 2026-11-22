@@ -1,0 +1,12 @@
+purpose: Enforce the frontend's semantic color tokens and their contrast minimums.
+problem: Literal colors can bypass the palettes and make interface elements unreadable in some themes.
+value: Frontend styles can be checked against the shared visual identity.
+conditions:
+  - statement: Color literals are declared in the tokens layer of the shared stylesheet.
+    rationale: Components consume the same colors in both themes.
+  - statement: The intended token pairings meet their contrast minimums in both themes.
+    rationale: Text and meaningful interface elements remain distinguishable.
+success_criteria:
+  - A color literal outside the tokens layer fails the check with a source location.
+  - Every intended foreground and background pairing meets its contrast minimum.
+placement: Local, because the check verifies the cockpit's styles.

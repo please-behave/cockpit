@@ -13,10 +13,16 @@ test('builds a hashed frontend entry and assets', (context) => {
   });
 
   const index = readFileSync(join(directory, 'index.html'), 'utf8');
+  const signIn = readFileSync(join(directory, 'sign-in.html'), 'utf8');
   const entry = index.match(/<script[^>]+src="\/assets\/([^"]+)"/)?.[1];
   assert.ok(entry, 'expected an external entry script');
   const assets = readdirSync(join(directory, 'assets'));
   assert.ok(assets.includes(entry));
+
+  const stylesheet = index.match(/rel="stylesheet"[^>]+href="\/assets\/([^"]+)"/)?.[1];
+  assert.ok(assets.includes(stylesheet), 'expected a built stylesheet');
+  assert.ok(signIn.includes(`href="/assets/${stylesheet}"`));
+
   for (const asset of assets) {
     assert.match(asset, /-[\w-]{8,}\.[^.]+$/);
   }

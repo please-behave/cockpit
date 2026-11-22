@@ -1,0 +1,14 @@
+id: REQ-0015
+name: Shared Visual Identity
+description: >-
+  The application shell and sign-in page use the logo, semantic colors, and
+  contrast pairings defined by the shared visual identity. They follow the
+  browser's preferred color scheme, retain visible keyboard focus, and remain
+  usable at 320 CSS pixels and 200 percent zoom. The shell exposes banner,
+  navigation, and main landmarks with a keyboard-accessible skip link.
+rationale: >-
+  A consistent, accessible identity helps viewers recognize and navigate the
+  cockpit across devices and display preferences.
+decisions:
+  - DEC-0006
+  - why:DEC-0009

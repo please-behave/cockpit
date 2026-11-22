@@ -5,7 +5,6 @@ use std::{
 };
 
 use anyhow::{Context, Result, ensure};
-use askama::Template;
 use axum::{
     Router,
     extract::{FromRef, Query, Request, State, rejection::QueryRejection},
@@ -357,42 +356,6 @@ fn unix_time() -> u64 {
         .as_secs()
 }
 
-#[derive(Template)]
-#[template(
-    ext = "html",
-    source = r#"<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Please Behave Cockpit</title>
-</head>
-<body>
-    <main>
-        <h1>Please Behave Cockpit</h1>
-        <a href="{{ href }}">{{ label }}</a>
-    </main>
-</body>
-</html>
-"#
-)]
-struct AuthPage {
-    href: &'static str,
-    label: &'static str,
-}
-
-impl IntoResponse for AuthPage {
-    fn into_response(self) -> Response {
-        match self.render() {
-            Ok(html) => Html(html).into_response(),
-            Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-        }
-    }
-}
-
-async fn sign_in() -> AuthPage {
-    AuthPage {
-        href: "/sign-in/github",
-        label: "Sign in with GitHub",
-    }
+async fn sign_in() -> Html<&'static str> {
+    Html(include_str!("../frontend/dist/sign-in.html"))
 }

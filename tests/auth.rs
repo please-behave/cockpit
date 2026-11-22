@@ -1,5 +1,5 @@
 // Verifies REQ-0003, REQ-0004, REQ-0006, REQ-0007, REQ-0009, REQ-0010,
-// REQ-0011, REQ-0012 and REQ-0013.
+// REQ-0011, REQ-0012, REQ-0013, REQ-0014 and REQ-0015.
 
 #[path = "support/auth_settings.rs"]
 mod support;
@@ -287,6 +287,48 @@ async fn unauthorized_id_is_refused_with_no_session() {
 }
 
 #[tokio::test]
+async fn sign_in_serves_static_html_and_public_assets_without_a_session() {
+    let site = TestSite::start().await;
+    let response = site.get("/sign-in").send().await.unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(
+        response.headers()[header::CONTENT_TYPE],
+        "text/html; charset=utf-8"
+    );
+    assert_browser_headers(&response);
+
+    let page = response.text().await.unwrap();
+    assert_eq!(page, include_str!("../frontend/dist/sign-in.html"));
+    assert!(page.contains(r#"href="/sign-in/github">Sign in with GitHub</a>"#));
+    for inline in ["<script", "<style", " style="] {
+        assert!(!page.contains(inline), "{inline}");
+    }
+
+    for (attribute, prefix, kind) in [
+        ("href", "main-", "text/css"),
+        ("src", "logo-", "image/svg+xml"),
+        ("srcset", "logo-dark-", "image/svg+xml"),
+        ("href", "favicon-", "image/svg+xml"),
+    ] {
+        let reference = format!(r#"{attribute}="/assets/{prefix}"#);
+        let (_, tail) = page.split_once(&reference).expect("built asset reference");
+        let (name, _) = tail.split_once('"').unwrap();
+        let asset = site
+            .get(&format!("/assets/{prefix}{name}"))
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(asset.status(), StatusCode::OK);
+        assert_eq!(asset.headers()[header::CONTENT_TYPE], kind);
+        assert_eq!(
+            asset.headers()[header::CACHE_CONTROL],
+            "public, max-age=31536000, immutable"
+        );
+        assert!(!asset.bytes().await.unwrap().is_empty());
+    }
+}
+
+#[tokio::test]
 async fn only_live_untampered_sessions_grant_access() {
     let site = TestSite::start().await;
     for path in ["/", DETAIL_PATH, "/style.css", "/missing", "/sign-out"] {
@@ -307,10 +349,6 @@ async fn only_live_untampered_sessions_grant_access() {
         .unwrap();
     assert_eq!(response.status(), StatusCode::SEE_OTHER);
     assert_eq!(location(&response), "/sign-in");
-    assert_eq!(
-        site.get("/sign-in").send().await.unwrap().status(),
-        StatusCode::OK
-    );
 
     let response = site.sign_in("allowed").await;
     assert_eq!(response.status(), StatusCode::SEE_OTHER);
@@ -630,8 +668,12 @@ async fn overview_distinguishes_empty_ledger_from_unavailable_ledger() {
 }
 
 fn assert_api_headers(response: &Response) {
+    assert_eq!(response.headers()[header::CONTENT_TYPE], "application/json");
+    assert_browser_headers(response);
+}
+
+fn assert_browser_headers(response: &Response) {
     let headers = response.headers();
-    assert_eq!(headers[header::CONTENT_TYPE], "application/json");
     assert_eq!(headers[header::CACHE_CONTROL], "no-store");
     assert_eq!(headers[header::X_CONTENT_TYPE_OPTIONS], "nosniff");
     assert_eq!(headers[header::REFERRER_POLICY], "no-referrer");

@@ -1,0 +1,91 @@
+@layer tokens, base, components, utilities;
+@import "./tokens.css";
+
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    background: var(--surface);
+    color: var(--text);
+    font: var(--type-body) / var(--line-body) var(--font-family);
+  }
+
+  h1 {
+    margin-block: 0;
+    font-size: var(--type-heading);
+    line-height: var(--line-heading);
+  }
+
+  a {
+    color: inherit;
+  }
+
+  :focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-offset);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  .sign-in {
+    display: grid;
+    min-block-size: 100svh;
+    place-items: center;
+    padding: var(--space-4);
+  }
+
+  .sign-in-card {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-4);
+    inline-size: min(100%, 28rem);
+    padding: clamp(var(--space-6), 6vw, var(--space-12));
+    border: 1px solid var(--border);
+    border-radius: var(--radius-panel);
+    background: var(--surface-raised);
+    box-shadow: var(--elevation-panel);
+  }
+
+  .sign-in-link {
+    display: inline-block;
+    margin-block-start: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-control);
+    background: var(--brand-primary);
+    color: var(--brand-light);
+    font-weight: var(--weight-semibold);
+    text-decoration: none;
+  }
+
+  .sign-in-link:hover {
+    text-decoration: underline;
+  }
+}
+
+@layer utilities {
+  .brand-mark {
+    display: block;
+    padding: 0.5rem;
+  }
+
+  .brand-mark img {
+    display: block;
+    block-size: max(32px, 3rem);
+    inline-size: auto;
+  }
+}

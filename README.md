@@ -24,8 +24,8 @@ mise exec -- cargo test --locked
 
 Setup installs frontend dependencies from `frontend/package-lock.json`, builds
 `frontend/dist`, and fetches locked Cargo dependencies. The Rust build embeds
-`frontend/dist/assets` at compile time. Run `mise run frontend-build` after
-editing the frontend and before invoking Cargo directly. `mise run build`
+the Vite sign-in page and its assets at compile time. Run `mise run frontend-build`
+after editing the frontend and before invoking Cargo directly. `mise run build`
 builds the frontend and the release executable in that order. CI uses the
 setup task, and the container build generates the assets in its Node stage.
 
@@ -36,8 +36,10 @@ mise exec -- npm --prefix frontend run typecheck
 mise exec -- npm --prefix frontend test
 ```
 
-The executable serves the content-hashed bundles from `/assets/`. The Vite
-entry page is used to build the minimal `pb-app` component.
+The executable serves the content-hashed bundles from `/assets/` and the Vite
+sign-in page from `/sign-in`. The application shell and sign-in page share the
+[Please Behave visual identity](https://github.com/please-behave/why/blob/main/brand/README.md)
+and follow the browser's color scheme.
 
 ## Run locally
 

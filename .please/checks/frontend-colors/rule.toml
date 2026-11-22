@@ -1,0 +1,9 @@
+id = "frontend-colors"
+name = "Frontend color tokens"
+description = "Frontend colors use layered tokens with accessible contrast"
+enabled = true
+run_at = ["pre-commit", "pre-push", "check"]
+
+[check]
+command = "node --test @rule/check.test.mjs"
+timeout_seconds = 120
