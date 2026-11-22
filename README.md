@@ -24,7 +24,7 @@ mise exec -- cargo test --locked
 
 Setup installs frontend dependencies from `frontend/package-lock.json`, builds
 `frontend/dist`, and fetches locked Cargo dependencies. The Rust build embeds
-the Vite sign-in page and its assets at compile time. Run `mise run frontend-build`
+the Vite application shell, sign-in page and assets at compile time. Run `mise run frontend-build`
 after editing the frontend and before invoking Cargo directly. `mise run build`
 builds the frontend and the release executable in that order. CI uses the
 setup task, and the container build generates the assets in its Node stage.
@@ -37,7 +37,10 @@ mise exec -- npm --prefix frontend test
 ```
 
 The executable serves the content-hashed bundles from `/assets/` and the Vite
-sign-in page from `/sign-in`. The application shell and sign-in page share the
+sign-in page from `/sign-in`. Signed-in viewers get the application shell on
+page routes, including direct links to individual attestations. The browser
+handles navigation and shows a page-not-found view for unknown page addresses.
+The application shell and sign-in page share the
 [Please Behave visual identity](https://github.com/please-behave/why/blob/main/brand/README.md)
 and follow the browser's color scheme.
 
@@ -70,7 +73,8 @@ Open `/sign-in` to sign in with GitHub. Sessions expire after eight hours,
 and **Sign out** clears the session from the current browser. The overview
 shows the latest reported attestation for each repository and execution-point
 combination, with errors and failures first. Select a repository link to see
-the rules and outcomes for that attestation.
+the rules and outcomes for that attestation. If the ledger is unavailable, the
+view shows an error with a retry action.
 
 Browser clients can use the [session-protected JSON read API](why/contracts/browser/latest.md).
 

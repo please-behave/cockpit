@@ -2,7 +2,7 @@ use axum::{
     Router,
     body::Bytes,
     extract::{Path, Request, State, rejection::PathRejection},
-    http::{StatusCode, header},
+    http::{Method, StatusCode, header},
     middleware::{self, Next},
     response::{IntoResponse, Response},
     routing::get,
@@ -25,6 +25,15 @@ pub(super) fn router(ledger: LedgerClient, auth: &Auth) -> Router {
             auth.clone(),
             require_session,
         ))
+}
+
+pub(super) async fn not_found(method: Method) -> Response {
+    let body = if method == Method::HEAD {
+        Bytes::new()
+    } else {
+        Bytes::from_static(br#"{"code":"route_not_found"}"#)
+    };
+    json_response(StatusCode::NOT_FOUND, body)
 }
 
 async fn require_session(

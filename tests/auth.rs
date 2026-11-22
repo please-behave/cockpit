@@ -1,5 +1,5 @@
-// Verifies REQ-0003, REQ-0004, REQ-0006, REQ-0007, REQ-0009, REQ-0010,
-// REQ-0011, REQ-0012, REQ-0013, REQ-0014 and REQ-0015.
+// Verifies REQ-0004, REQ-0006, REQ-0007, REQ-0011, REQ-0012, REQ-0013,
+// REQ-0014 and REQ-0015.
 
 #[path = "support/auth_settings.rs"]
 mod support;
@@ -331,7 +331,7 @@ async fn sign_in_serves_static_html_and_public_assets_without_a_session() {
 #[tokio::test]
 async fn only_live_untampered_sessions_grant_access() {
     let site = TestSite::start().await;
-    for path in ["/", DETAIL_PATH, "/style.css", "/missing", "/sign-out"] {
+    for path in ["/", DETAIL_PATH, "/missing/view", "/sign-out"] {
         let response = site.get(path).send().await.unwrap();
         assert_eq!(response.status(), StatusCode::SEE_OTHER);
         assert_eq!(location(&response), "/sign-in");
@@ -343,7 +343,7 @@ async fn only_live_untampered_sessions_grant_access() {
 
     let response = site
         .client
-        .post(format!("{}/style.css", site.cockpit.origin))
+        .post(format!("{}/missing/view", site.cockpit.origin))
         .send()
         .await
         .unwrap();
@@ -364,21 +364,6 @@ async fn only_live_untampered_sessions_grant_access() {
     let (expiry, id) = cookie.value().split_once(':').unwrap();
     assert!(expiry.parse::<u64>().is_ok());
     assert_eq!(id, "42");
-
-    for (path, status, content) in [
-        ("/", StatusCode::OK, "Sign out"),
-        ("/style.css", StatusCode::OK, "main {"),
-        ("/missing", StatusCode::NOT_FOUND, "Page not found"),
-    ] {
-        let response = site
-            .get(path)
-            .header(header::COOKIE, &original)
-            .send()
-            .await
-            .unwrap();
-        assert_eq!(response.status(), status);
-        assert!(response.text().await.unwrap().contains(content));
-    }
 
     let second_instance =
         TestSite::start_cockpit(&site.github, &site.ledger.origin, "42, 123").await;
@@ -491,179 +476,67 @@ fn reported_summary(id: &str, repository: &str, point: &str, overall: &str) -> V
 }
 
 #[tokio::test]
-async fn overview_orders_rows_and_shows_reported_summary_values() {
-    let site = TestSite::start_with_ledger(Router::new().route(
-        "/v0/attestations/latest",
-        get(|| async {
-            json!([
-                reported_summary(
-                    "00000000-0000-0000-0000-000000000005",
-                    "a/pass",
-                    "check",
-                    "PASS"
-                ),
-                reported_summary(
-                    "00000000-0000-0000-0000-000000000004",
-                    "b/fail",
-                    "check",
-                    "FAIL"
-                ),
-                reported_summary(
-                    "00000000-0000-0000-0000-000000000003",
-                    "a/fail",
-                    "test",
-                    "FAIL"
-                ),
-                reported_summary(
-                    "00000000-0000-0000-0000-000000000002",
-                    "a/fail",
-                    "check",
-                    "FAIL"
-                ),
-                reported_summary(ATTESTATION, "z/<reported>", "check<script>", "ERROR")
-            ])
-            .to_string()
-        }),
-    ))
+async fn authenticated_page_requests_return_the_embedded_shell() {
+    let site = TestSite::start_with_ledger(Router::new().fallback(|| async {
+        panic!("a shell request reached the ledger");
+    }))
     .await;
-    let session = cookie(&site.sign_in("allowed").await, SESSION).unwrap();
+    let session = cookie_header(&cookie(&site.sign_in("allowed").await, SESSION).unwrap());
+
+    for path in [
+        "/",
+        DETAIL_PATH,
+        "/attestations/invalid",
+        "/future/view?query=1",
+    ] {
+        let response = site
+            .get(path)
+            .header(header::COOKIE, &session)
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK, "{path}");
+        assert_browser_headers(&response);
+        assert_eq!(
+            response.headers()[header::CONTENT_TYPE],
+            "text/html; charset=utf-8"
+        );
+        assert_eq!(
+            response.text().await.unwrap(),
+            include_str!("../frontend/dist/index.html")
+        );
+    }
+
     let response = site
-        .get("/")
-        .header(header::COOKIE, cookie_header(&session))
+        .client
+        .head(format!("{}{DETAIL_PATH}", site.cockpit.origin))
+        .header(header::COOKIE, &session)
         .send()
         .await
         .unwrap();
     assert_eq!(response.status(), StatusCode::OK);
-    let html = response.text().await.unwrap();
-    assert!(html.contains("shown as reported to the ledger"));
-    assert!(!html.contains("<script>"));
-    assert!(!html.contains("No attestations have been reported yet."));
-    let rows: Vec<_> = html.split("<tr>").skip(2).collect();
-    assert_eq!(rows.len(), 5);
-    for (row, (repository, points, overall)) in rows.iter().zip([
-        (
-            "z/&#60;reported&#62;",
-            "check&#60;script&#62;, release",
-            "ERROR",
-        ),
-        ("a/fail", "check, release", "FAIL"),
-        ("a/fail", "test, release", "FAIL"),
-        ("b/fail", "check, release", "FAIL"),
-        ("a/pass", "check, release", "PASS"),
-    ]) {
-        for cell in [
-            format!(">{repository}</a>"),
-            format!("<td>{points}</td>"),
-            "<td>github&#60;&#38;&#62;</td>".into(),
-            "<code>e2c8d2a</code>".into(),
-            format!("<td>{overall}</td>"),
-            "<td>3</td>".into(),
-            "<td>5</td>".into(),
-            r#"<time datetime="2026-10-20T00:00:00Z">2026-10-20T00:00:00Z</time>"#.into(),
-        ] {
-            assert!(row.contains(&cell), "missing {cell} in {row}");
-        }
-    }
-    assert!(rows[0].contains(&format!(r#"href="{DETAIL_PATH}""#)));
+    assert!(response.bytes().await.unwrap().is_empty());
 }
 
 #[tokio::test]
-async fn detail_shows_rules_in_reported_order_and_distinguishes_missing_identifiers() {
-    let site = TestSite::start_with_ledger(Router::new().route(
-        "/v0/attestations/{id}",
-        get(|Path(id): Path<String>| async move {
-            match id.as_str() {
-                ATTESTATION => {
-                    let mut value =
-                        reported_summary(ATTESTATION, "z/<reported>", "check<script>", "ERROR");
-                    value["results"] = json!([
-                        {"id": "z/<rule>", "kind": "review", "status": "WARN"},
-                        {"id": "a/check", "kind": "check", "status": "FAIL"},
-                        {"id": "integrity", "kind": "integrity", "status": "NOT_RUN"}
-                    ]);
-                    (StatusCode::OK, value.to_string())
-                }
-                "00000000-0000-0000-0000-000000000099" => (StatusCode::NOT_FOUND, String::new()),
-                _ => (StatusCode::BAD_REQUEST, String::new()),
-            }
-        }),
-    ))
-    .await;
-    let session = cookie(&site.sign_in("allowed").await, SESSION).unwrap();
-    for (path, status, heading) in [
-        (DETAIL_PATH, StatusCode::OK, "<h1>z/&#60;reported&#62;</h1>"),
-        (
-            "/attestations/00000000-0000-0000-0000-000000000099",
-            StatusCode::NOT_FOUND,
-            "<h1>Attestation not found</h1>",
-        ),
-        (
-            "/attestations/malformed",
-            StatusCode::BAD_REQUEST,
-            "<h1>Invalid attestation identifier</h1>",
-        ),
+async fn unknown_api_routes_return_json_with_or_without_a_session() {
+    let site = TestSite::start().await;
+    let session = cookie_header(&cookie(&site.sign_in("allowed").await, SESSION).unwrap());
+    for path in [
+        "/v0",
+        "/v0/",
+        "/v0/unknown",
+        "/v0/attestations/unknown/nested",
     ] {
+        let response = site.get(path).send().await.unwrap();
+        assert_api_error(response, StatusCode::NOT_FOUND, "route_not_found").await;
         let response = site
             .get(path)
-            .header(header::COOKIE, cookie_header(&session))
+            .header(header::COOKIE, &session)
             .send()
             .await
             .unwrap();
-        assert_eq!(response.status(), status);
-        let html = response.text().await.unwrap();
-        assert!(html.contains(heading));
-        if status != StatusCode::OK {
-            continue;
-        }
-        assert!(html.contains("shown as reported to the ledger"));
-        assert!(html.contains("<code>e2c8d2abcde01234</code>"));
-        assert!(!html.contains("<rule>"));
-        let rows: Vec<_> = html.split("<tr>").skip(2).collect();
-        assert_eq!(rows.len(), 3);
-        for (row, (id, kind, status)) in rows.iter().zip([
-            ("z/&#60;rule&#62;", "review", "WARN"),
-            ("a/check", "check", "FAIL"),
-            ("integrity", "integrity", "NOT_RUN"),
-        ]) {
-            assert!(row.contains(&format!(r#"<th scope="row">{id}</th>"#)));
-            assert!(row.contains(&format!("<td>{kind}</td>")));
-            assert!(row.contains(&format!("<td>{status}</td>")));
-        }
-    }
-}
-
-#[tokio::test]
-async fn overview_distinguishes_empty_ledger_from_unavailable_ledger() {
-    let empty = TestSite::start().await;
-    let unavailable = TestSite::start_with_ledger(Router::new().route(
-        "/v0/attestations/latest",
-        get(|| async { (StatusCode::BAD_GATEWAY, "synthetic upstream error") }),
-    ))
-    .await;
-    for (site, status, content) in [
-        (
-            empty,
-            StatusCode::OK,
-            "No attestations have been reported yet.",
-        ),
-        (
-            unavailable,
-            StatusCode::SERVICE_UNAVAILABLE,
-            "Ledger unavailable",
-        ),
-    ] {
-        let session = cookie(&site.sign_in("allowed").await, SESSION).unwrap();
-        let response = site
-            .get("/")
-            .header(header::COOKIE, cookie_header(&session))
-            .send()
-            .await
-            .unwrap();
-        assert_eq!(response.status(), status);
-        let html = response.text().await.unwrap();
-        assert!(html.contains(content));
-        assert!(!html.contains("<table>"));
-        assert!(!html.contains("synthetic upstream error"));
+        assert_api_error(response, StatusCode::NOT_FOUND, "route_not_found").await;
     }
 }
 

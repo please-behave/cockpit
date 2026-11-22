@@ -24,3 +24,8 @@ Content Security Policy specified by REQ-0004.
 
 Errors carry no redirect or upstream details. HEAD uses the same status and
 headers as GET with an empty body.
+
+Unknown routes under `/v0` return HTTP 404 with `{"code":"route_not_found"}`
+regardless of session state. The [frontend API client](../../../frontend/src/api/client.ts)
+defines the TypeScript types for both endpoint responses. Update those types
+with any change to the response schemas.

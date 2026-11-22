@@ -2,11 +2,11 @@ id: REQ-0013
 name: Browser API Errors and Headers
 description: >-
   The browser API returns HTTP 400 for a malformed identifier, HTTP 404 for
-  an unknown attestation, HTTP 405 for an unsupported method and HTTP 503 for
-  a failed connection, timeout or unexpected ledger response. Each error
-  carries the stable JSON code defined by the contract and omits upstream
-  details. Every API response uses the protective headers of REQ-0004 and
-  Cache-Control no-store.
+  an unknown attestation or API route, HTTP 405 for an unsupported method and
+  HTTP 503 for a failed connection, timeout or unexpected ledger response.
+  Each error carries the stable JSON code defined by the contract and omits
+  upstream details. Every API response uses the protective headers of REQ-0004
+  and Cache-Control no-store.
 rationale: >-
   Browser code needs predictable errors, and caches must not retain
   session-protected data.

@@ -12,8 +12,7 @@ use std::{
     time::Duration,
 };
 
-use axum::{body::to_bytes, http::StatusCode, response::IntoResponse};
-use cockpit::web::ErrorPage;
+use axum::http::StatusCode;
 use reqwest::{Client, header};
 use serde_json::Value;
 
@@ -165,13 +164,6 @@ async fn public_routes_and_protective_headers_work_without_a_responding_ledger()
             "ok\n",
         ),
         (
-            "/style.css",
-            reqwest::Method::GET,
-            StatusCode::SEE_OTHER,
-            "",
-            "",
-        ),
-        (
             "/missing",
             reqwest::Method::GET,
             StatusCode::SEE_OTHER,
@@ -221,11 +213,10 @@ async fn assert_frontend_assets(client: &Client, address: SocketAddr) {
         .split_once(r#"src="/assets/"#)
         .and_then(|(_, path)| path.split_once('"'))
         .expect("built entry script in index.html");
-    let (name, hash) = asset_url
-        .strip_suffix(".js")
-        .and_then(|name| name.rsplit_once('-'))
+    let hash = asset_url
+        .strip_prefix("index-")
+        .and_then(|name| name.strip_suffix(".js"))
         .expect("content-hashed JavaScript name");
-    assert_eq!(name, "index");
     assert!(hash.len() >= 8);
 
     let url = format!("http://{address}/assets/{asset_url}");
@@ -255,6 +246,7 @@ async fn assert_frontend_assets(client: &Client, address: SocketAddr) {
     assert!(response.bytes().await.unwrap().is_empty());
 
     for path in [
+        "/assets",
         "/assets/",
         "/assets/unknown.js",
         "/assets/missing/nested.js",
@@ -267,27 +259,4 @@ async fn assert_frontend_assets(client: &Client, address: SocketAddr) {
         assert_eq!(response.status(), StatusCode::NOT_FOUND);
         assert_eq!(response.headers()[header::CACHE_CONTROL], "no-store");
     }
-}
-
-#[tokio::test]
-async fn templates_escape_hostile_values_in_title_and_body() {
-    let hostile = r#"</title><script>alert("x")</script><img src=x onerror='x'>&"#;
-    let response = ErrorPage {
-        status: StatusCode::BAD_REQUEST,
-        title: hostile,
-        message: hostile,
-    }
-    .into_response();
-    let body = to_bytes(response.into_body(), 4096).await.unwrap();
-    let html = std::str::from_utf8(&body).unwrap();
-
-    assert_eq!(html.matches("&#60;/title&#62;").count(), 3);
-    assert_eq!(
-        html.matches("&#60;script&#62;alert(&#34;x&#34;)").count(),
-        3
-    );
-    assert_eq!(html.matches("onerror=&#39;x&#39;&#62;&#38;").count(), 3);
-    assert!(!html.contains("<script"));
-    assert!(!html.contains("<img"));
-    assert!(html.contains(r#"<link rel="stylesheet" href="/style.css">"#));
 }

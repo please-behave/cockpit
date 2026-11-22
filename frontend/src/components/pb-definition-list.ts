@@ -1,8 +1,8 @@
-import { css, html, LitElement } from 'lit';
+import { css, html, LitElement, type TemplateResult } from 'lit';
 
 export interface Definition {
   term: string;
-  description: string;
+  description: string | TemplateResult;
 }
 
 export class DefinitionList extends LitElement {

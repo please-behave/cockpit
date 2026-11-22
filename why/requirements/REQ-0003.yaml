@@ -1,8 +1,8 @@
 id: REQ-0003
 name: Ledger Unavailability
 description: >-
-  A page that cannot obtain its data from the ledger because of a connection
-  failure, timeout or unexpected response returns a plain HTTP 503 error page
-  without upstream details.
+  A view that cannot obtain its data because of a ledger connection failure,
+  timeout or unexpected response shows a ledger-unavailable error with a retry
+  action. It omits upstream details.
 rationale: >-
   Viewers need a clear explanation when reported evidence cannot be loaded.

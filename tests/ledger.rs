@@ -1,4 +1,4 @@
-// Verifies REQ-0002 and REQ-0003.
+// Verifies REQ-0002.
 
 use std::{
     future::pending,
@@ -7,10 +7,8 @@ use std::{
 
 use axum::{
     Router,
-    body::to_bytes,
     extract::Path,
     http::{StatusCode, header},
-    response::IntoResponse,
     routing::get,
 };
 use cockpit::ledger::{LedgerClient, Overall, ReadError, ReportedStatus, ResultKind};
@@ -117,7 +115,7 @@ async fn accepts_an_empty_latest_list() {
 }
 
 #[tokio::test]
-async fn upstream_errors_have_a_plain_error_page() {
+async fn redirects_and_invalid_payloads_are_ledger_failures() {
     let router = Router::new()
         .route(
             "/v0/attestations/latest",
@@ -135,17 +133,7 @@ async fn upstream_errors_have_a_plain_error_page() {
         );
     let (ledger, _mock) = mock_ledger(router).await;
     assert_eq!(ledger.latest().await, Err(ReadError::Unavailable));
-    let error = ledger.attestation(ID).await.unwrap_err();
-    let response = error.into_response();
-    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
-    assert_eq!(
-        response.headers()[header::CONTENT_TYPE],
-        "text/html; charset=utf-8"
-    );
-    let bytes = to_bytes(response.into_body(), 4096).await.unwrap();
-    let page = std::str::from_utf8(&bytes).unwrap();
-    assert!(page.contains("Ledger unavailable"));
-    assert!(!page.contains("synthetic upstream detail"));
+    assert_eq!(ledger.attestation(ID).await, Err(ReadError::Unavailable));
 }
 
 #[tokio::test]

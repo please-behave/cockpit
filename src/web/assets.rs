@@ -9,6 +9,10 @@ use rust_embed::RustEmbed;
 #[folder = "frontend/dist/assets/"]
 struct FrontendAssets;
 
+pub(super) async fn not_found() -> StatusCode {
+    StatusCode::NOT_FOUND
+}
+
 pub(super) async fn get(Path(path): Path<String>) -> Result<Response, StatusCode> {
     let asset = FrontendAssets::get(&path).ok_or(StatusCode::NOT_FOUND)?;
     Ok((

@@ -1,8 +1,21 @@
-import { afterEach, expect, test } from 'vitest';
+import { afterEach, expect, test, vi } from 'vitest';
+import { getAttestation, latestAttestations } from '../api/client';
 import { CockpitApp } from './app';
+import type { DetailView } from '../views/detail';
+import type { OverviewView } from '../views/overview';
 import { CockpitAppShell } from './app-shell';
 
-afterEach(() => document.body.replaceChildren());
+vi.mock(import('../api/client'), async original => ({
+  ...await original(),
+  latestAttestations: vi.fn(async () => []),
+  getAttestation: vi.fn(),
+}));
+
+afterEach(() => {
+  document.body.replaceChildren();
+  window.history.replaceState(null, '', '/');
+  vi.restoreAllMocks();
+});
 
 // Verifies REQ-0015.
 test('pb-app renders its content in the application shell', async () => {
@@ -11,7 +24,9 @@ test('pb-app renders its content in the application shell', async () => {
   document.body.append(app);
   await (app as CockpitApp).updateComplete;
 
-  expect(app.shadowRoot?.querySelector('h1')?.textContent).toBe('Please Behave Cockpit');
+  const overview = app.shadowRoot!.querySelector<OverviewView>('pb-overview')!;
+  await overview.updateComplete;
+  expect(overview.shadowRoot?.querySelector('h1')?.textContent).toBe('Latest attestations');
   const shell = app.shadowRoot?.querySelector('pb-app-shell') as CockpitAppShell;
   expect(shell).toBeInstanceOf(CockpitAppShell);
   await shell.updateComplete;
@@ -26,4 +41,37 @@ test('pb-app renders its content in the application shell', async () => {
 
   root.querySelector<HTMLAnchorElement>('.skip-link')!.click();
   expect(root.activeElement).toBe(root.querySelector('main'));
+});
+
+// Verifies REQ-0007.
+test('mounts a deep link, disposes it on history navigation and focuses the next view', async () => {
+  window.history.replaceState(null, '', '/attestations/example');
+  vi.mocked(getAttestation).mockReturnValue(new Promise(() => {}));
+  const app = new CockpitApp();
+  document.body.append(app);
+  await app.updateComplete;
+  const detail = app.shadowRoot!.querySelector<DetailView>('pb-attestation')!;
+  await detail.updateComplete;
+  expect(getAttestation).toHaveBeenCalledWith('example', expect.any(AbortSignal));
+  expect(detail.shadowRoot!.activeElement?.textContent).toBe('Attestation');
+  expect(document.title).toBe('Attestation | Please Behave');
+
+  window.history.pushState(null, '', '/future/view');
+  window.dispatchEvent(new PopStateEvent('popstate'));
+  await app.updateComplete;
+  expect(vi.mocked(getAttestation).mock.calls.at(-1)?.[1].aborted).toBe(true);
+  const missing = app.shadowRoot!.querySelector('pb-not-found')!;
+  await vi.waitFor(() => {
+    expect(missing.shadowRoot!.activeElement?.textContent).toBe('Page not found');
+    expect(document.title).toBe('Page not found | Please Behave');
+  });
+
+  vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+  missing.shadowRoot!.querySelector('a')!.click();
+  await app.updateComplete;
+  const overview = app.shadowRoot!.querySelector<OverviewView>('pb-overview')!;
+  await overview.updateComplete;
+  expect(window.location.pathname).toBe('/');
+  expect(latestAttestations).toHaveBeenCalled();
+  expect(overview.shadowRoot!.activeElement?.textContent).toBe('Latest attestations');
 });

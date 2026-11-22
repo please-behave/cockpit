@@ -26,6 +26,19 @@ export class DataTable extends LitElement {
         overflow-x: auto;
       }
 
+      a {
+        color: inherit;
+      }
+
+      a:focus-visible {
+        outline: var(--focus-ring);
+        outline-offset: var(--focus-offset);
+      }
+
+      td, th {
+        overflow-wrap: anywhere;
+      }
+
       .scroll:focus-visible {
         outline: var(--focus-ring);
         outline-offset: calc(-1 * var(--focus-offset));
