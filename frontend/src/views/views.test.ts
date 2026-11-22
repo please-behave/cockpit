@@ -34,6 +34,7 @@ const summary = (id: string, overall: Summary['overall'], repository: string,
 
 afterEach(() => {
   document.body.replaceChildren();
+  document.documentElement.removeAttribute('data-theme');
   vi.resetAllMocks();
 });
 
@@ -51,23 +52,33 @@ function mountDetail(id: string, origin?: Origin) {
   return view;
 }
 
-// Verifies REQ-0004, REQ-0010, REQ-0017 and REQ-0018.
-test('detail presents evidence as reported and preserves rule order', async () => {
+// Verifies REQ-0004, REQ-0010, REQ-0017, REQ-0018 and REQ-0024.
+test.each(['light', 'dark'])('detail presents reported results and verification in the %s theme', async theme => {
+  document.documentElement.setAttribute('data-theme', theme);
   const repository = 'org/<img src=x>';
   const value = summary('id', 'FAIL', repository, ['check', 'release']);
+  const rule = {
+    source: 'github.com/org/<img src=x onerror=alert(1)>',
+    path: '.please/reviews/<script>bad</script>',
+    id: 'review',
+  };
   detail.mockResolvedValue({
     ...value,
     results: [
-      { id: 'z/<script>bad</script>', kind: 'review', status: 'WARN' },
-      { id: 'a/rule', kind: 'integrity', status: 'NOT_RUN' },
-      { id: 'a/rule', kind: 'check', status: 'FAIL' },
+      { id: 'z/<script>bad</script>', kind: 'review', status: 'FAIL',
+        rule: { ...rule, version: '1.2' }, verification: { status: 'verified' } },
+      { id: 'a/rule', kind: 'integrity', status: 'NOT_RUN',
+        verification: { status: 'unverified', reason: 'unregistered' } },
+      { id: 'a/rule', kind: 'check', status: 'PASS',
+        rule: { ...rule, version: '2.0' }, verification: { status: 'unverified', reason: 'mismatch' } },
+      { id: 'versionless', kind: 'review', status: 'WARN',
+        rule, verification: { status: 'unverified', reason: 'unregistered' } },
     ],
   });
   const view = mountDetail(value.id);
-  await vi.waitFor(() => expect(document.title).toBe(`${repository} | Please Behave`));
   const root = view.shadowRoot!;
+  await vi.waitFor(() => expect(root.activeElement?.textContent).toBe(repository));
   expect(detail).toHaveBeenCalledWith(value.id, expect.any(AbortSignal));
-  expect(root.activeElement?.textContent).toBe(repository);
   expect(document.title).toBe(`${repository} | Please Behave`);
   expect(root.querySelector('a')?.getAttribute('href')).toBe('/');
   expect(root.textContent).toContain('shown as reported');
@@ -87,14 +98,26 @@ test('detail presents evidence as reported and preserves rule order', async () =
   const table = await tableRoot(view);
   const rows = [...table.querySelectorAll<HTMLTableRowElement>('tbody tr')];
   expect(rows.map(row => row.querySelector<ShortName>('pb-short-name')?.value)).toEqual([
-    'z/<script>bad</script>', 'a/rule', 'a/rule',
+    'z/<script>bad</script>', 'a/rule', 'a/rule', 'versionless',
   ]);
-  expect(table.querySelectorAll('thead th.fill, thead th.content')).toHaveLength(3);
-  expect(rows.map(row => row.cells[1].textContent)).toEqual(['review', 'integrity', 'check']);
-  expect(rows.map(row => row.querySelector<StatusPill>('pb-status-pill')?.status)).toEqual([
-    'WARN', 'NOT_RUN', 'FAIL',
+  expect([...table.querySelectorAll('thead th.content')].map(cell => cell.textContent))
+    .toEqual(['Kind', 'Status']);
+  expect(table.querySelector('thead th:last-child')?.textContent).toBe('Verification');
+  expect(rows.map(row => row.cells[1].textContent)).toEqual(['review', 'integrity', 'check', 'review']);
+  expect(rows.map(row => row.cells[2].querySelector<StatusPill>('pb-status-pill')?.status)).toEqual([
+    'FAIL', 'NOT_RUN', 'PASS', 'WARN',
   ]);
-  expect(table.querySelector('script')).toBeNull();
+  expect(rows.map(row => [...row.cells[0].querySelectorAll('code')].map(field => field.textContent)))
+    .toEqual([[rule.source, rule.path, '1.2'], [], [rule.source, rule.path, '2.0'], [rule.source, rule.path]]);
+  expect(rows[1].cells[0].querySelector('div')).toBeNull();
+  expect(table.querySelector('img, script, [onerror]')).toBeNull();
+
+  const verification = rows.map(row => row.cells[3].querySelector<StatusPill>('pb-status-pill')!);
+  await Promise.all(verification.map(pill => pill.updateComplete));
+  expect(verification.map(pill => pill.shadowRoot!.querySelector('.pill span:last-child')?.textContent))
+    .toEqual(['Verified', 'Unverified (unregistered)', 'Unverified (mismatch)', 'Unverified (unregistered)']);
+  expect(verification.map(pill => pill.shadowRoot!.querySelector('.pill')?.className))
+    .toEqual(['pill passed', 'pill warning', 'pill warning', 'pill warning']);
 });
 
 test.each([

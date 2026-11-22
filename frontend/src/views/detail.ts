@@ -10,9 +10,10 @@ import { CockpitView, reportedEvidence } from './cockpit-view';
 import type { Origin } from './router';
 
 const columns: DataTableColumn[] = [
-  { label: 'Rule', mode: 'fill' },
+  { label: 'Rule' },
   { label: 'Kind', mode: 'content' },
   { label: 'Status', mode: 'content' },
+  { label: 'Verification' },
 ];
 
 export class DetailView extends CockpitView<Attestation> {
@@ -60,14 +61,25 @@ export class DetailView extends CockpitView<Attestation> {
     const rows = attestation.results.map((result, index) => ({
       key: String(index),
       cells: [
-        html`<pb-short-name .value=${result.id}></pb-short-name>`,
+        html`
+          <pb-short-name .value=${result.id}></pb-short-name>
+          ${result.rule ? html`
+            <div>Source <code>${result.rule.source}</code></div>
+            <div>Path <code>${result.rule.path}</code></div>
+            ${result.rule.version ? html`<div>Version <code>${result.rule.version}</code></div>` : nothing}
+          ` : nothing}
+        `,
         result.kind,
         html`<pb-status-pill .status=${result.status}></pb-status-pill>`,
+        html`<pb-status-pill .status=${result.verification.status === 'verified'
+          ? 'Verified'
+          : `Unverified (${result.verification.reason})`}></pb-status-pill>`,
       ],
     }));
 
     return html`
       <pb-definition-list .items=${items}></pb-definition-list>
+      <p>Verification shows whether the ledger matched a result to a registered rule version.</p>
       <pb-data-table label="Rules" .columns=${columns} row-header-column="0" .rows=${rows}></pb-data-table>
     `;
   }

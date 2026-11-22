@@ -57,6 +57,30 @@ pub struct ReportedResult {
     pub id: String,
     pub kind: ResultKind,
     pub status: ReportedStatus,
+    pub verification: Verification,
+    pub rule: Option<RuleIdentity>,
+}
+
+#[derive(Debug, Deserialize, Eq, PartialEq)]
+pub struct RuleIdentity {
+    pub source: String,
+    pub path: String,
+    pub id: String,
+    pub version: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Eq, PartialEq)]
+#[serde(tag = "status", rename_all = "snake_case", deny_unknown_fields)]
+pub enum Verification {
+    Verified {},
+    Unverified { reason: UnverifiedReason },
+}
+
+#[derive(Debug, Deserialize, Eq, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum UnverifiedReason {
+    Unregistered,
+    Mismatch,
 }
 
 #[derive(Debug, Deserialize, Eq, PartialEq)]

@@ -6,6 +6,14 @@ returns the JSON object reported by the ledger under `ledger:CON-0003`.
 The object contains the summary fields and the results in reported order.
 Fields and values are preserved as reported.
 
+Each result carries the ledger's `verification` object. The status is
+`verified` or `unverified`. An unverified result includes the ledger's reason,
+`unregistered` or `mismatch`. Verification describes the match to a registered
+rule version and is separate from the reported outcome in the result's `status`.
+When the ledger includes a `rule` object, it carries the source, path, and local
+rule ID, plus the version if reported. The result's top-level `id` is the
+run-scoped identifier.
+
 The [session, headers and errors](latest.md#session-headers-and-errors) apply
 to this endpoint. An authorized request can also receive these responses.
 

@@ -1,4 +1,4 @@
-// Verifies REQ-0002.
+// Verifies REQ-0002 and REQ-0024.
 
 use std::{
     future::pending,
@@ -11,7 +11,9 @@ use axum::{
     http::{StatusCode, header},
     routing::get,
 };
-use cockpit::ledger::{LedgerClient, Overall, ReadError, ReportedStatus, ResultKind};
+use cockpit::ledger::{
+    LedgerClient, Overall, ReadError, ReportedStatus, ResultKind, UnverifiedReason, Verification,
+};
 use serde_json::{Value, json};
 use tokio::{net::TcpListener, task::JoinHandle};
 
@@ -70,9 +72,12 @@ async fn reads_the_two_v0_contracts_and_preserves_reported_values() {
                     ID => {
                         let mut value = summary(ID, "org/<reported>");
                         value["results"] = json!([
-                            {"id": "first", "kind": "review", "status": "WARN"},
-                            {"id": "second", "kind": "integrity", "status": "NOT_RUN"},
-                            {"id": "third", "kind": "check", "status": "FAIL"}
+                            {"id": "first", "kind": "review", "status": "WARN",
+                             "verification": {"status": "verified"}},
+                            {"id": "second", "kind": "integrity", "status": "NOT_RUN",
+                             "verification": {"status": "unverified", "reason": "unregistered"}},
+                            {"id": "third", "kind": "check", "status": "FAIL",
+                             "verification": {"status": "unverified", "reason": "mismatch"}}
                         ]);
                         (StatusCode::OK, value.to_string())
                     }
@@ -103,9 +108,40 @@ async fn reads_the_two_v0_contracts_and_preserves_reported_values() {
     assert_eq!(attestation.results[0].status, ReportedStatus::Warn);
     assert_eq!(attestation.results[1].status, ReportedStatus::NotRun);
     assert_eq!(attestation.results[2].status, ReportedStatus::Fail);
+    assert_eq!(
+        attestation.results[0].verification,
+        Verification::Verified {}
+    );
+    assert_eq!(
+        attestation.results[1].verification,
+        Verification::Unverified {
+            reason: UnverifiedReason::Unregistered,
+        }
+    );
+    assert_eq!(
+        attestation.results[2].verification,
+        Verification::Unverified {
+            reason: UnverifiedReason::Mismatch,
+        }
+    );
     assert_eq!(ledger.attestation(OTHER_ID).await, Err(ReadError::NotFound));
     for id in ["bad", "fake/../../latest", "?", "latest", ".."] {
         assert_eq!(ledger.attestation(id).await, Err(ReadError::InvalidId));
+    }
+}
+
+#[test]
+fn rejects_missing_or_invalid_verification() {
+    let mut result = json!({"id": "rule", "kind": "check", "status": "PASS"});
+    assert!(serde_json::from_value::<cockpit::ledger::ReportedResult>(result.clone()).is_err());
+    for verification in [
+        json!({"status": "unverified"}),
+        json!({"status": "unverified", "reason": "unknown"}),
+        json!({"status": "verified", "reason": "mismatch"}),
+        json!({"status": "unknown"}),
+    ] {
+        result["verification"] = verification;
+        assert!(serde_json::from_value::<cockpit::ledger::ReportedResult>(result.clone()).is_err());
     }
 }
 

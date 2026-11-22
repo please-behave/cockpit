@@ -83,7 +83,8 @@
         "required": [
           "id",
           "kind",
-          "status"
+          "status",
+          "verification"
         ],
         "properties": {
           "id": {
@@ -104,6 +105,36 @@
               "NOT_RUN",
               "WARN"
             ]
+          },
+          "verification": {
+            "type": "object",
+            "oneOf": [
+              {
+                "additionalProperties": false,
+                "required": ["status"],
+                "properties": {
+                  "status": { "const": "verified" }
+                }
+              },
+              {
+                "additionalProperties": false,
+                "required": ["status", "reason"],
+                "properties": {
+                  "status": { "const": "unverified" },
+                  "reason": { "enum": ["unregistered", "mismatch"] }
+                }
+              }
+            ]
+          },
+          "rule": {
+            "type": "object",
+            "required": ["source", "path", "id"],
+            "properties": {
+              "source": { "type": "string" },
+              "path": { "type": "string" },
+              "id": { "type": "string" },
+              "version": { "type": "string" }
+            }
           }
         }
       }

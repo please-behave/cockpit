@@ -1,0 +1,21 @@
+id: REQ-0024
+name: Rule Result Verification
+description: >-
+  Wherever the cockpit shows rule results, it displays the verification
+  supplied by the ledger under ledger:CON-0003, without computing it. It
+  labels verified results and distinguishes unverified results by their
+  reported reason, unregistered or mismatch. Verification describes the
+  evidence separately from the reported rule outcome. The display uses
+  shared status tokens and visible text in both themes. It shows a rule's
+  source, path and version when the ledger includes them and omits absent
+  fields.
+rationale: >-
+  Viewers can tell how far a reported result can be attributed to a known
+  rule version.
+decisions:
+  - DEC-0001
+  - DEC-0002
+  - DEC-0006
+  - why:DEC-0010
+  - why:DEC-0011
+  - why:DEC-0013

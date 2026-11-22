@@ -19,8 +19,19 @@ export interface Attestation extends Summary {
     id: string;
     kind: 'check' | 'review' | 'integrity';
     status: Overall | 'NOT_RUN' | 'WARN';
+    verification: Verification;
+    rule?: {
+      source: string;
+      path: string;
+      id: string;
+      version?: string;
+    };
   }[];
 }
+
+type Verification =
+  | { status: 'verified' }
+  | { status: 'unverified'; reason: 'unregistered' | 'mismatch' };
 
 const errorCodes = {
   401: 'unauthorized',

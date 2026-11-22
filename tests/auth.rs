@@ -1,5 +1,5 @@
 // Verifies REQ-0004, REQ-0006, REQ-0007, REQ-0011, REQ-0012, REQ-0013,
-// REQ-0014 and REQ-0015.
+// REQ-0014, REQ-0015 and REQ-0024.
 
 #[path = "support/auth_settings.rs"]
 mod support;
@@ -584,9 +584,22 @@ async fn browser_api_preserves_ledger_json_and_distinguishes_identifier_errors()
     );
     let latest = json!([pass, fail]).to_string();
     let mut attestation = pass;
+    attestation["result_count"] = json!(3);
     attestation["results"] = json!([
-        {"id": "z/review", "kind": "review", "status": "WARN"},
-        {"id": "a/check", "kind": "check", "status": "NOT_RUN"}
+        {
+            "id": "z/review", "kind": "review", "status": "WARN",
+            "verification": {"status": "verified"},
+            "rule": {"source": "github.com/org/rules", "path": ".please/reviews/example", "id": "example", "version": "1.2"}
+        },
+        {
+            "id": "old", "kind": "integrity", "status": "NOT_RUN",
+            "verification": {"status": "unverified", "reason": "unregistered"}
+        },
+        {
+            "id": "a/check", "kind": "check", "status": "PASS",
+            "verification": {"status": "unverified", "reason": "mismatch"},
+            "rule": {"source": "github.com/org/rules", "path": ".please/checks/example", "id": "example", "version": "2.0"}
+        }
     ]);
     attestation["additional_reported_field"] = json!(["second", "first"]);
     let detail = serde_json::to_string_pretty(&attestation).unwrap();
