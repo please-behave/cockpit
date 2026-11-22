@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from 'vitest';
-import { routeFor, Router } from './router';
+import { originOf, routeFor, Router } from './router';
 
 afterEach(() => {
   document.body.replaceChildren();
@@ -32,20 +32,20 @@ test('uses a real anchor in Shadow DOM and follows back and forward navigation',
   router.connect();
 
   try {
-    expect(navigate).toHaveBeenLastCalledWith('/');
+    expect(navigate).toHaveBeenLastCalledWith('/', undefined);
     link.click();
     expect(window.location.pathname).toBe(path);
-    expect(navigate).toHaveBeenLastCalledWith(path);
+    expect(navigate).toHaveBeenLastCalledWith(path, 'dashboard');
 
     const back = new Promise<void>(resolve => window.addEventListener('popstate', () => resolve(), { once: true }));
     window.history.back();
     await back;
-    expect(navigate).toHaveBeenLastCalledWith('/');
+    expect(navigate).toHaveBeenLastCalledWith('/', undefined);
 
     const forward = new Promise<void>(resolve => window.addEventListener('popstate', () => resolve(), { once: true }));
     window.history.forward();
     await forward;
-    expect(navigate).toHaveBeenLastCalledWith(path);
+    expect(navigate).toHaveBeenLastCalledWith(path, 'dashboard');
   } finally {
     router.disconnect();
   }
@@ -86,4 +86,64 @@ test('preserves native behavior for modified clicks, new tabs and regular links'
   } finally {
     router.disconnect();
   }
+});
+
+// Verifies REQ-0010.
+test.each([
+  ['/', 'dashboard'],
+  ['/attestations', 'history'],
+] as const)('records %s as the origin of a detail page and keeps it across a reload', (start, origin) => {
+  vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+  window.history.replaceState(null, '', start);
+  const host = document.createElement('div');
+  document.body.append(host);
+  const link = document.createElement('a');
+  link.href = '/attestations/id';
+  link.setAttribute('data-route', '');
+  host.append(link);
+  const navigate = vi.fn();
+  const router = new Router(host, navigate);
+  router.connect();
+
+  try {
+    link.click();
+    expect(navigate).toHaveBeenLastCalledWith('/attestations/id', origin);
+    expect(window.history.state).toEqual({ origin });
+    router.disconnect();
+    navigate.mockClear();
+    router.connect();
+    expect(navigate).toHaveBeenLastCalledWith('/attestations/id', origin);
+  } finally {
+    router.disconnect();
+  }
+});
+
+test('records no origin for a direct open or a non-detail navigation', () => {
+  vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+  window.history.replaceState(null, '', '/attestations/first');
+  const host = document.createElement('div');
+  document.body.append(host);
+  const link = document.createElement('a');
+  link.href = '/attestations/second';
+  link.setAttribute('data-route', '');
+  host.append(link);
+  const navigate = vi.fn();
+  const router = new Router(host, navigate);
+  router.connect();
+
+  try {
+    expect(navigate).toHaveBeenLastCalledWith('/attestations/first', undefined);
+    link.click();
+    expect(navigate).toHaveBeenLastCalledWith('/attestations/second', undefined);
+    expect(window.history.state).toBeNull();
+  } finally {
+    router.disconnect();
+  }
+});
+
+test('accepts only known origins from the navigation state', () => {
+  expect(originOf({ origin: 'history' })).toBe('history');
+  expect(originOf({ origin: 'dashboard' })).toBe('dashboard');
+  expect(originOf({ origin: 'elsewhere' })).toBeUndefined();
+  expect(originOf(null)).toBeUndefined();
 });

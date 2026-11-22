@@ -8,6 +8,7 @@ import type { CockpitTime } from '../components/pb-time';
 import type { StatusPill } from '../components/pb-status-pill';
 import { DetailView } from './detail';
 import { DashboardView } from './dashboard';
+import type { Origin } from './router';
 
 vi.mock(import('../api/client'), async original => ({
   ...await original(),
@@ -42,9 +43,10 @@ async function tableRoot(view: DetailView) {
   return table.shadowRoot!;
 }
 
-function mountDetail(id: string) {
+function mountDetail(id: string, origin?: Origin) {
   const view = new DetailView();
   view.attestationId = id;
+  view.origin = origin;
   document.body.append(view);
   return view;
 }
@@ -117,4 +119,29 @@ test('detail reports loading and cancels work on disposal', async () => {
   expect(signal.aborted).toBe(false);
   view.remove();
   expect(signal.aborted).toBe(true);
+});
+
+// Verifies REQ-0010.
+test.each([
+  [undefined, 'Back to dashboard', '/', true],
+  ['dashboard', 'Back to dashboard', '/', false],
+  ['history', 'Back to attestations', '/attestations', false],
+] as const)('detail opened from %s offers "%s"', async (origin, text, href, routed) => {
+  detail.mockReturnValue(new Promise(() => {}));
+  const back = vi.spyOn(window.history, 'back').mockImplementation(() => {});
+  const view = mountDetail('id', origin);
+  await view.updateComplete;
+  const link = view.shadowRoot!.querySelector('a')!;
+  expect(link.textContent?.trim()).toBe(text);
+  expect(link.getAttribute('href')).toBe(href);
+  expect(link.hasAttribute('data-route')).toBe(routed);
+
+  const click = new MouseEvent('click', { bubbles: true, cancelable: true });
+  link.dispatchEvent(click);
+  expect(back).toHaveBeenCalledTimes(routed ? 0 : 1);
+  expect(click.defaultPrevented).toBe(!routed);
+
+  const modified = new MouseEvent('click', { bubbles: true, cancelable: true, ctrlKey: true });
+  link.dispatchEvent(modified);
+  expect(back).toHaveBeenCalledTimes(routed ? 0 : 1);
 });

@@ -7,6 +7,7 @@ import '../components/pb-short-name';
 import '../components/pb-status-pill';
 import '../components/pb-time';
 import { CockpitView, reportedEvidence } from './cockpit-view';
+import type { Origin } from './router';
 
 const columns: DataTableColumn[] = [
   { label: 'Rule', mode: 'fill' },
@@ -15,8 +16,9 @@ const columns: DataTableColumn[] = [
 ];
 
 export class DetailView extends CockpitView<Attestation> {
-  static override properties = { attestationId: { attribute: false } };
+  static override properties = { attestationId: { attribute: false }, origin: { attribute: false } };
   declare attestationId: string;
+  declare origin?: Origin;
 
   protected override read(signal: AbortSignal) {
     return getAttestation(this.attestationId, signal);
@@ -28,11 +30,25 @@ export class DetailView extends CockpitView<Attestation> {
 
   protected override content(attestation?: Attestation) {
     return html`
-      <p><a data-route href="/">Back to dashboard</a></p>
+      ${this.backLink()}
       ${reportedEvidence}
       ${attestation ? this.results(attestation) : nothing}
     `;
   }
+
+  private backLink() {
+    if (!this.origin) return html`<p><a data-route href="/">Back to dashboard</a></p>`;
+    const history = this.origin === 'history';
+    return html`<p><a href=${history ? '/attestations' : '/'} @click=${this.back}>
+      ${history ? 'Back to attestations' : 'Back to dashboard'}
+    </a></p>`;
+  }
+
+  private readonly back = (event: MouseEvent) => {
+    if (event.button !== 0 || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    event.preventDefault();
+    window.history.back();
+  };
 
   private results(attestation: Attestation) {
     const items = [

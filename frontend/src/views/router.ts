@@ -4,6 +4,13 @@ export type Route =
   | { view: 'detail'; id: string }
   | { view: 'not-found' };
 
+export type Origin = 'dashboard' | 'history';
+
+export function originOf(state: unknown): Origin | undefined {
+  const origin = (state as { origin?: unknown } | null)?.origin;
+  return origin === 'dashboard' || origin === 'history' ? origin : undefined;
+}
+
 export function routeFor(path: string): Route {
   if (path === '/') return { view: 'dashboard' };
   if (path === '/attestations') return { view: 'history' };
@@ -22,7 +29,7 @@ export function routeFor(path: string): Route {
 export class Router {
   constructor(
     private readonly host: HTMLElement,
-    private readonly navigate: (path: string) => void,
+    private readonly navigate: (path: string, origin?: Origin) => void,
   ) {}
 
   connect() {
@@ -36,7 +43,7 @@ export class Router {
     window.removeEventListener('popstate', this.pop);
   }
 
-  private readonly pop = () => this.navigate(window.location.pathname);
+  private readonly pop = () => this.navigate(window.location.pathname, originOf(window.history.state));
 
   private readonly click = (event: MouseEvent) => {
     if (event.defaultPrevented || event.button !== 0 ||
@@ -51,8 +58,14 @@ export class Router {
 
     event.preventDefault();
     if (url.pathname === window.location.pathname) return;
-    window.history.pushState(null, '', url);
+    window.history.pushState(this.stateFor(url.pathname), '', url);
     this.pop();
     window.scrollTo(0, 0);
   };
+
+  private stateFor(target: string) {
+    const from = routeFor(window.location.pathname).view;
+    const origin = routeFor(target).view === 'detail' && (from === 'dashboard' || from === 'history') ? from : undefined;
+    return origin ? { origin } : null;
+  }
 }

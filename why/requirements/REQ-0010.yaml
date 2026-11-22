@@ -5,8 +5,12 @@ description: >-
   the attestation ID, the reported commit, overall status and ledger receipt
   time under the full repository name. It shows rules in reported order with
   their shortened identifiers, kinds and statuses and identifies the outcomes
-  as reported. An unknown attestation
-  or malformed identifier has its own error state.
+  as reported. A link at the top returns to the dashboard or the attestations
+  page, whichever the viewer opened the detail from. The router keeps that
+  origin in the navigation state of the history entry, so it survives a reload,
+  and the link goes back through the browser history like the browser's back
+  button. A directly opened detail links to the dashboard. An unknown
+  attestation or malformed identifier has its own error state.
 rationale: >-
   Viewers can inspect the outcomes that make up an attestation and distinguish
   the kinds of evidence behind them.
