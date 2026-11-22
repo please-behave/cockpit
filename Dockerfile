@@ -9,6 +9,7 @@ FROM rust:1.100.0-slim-trixie@sha256:6f14b2b4b278ec0d50aa1d69541c304ce0f95e0f626
 WORKDIR /src
 COPY Cargo.toml Cargo.lock build.rs ./
 COPY --from=frontend /src/frontend/dist/assets ./frontend/dist/assets
+COPY --from=frontend /src/frontend/dist/index.html ./frontend/dist/index.html
 COPY --from=frontend /src/frontend/dist/sign-in.html ./frontend/dist/sign-in.html
 COPY src ./src
 RUN cargo build --release --locked
