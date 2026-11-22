@@ -73,7 +73,7 @@ Open `/sign-in` to sign in with GitHub. Sessions expire after eight hours,
 and **Sign out** clears the session from the current browser. The dashboard
 shows one tile for the latest reported attestation of each repository and
 execution-point combination, with a header counting the tiles that pass and
-those that do not. Sort the tiles by last attestation or by name. The sort
+those that do not. Sort the tiles by last attestation or by name, ignoring case. The sort
 choice is the `sort` query parameter. The dashboard refreshes every minute
 while the tab is visible. Select a repository to see the rules and outcomes
 for that attestation; its back link returns to the dashboard or the

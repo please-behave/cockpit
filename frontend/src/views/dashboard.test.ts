@@ -161,12 +161,21 @@ test('sorts by last attestation by default and by name through the URL', async (
   expect(hrefs(fallback)[0]).toBe('/attestations/new');
 });
 
-test('compares names by code point', async () => {
+test('compares names ignoring case, with code points as tie-break', async () => {
   window.history.replaceState(null, '', '/?sort=name');
   latest.mockResolvedValue([
     summary('lower', 'PASS', 'a/b'), summary('upper', 'PASS', 'a/B'), summary('short', 'PASS', 'a/'),
+    summary('zed', 'PASS', 'Zed'), summary('alpha', 'PASS', 'alpha'), summary('beta', 'PASS', 'Beta'),
+    summary('foo-lower', 'PASS', 'foo'), summary('foo-upper', 'PASS', 'Foo'),
+    summary('umlaut', 'PASS', 'zz-\u00e4'), summary('ascii', 'PASS', 'zz-z'),
+    summary('astral', 'PASS', 'zz-\u{1F600}'),
   ]);
-  expect(hrefs(await mount())).toEqual(['/attestations/short', '/attestations/upper', '/attestations/lower']);
+  expect(hrefs(await mount())).toEqual([
+    '/attestations/short', '/attestations/upper', '/attestations/lower',
+    '/attestations/alpha', '/attestations/beta',
+    '/attestations/foo-upper', '/attestations/foo-lower',
+    '/attestations/zed', '/attestations/ascii', '/attestations/umlaut', '/attestations/astral',
+  ]);
 });
 
 // Verifies REQ-0003.

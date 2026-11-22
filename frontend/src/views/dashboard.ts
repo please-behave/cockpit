@@ -18,8 +18,7 @@ const sortOptions: readonly { value: Sort; label: string }[] = [
 
 const refreshInterval = 60_000;
 
-function compareText(left: string, right: string): number {
-  // Compare code points so ordering stays deterministic across browser locales.
+function compareCodePoints(left: string, right: string): number {
   const leftPoints = Array.from(left, character => character.codePointAt(0)!);
   const rightPoints = Array.from(right, character => character.codePointAt(0)!);
   for (let index = 0; index < Math.min(leftPoints.length, rightPoints.length); index++) {
@@ -27,6 +26,11 @@ function compareText(left: string, right: string): number {
     if (difference) return difference;
   }
   return leftPoints.length - rightPoints.length;
+}
+
+function compareText(left: string, right: string): number {
+  // Lower-case code points ignore case without a locale, so ordering stays deterministic across browsers.
+  return compareCodePoints(left.toLowerCase(), right.toLowerCase()) || compareCodePoints(left, right);
 }
 
 function compareByName(left: Summary, right: Summary): number {
