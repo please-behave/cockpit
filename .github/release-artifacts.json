@@ -2,8 +2,10 @@
   "root": "dist",
   "targets": {
     "linux-amd64": [
-      "cockpit.tar",
-      "metadata.json"
+      "cockpit-linux-amd64.tar"
+    ],
+    "linux-arm64": [
+      "cockpit-linux-arm64.tar"
     ]
   }
 }
