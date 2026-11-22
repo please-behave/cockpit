@@ -1,7 +1,8 @@
 use std::time::Duration;
 
 use anyhow::{Context, Result, ensure};
-use reqwest::{Client, StatusCode, Url, redirect::Policy};
+use axum::body::Bytes;
+use reqwest::{Client, Response, StatusCode, Url, redirect::Policy};
 use serde::{Deserialize, de::DeserializeOwned};
 
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(2);
@@ -137,17 +138,34 @@ impl LedgerClient {
     }
 
     pub async fn latest(&self) -> Result<Vec<Summary>, ReadError> {
-        self.read("latest", false).await
+        self.latest_response().await.map(|(summaries, _)| summaries)
     }
 
     pub async fn attestation(&self, id: &str) -> Result<Attestation, ReadError> {
+        self.attestation_response(id)
+            .await
+            .map(|(attestation, _)| attestation)
+    }
+
+    pub(crate) async fn latest_response(&self) -> Result<(Vec<Summary>, Bytes), ReadError> {
+        self.read("latest", false).await
+    }
+
+    pub(crate) async fn attestation_response(
+        &self,
+        id: &str,
+    ) -> Result<(Attestation, Bytes), ReadError> {
         if matches!(id, "" | "." | ".." | "latest") {
             return Err(ReadError::InvalidId);
         }
         self.read(id, true).await
     }
 
-    async fn read<T: DeserializeOwned>(&self, segment: &str, detail: bool) -> Result<T, ReadError> {
+    async fn read<T: DeserializeOwned>(
+        &self,
+        segment: &str,
+        detail: bool,
+    ) -> Result<(T, Bytes), ReadError> {
         let mut url = self.attestations_url.clone();
         url.path_segments_mut()
             .expect("a validated ledger URL has path segments")
@@ -165,15 +183,7 @@ impl LedgerClient {
         })?;
 
         match response.status() {
-            StatusCode::OK => response.json().await.map_err(|error| {
-                let reason = if error.is_timeout() {
-                    "timeout"
-                } else {
-                    "response body"
-                };
-                tracing::warn!(reason, "Ledger read failed");
-                ReadError::Unavailable
-            }),
+            StatusCode::OK => validated_body(response).await,
             StatusCode::BAD_REQUEST if detail => Err(ReadError::InvalidId),
             StatusCode::NOT_FOUND if detail => Err(ReadError::NotFound),
             status => {
@@ -182,4 +192,21 @@ impl LedgerClient {
             }
         }
     }
+}
+
+async fn validated_body<T: DeserializeOwned>(response: Response) -> Result<(T, Bytes), ReadError> {
+    let body = response.bytes().await.map_err(|error| {
+        let reason = if error.is_timeout() {
+            "timeout"
+        } else {
+            "response body"
+        };
+        tracing::warn!(reason, "Ledger read failed");
+        ReadError::Unavailable
+    })?;
+    let parsed = serde_json::from_slice(&body).map_err(|_| {
+        tracing::warn!(reason = "response body", "Ledger read failed");
+        ReadError::Unavailable
+    })?;
+    Ok((parsed, body))
 }

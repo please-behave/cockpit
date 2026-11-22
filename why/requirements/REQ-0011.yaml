@@ -1,0 +1,16 @@
+id: REQ-0011
+name: Browser Attestation Reads
+description: >-
+  The cockpit serves same-origin, read-only JSON endpoints for the latest
+  attestation summaries and a single attestation by identifier under /v0.
+  It uses its bounded ledger client to validate each successful response from
+  ledger:CON-0002 or ledger:CON-0003 and forwards the reported JSON with its
+  fields, values and order intact.
+rationale: >-
+  The browser needs the evidence held by the ledger through the cockpit
+  origin, with its original meaning and ordering preserved.
+decisions:
+  - DEC-0001
+  - DEC-0002
+  - why:DEC-0002
+  - why:DEC-0006

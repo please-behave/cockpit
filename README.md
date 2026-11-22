@@ -43,6 +43,8 @@ shows the latest reported attestation for each repository and execution-point
 combination, with errors and failures first. Select a repository link to see
 the rules and outcomes for that attestation.
 
+Browser clients can use the [session-protected JSON read API](why/contracts/browser/latest.md).
+
 `GET /healthz` checks liveness. `GET /readyz` confirms the service has loaded
 valid configuration and stays available during ledger outages. Startup errors
 and service logs are written as JSON to stderr.

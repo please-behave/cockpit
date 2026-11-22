@@ -160,6 +160,12 @@ impl Auth {
             ))
     }
 
+    pub(crate) fn has_live_session(&self, jar: &PrivateCookieJar) -> bool {
+        jar.get(SESSION_COOKIE)
+            .and_then(|cookie| live_value(&cookie)?.parse::<u64>().ok())
+            .is_some_and(|id| self.allowed_ids.contains(&id))
+    }
+
     async fn github_id(&self, code: String, verifier: PkceCodeVerifier) -> Result<u64, ()> {
         let oauth_http = |request| exchange(self.http.clone(), request);
         let token = self
@@ -300,10 +306,7 @@ async fn require_session(
     request: Request,
     next: Next,
 ) -> Response {
-    let id = jar
-        .get(SESSION_COOKIE)
-        .and_then(|cookie| live_value(&cookie)?.parse::<u64>().ok());
-    if id.is_some_and(|id| auth.allowed_ids.contains(&id)) {
+    if auth.has_live_session(&jar) {
         next.run(request).await
     } else {
         Redirect::to(SIGN_IN).into_response()

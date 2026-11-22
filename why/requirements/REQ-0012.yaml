@@ -1,0 +1,10 @@
+id: REQ-0012
+name: Browser API Sessions
+description: >-
+  The browser API requires the live session and current authorization defined
+  by REQ-0007. If either is absent, the API returns HTTP 401 without a
+  redirect, before contacting the ledger.
+rationale: >-
+  Browser code needs to recognize a session that cannot access the API.
+decisions:
+  - DEC-0004

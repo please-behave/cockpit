@@ -1,9 +1,10 @@
-// Verifies REQ-0003, REQ-0004, REQ-0006, REQ-0007, REQ-0009 and REQ-0010.
+// Verifies REQ-0003, REQ-0004, REQ-0006, REQ-0007, REQ-0009, REQ-0010,
+// REQ-0011, REQ-0012 and REQ-0013.
 
 #[path = "support/auth_settings.rs"]
 mod support;
 
-use std::{collections::HashMap, time::Duration};
+use std::{collections::HashMap, future::pending, time::Duration};
 
 use axum::{
     Router,
@@ -26,6 +27,8 @@ use tokio::{net::TcpListener, task::JoinHandle};
 const STATE: &str = "__Host-cockpit-state";
 const SESSION: &str = "__Host-cockpit-session";
 const ATTESTATION: &str = "00000000-0000-0000-0000-000000000001";
+const API_LATEST: &str = "/v0/attestations/latest";
+const API_DETAIL: &str = "/v0/attestations/00000000-0000-0000-0000-000000000001";
 const DETAIL_PATH: &str = "/attestations/00000000-0000-0000-0000-000000000001";
 
 struct Server {
@@ -72,11 +75,11 @@ impl TestSite {
                 .route("/user", get(user)),
         )
         .await;
-        let cockpit = Self::start_cockpit(&github, &ledger, "42, 123").await;
+        let cockpit = Self::start_cockpit(&github, &ledger.origin, "42, 123").await;
         let client = Client::builder()
             .no_proxy()
             .redirect(reqwest::redirect::Policy::none())
-            .timeout(Duration::from_secs(3))
+            .timeout(Duration::from_secs(10))
             .build()
             .unwrap();
         Self {
@@ -87,7 +90,7 @@ impl TestSite {
         }
     }
 
-    async fn start_cockpit(github: &Server, ledger: &Server, allowed_ids: &str) -> Server {
+    async fn start_cockpit(github: &Server, ledger_origin: &str, allowed_ids: &str) -> Server {
         let auth = Auth::new(
             support::AUTH_SETTINGS[0].1,
             support::AUTH_SETTINGS[1].1,
@@ -101,7 +104,7 @@ impl TestSite {
             },
         )
         .unwrap();
-        let ledger = LedgerClient::new(&ledger.origin).unwrap();
+        let ledger = LedgerClient::new(ledger_origin).unwrap();
         Server::start(web::router(ledger, auth)).await
     }
 
@@ -291,6 +294,11 @@ async fn only_live_untampered_sessions_grant_access() {
         assert_eq!(response.status(), StatusCode::SEE_OTHER);
         assert_eq!(location(&response), "/sign-in");
     }
+    for path in [API_LATEST, API_DETAIL] {
+        let response = site.get(path).send().await.unwrap();
+        assert_api_error(response, StatusCode::UNAUTHORIZED, "unauthorized").await;
+    }
+
     let response = site
         .client
         .post(format!("{}/style.css", site.cockpit.origin))
@@ -334,7 +342,8 @@ async fn only_live_untampered_sessions_grant_access() {
         assert!(response.text().await.unwrap().contains(content));
     }
 
-    let second_instance = TestSite::start_cockpit(&site.github, &site.ledger, "42, 123").await;
+    let second_instance =
+        TestSite::start_cockpit(&site.github, &site.ledger.origin, "42, 123").await;
     let response = site
         .client
         .get(&second_instance.origin)
@@ -343,7 +352,8 @@ async fn only_live_untampered_sessions_grant_access() {
         .await
         .unwrap();
     assert_eq!(response.status(), StatusCode::OK);
-    let changed_allow_list = TestSite::start_cockpit(&site.github, &site.ledger, "123").await;
+    let changed_allow_list =
+        TestSite::start_cockpit(&site.github, &site.ledger.origin, "123").await;
     let response = site
         .client
         .get(&changed_allow_list.origin)
@@ -352,6 +362,15 @@ async fn only_live_untampered_sessions_grant_access() {
         .await
         .unwrap();
     assert_eq!(location(&response), "/sign-in");
+
+    let response = site
+        .client
+        .get(format!("{}{API_LATEST}", changed_allow_list.origin))
+        .header(header::COOKIE, &original)
+        .send()
+        .await
+        .unwrap();
+    assert_api_error(response, StatusCode::UNAUTHORIZED, "unauthorized").await;
 
     let mut tampered = session.clone();
     let mut value = session.value().to_owned();
@@ -373,6 +392,13 @@ async fn only_live_untampered_sessions_grant_access() {
             .unwrap();
         assert_eq!(response.status(), StatusCode::SEE_OTHER);
         assert_eq!(location(&response), "/sign-in");
+        let response = site
+            .get(API_DETAIL)
+            .header(header::COOKIE, invalid)
+            .send()
+            .await
+            .unwrap();
+        assert_api_error(response, StatusCode::UNAUTHORIZED, "unauthorized").await;
     }
 }
 
@@ -600,5 +626,151 @@ async fn overview_distinguishes_empty_ledger_from_unavailable_ledger() {
         assert!(html.contains(content));
         assert!(!html.contains("<table>"));
         assert!(!html.contains("synthetic upstream error"));
+    }
+}
+
+fn assert_api_headers(response: &Response) {
+    let headers = response.headers();
+    assert_eq!(headers[header::CONTENT_TYPE], "application/json");
+    assert_eq!(headers[header::CACHE_CONTROL], "no-store");
+    assert_eq!(headers[header::X_CONTENT_TYPE_OPTIONS], "nosniff");
+    assert_eq!(headers[header::REFERRER_POLICY], "no-referrer");
+    assert_eq!(
+        headers[header::CONTENT_SECURITY_POLICY],
+        "default-src 'none'; style-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+    );
+    assert!(!headers.contains_key(header::LOCATION));
+}
+
+async fn assert_api_error(response: Response, status: StatusCode, code: &str) {
+    assert_eq!(response.status(), status);
+    assert_api_headers(&response);
+    assert_eq!(
+        serde_json::from_str::<Value>(&response.text().await.unwrap()).unwrap(),
+        json!({ "code": code })
+    );
+}
+
+#[tokio::test]
+async fn browser_api_preserves_ledger_json_and_distinguishes_identifier_errors() {
+    let pass = reported_summary(ATTESTATION, "a/pass", "release", "PASS");
+    let fail = reported_summary(
+        "00000000-0000-0000-0000-000000000002",
+        "z/<reported>",
+        "check",
+        "FAIL",
+    );
+    let latest = json!([pass, fail]).to_string();
+    let mut attestation = pass;
+    attestation["results"] = json!([
+        {"id": "z/review", "kind": "review", "status": "WARN"},
+        {"id": "a/check", "kind": "check", "status": "NOT_RUN"}
+    ]);
+    attestation["additional_reported_field"] = json!(["second", "first"]);
+    let detail = serde_json::to_string_pretty(&attestation).unwrap();
+    let ledger_latest = latest.clone();
+    let ledger_detail = detail.clone();
+    let site = TestSite::start_with_ledger(
+        Router::new()
+            .route(API_LATEST, get(move || async { ledger_latest }))
+            .route(
+                "/v0/attestations/{id}",
+                get(move |Path(id): Path<String>| async move {
+                    match id.as_str() {
+                        ATTESTATION => (StatusCode::OK, ledger_detail),
+                        "00000000-0000-0000-0000-000000000099" => {
+                            (StatusCode::NOT_FOUND, "synthetic upstream message".into())
+                        }
+                        _ => panic!("malformed identifier reached the ledger"),
+                    }
+                }),
+            ),
+    )
+    .await;
+    let session = cookie_header(&cookie(&site.sign_in("allowed").await, SESSION).unwrap());
+    for (path, body) in [(API_LATEST, latest), (API_DETAIL, detail)] {
+        let response = site
+            .get(path)
+            .header(header::COOKIE, &session)
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_api_headers(&response);
+        assert_eq!(response.text().await.unwrap(), body);
+    }
+    for (id, status, code) in [
+        ("malformed", StatusCode::BAD_REQUEST, "invalid_identifier"),
+        ("%FF", StatusCode::BAD_REQUEST, "invalid_identifier"),
+        (
+            "00000000-0000-0000-0000-000000000099",
+            StatusCode::NOT_FOUND,
+            "attestation_not_found",
+        ),
+    ] {
+        let response = site
+            .get(&format!("/v0/attestations/{id}"))
+            .header(header::COOKIE, &session)
+            .send()
+            .await
+            .unwrap();
+        assert_api_error(response, status, code).await;
+    }
+
+    let response = site
+        .client
+        .post(format!("{}{API_LATEST}", site.cockpit.origin))
+        .header(header::COOKIE, &session)
+        .send()
+        .await
+        .unwrap();
+    assert_api_error(
+        response,
+        StatusCode::METHOD_NOT_ALLOWED,
+        "method_not_allowed",
+    )
+    .await;
+}
+
+#[tokio::test]
+async fn browser_api_hides_ledger_failures() {
+    let site = TestSite::start_with_ledger(
+        Router::new()
+            .route(API_LATEST, get(pending::<&'static str>))
+            .route(
+                API_DETAIL,
+                get(|| async { r#"{"upstream":"unexpected shape"}"# }),
+            )
+            .route(
+                "/v0/attestations/00000000-0000-0000-0000-000000000002",
+                get(|| async { (StatusCode::BAD_GATEWAY, "synthetic upstream error") }),
+            ),
+    )
+    .await;
+    let unreachable = TestSite::start_cockpit(&site.github, "http://127.0.0.1:0", "42").await;
+    let session = cookie_header(&cookie(&site.sign_in("allowed").await, SESSION).unwrap());
+    let urls = [
+        format!("{}{API_LATEST}", unreachable.origin),
+        format!("{}{API_DETAIL}", site.cockpit.origin),
+        format!(
+            "{}/v0/attestations/00000000-0000-0000-0000-000000000002",
+            site.cockpit.origin
+        ),
+        format!("{}{API_LATEST}", site.cockpit.origin),
+    ];
+    for url in urls {
+        let response = site
+            .client
+            .get(url)
+            .header(header::COOKIE, &session)
+            .send()
+            .await
+            .unwrap();
+        assert_api_error(
+            response,
+            StatusCode::SERVICE_UNAVAILABLE,
+            "ledger_unavailable",
+        )
+        .await;
     }
 }

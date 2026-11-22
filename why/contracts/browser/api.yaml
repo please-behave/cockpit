@@ -1,0 +1,14 @@
+id: API-0001
+name: Browser Read
+version: 0
+contracts:
+  - id: CON-0001
+    name: Latest Attestations
+    document: latest.md
+    schema: latest.schema.json
+    requirements: [REQ-0011, REQ-0012, REQ-0013]
+  - id: CON-0002
+    name: Attestation
+    document: attestation.md
+    schema: attestation.schema.json
+    requirements: [REQ-0011, REQ-0012, REQ-0013]

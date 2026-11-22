@@ -1,3 +1,5 @@
+mod api;
+
 use askama::Template;
 use axum::{
     Router,
@@ -76,6 +78,7 @@ impl IntoResponse for ReadError {
 }
 
 pub fn router(ledger: LedgerClient, auth: Auth) -> Router {
+    let api = api::router(ledger.clone(), &auth);
     let protected = Router::new()
         .route("/", get(overview))
         .route("/attestations/{id}", get(detail))
@@ -84,6 +87,7 @@ pub fn router(ledger: LedgerClient, auth: Auth) -> Router {
         .with_state(ledger);
 
     auth.protect(protected)
+        .merge(api)
         .merge(auth.sign_in_routes())
         .route("/healthz", get(health))
         .route("/readyz", get(health))
