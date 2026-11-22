@@ -5,15 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Sign in | Please Behave Cockpit</title>
     <link rel="icon" type="image/svg+xml" href="/brand/favicon.svg">
+    <script type="module" src="/src/theme-init.ts"></script>
     <link rel="stylesheet" href="/src/styles/main.css">
   </head>
   <body>
     <main class="sign-in">
       <div class="sign-in-card">
-        <picture class="brand-mark">
-          <source media="(prefers-color-scheme: dark)" srcset="/brand/logo-dark.svg">
-          <img src="/brand/logo.svg" alt="">
-        </picture>
+        <span class="brand-mark">
+          <img class="logo-light" src="/brand/logo.svg" alt="">
+          <img class="logo-dark" src="/brand/logo-dark.svg" alt="">
+        </span>
         <h1>Please Behave Cockpit</h1>
         <a class="sign-in-link" href="/sign-in/github">Sign in with GitHub</a>
       </div>

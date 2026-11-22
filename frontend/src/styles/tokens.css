@@ -39,13 +39,17 @@
     --radius-panel: 1rem;
     --elevation-panel: 0 0.5rem 1.5rem color-mix(in srgb, var(--text) 8%, transparent);
 
+    --logo-light-display: block;
+    --logo-dark-display: none;
+
     --content-width: 75rem;
     --focus-ring: 0.125rem solid var(--text);
     --focus-offset: 0.1875rem;
   }
 
+  /* The dark values apply to the system theme and to a stored choice, so they appear twice. */
   @media (prefers-color-scheme: dark) {
-    :root {
+    :root:not([data-theme="light"]) {
       --surface: #15131C;
       --surface-raised: #23202C;
       --border: #888291;
@@ -57,7 +61,33 @@
       --status-error: #DAB0F3;
       --status-warning: #F5B97C;
       --status-allowed: #F3D16B;
+
+      --logo-light-display: none;
+      --logo-dark-display: block;
     }
+  }
+
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+
+    --surface: #15131C;
+    --surface-raised: #23202C;
+    --border: #888291;
+    --text-muted: #B1AAB9;
+    --text: #F7F5F9;
+
+    --status-passed: #78D69A;
+    --status-failed: #FF929C;
+    --status-error: #DAB0F3;
+    --status-warning: #F5B97C;
+    --status-allowed: #F3D16B;
+
+    --logo-light-display: none;
+    --logo-dark-display: block;
+  }
+
+  :root[data-theme="light"] {
+    color-scheme: light;
   }
 
   @media (forced-colors: active) {

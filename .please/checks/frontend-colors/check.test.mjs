@@ -61,14 +61,18 @@ test('declared token pairings meet the shared contrast minimums in both themes',
   const stylesheet = parse(readFileSync(path, 'utf8'));
   const defaults = new Map();
   const darkOverrides = new Map();
+  const chosenDark = new Map();
   stylesheet.walkDecls(/^--/, ({ prop, value, parent }) => {
-    if (parent.selector !== ':root') return;
     const scope = parent.parent;
-    if (scope.name === 'layer' && scope.params === 'tokens') defaults.set(prop, value);
-    if (scope.name === 'media' && scope.params === '(prefers-color-scheme: dark)') {
+    if (parent.selector === ':root' && scope.name === 'layer' && scope.params === 'tokens') defaults.set(prop, value);
+    if (parent.selector === ':root:not([data-theme="light"])' && scope.name === 'media'
+      && scope.params === '(prefers-color-scheme: dark)') {
       darkOverrides.set(prop, value);
     }
+    if (parent.selector === ':root[data-theme="dark"]') chosenDark.set(prop, value);
   });
+  assert.ok(darkOverrides.size > 0, 'the system dark theme overrides tokens');
+  assert.deepEqual(chosenDark, darkOverrides, 'a chosen dark theme matches the system dark theme');
 
   const textTokens = [
     'text', 'text-muted', 'status-passed', 'status-failed', 'status-error',

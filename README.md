@@ -42,7 +42,9 @@ page routes, including direct links to individual attestations. The browser
 handles navigation and shows a page-not-found view for unknown page addresses.
 The application shell and sign-in page share the
 [Please Behave visual identity](https://github.com/please-behave/why/blob/main/brand/README.md)
-and follow the browser's color scheme.
+and follow the browser's color scheme until the viewer picks the light or dark
+theme with the button in the navigation. The choice is kept in the browser's
+local storage.
 
 ## Run locally
 

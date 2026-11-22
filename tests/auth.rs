@@ -301,14 +301,19 @@ async fn sign_in_serves_static_html_and_public_assets_without_a_session() {
     let page = response.text().await.unwrap();
     assert_eq!(page, include_str!("../frontend/dist/sign-in.html"));
     assert!(page.contains(r#"href="/sign-in/github">Sign in with GitHub</a>"#));
-    for inline in ["<script", "<style", " style="] {
+    assert_eq!(
+        page.matches("<script").count(),
+        page.matches(r#"<script type="module" crossorigin src="/assets/"#)
+            .count()
+    );
+    for inline in ["<style", " style="] {
         assert!(!page.contains(inline), "{inline}");
     }
 
     for (attribute, prefix, kind) in [
         ("href", "main-", "text/css"),
         ("src", "logo-", "image/svg+xml"),
-        ("srcset", "logo-dark-", "image/svg+xml"),
+        ("src", "logo-dark-", "image/svg+xml"),
         ("href", "favicon-", "image/svg+xml"),
     ] {
         let reference = format!(r#"{attribute}="/assets/{prefix}"#);

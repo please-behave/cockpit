@@ -1,0 +1,18 @@
+id: REQ-0023
+name: Theme Choice
+description: >-
+  The application shell offers a button next to the sign-out link that switches
+  between the light and the dark theme. Its visible text and accessible name
+  state the action, `Switch to dark theme` or `Switch to light theme`. Until
+  the viewer chooses, the cockpit follows the system theme, including a change
+  of it while the page is open. A choice overrides the system theme on the
+  whole document and its Shadow DOM components, and it is remembered across
+  reloads and sessions. The sign-in page follows the same choice. A browser
+  that blocks storage keeps the page working, and the choice then applies to
+  the current page only.
+rationale: >-
+  Viewers read the cockpit in the theme they prefer, whatever their system
+  setting is.
+decisions:
+  - DEC-0006
+  - DEC-0015

@@ -1,0 +1,18 @@
+id: DEC-0015
+name: Store the Theme Choice in the Browser
+context: >-
+  The theme choice must survive reloads, apply before the page is first
+  painted as far as the content security policy allows, and reach the sign-in
+  page, which shares no code with the application shell. Attestation data is
+  never stored in the browser (DEC-0014), but the preference is not evidence.
+decision: >-
+  The choice is the value `light` or `dark` under one localStorage key, and its
+  absence means that the system theme applies. A same-origin module loaded in
+  the head of the application shell and the sign-in page sets the `data-theme`
+  attribute on the root element from it. The tokens layer defines the dark
+  values for that attribute and for the system theme unless the attribute says
+  `light`. Every storage access tolerates failure.
+rationale: >-
+  A stored preference needs no server state, the external module needs no
+  inline script, and the attribute carries the choice to every Shadow DOM
+  component through the existing tokens.

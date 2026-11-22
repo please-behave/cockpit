@@ -84,8 +84,15 @@
   }
 
   .brand-mark img {
-    display: block;
     block-size: max(32px, 3rem);
     inline-size: auto;
+  }
+
+  .logo-light {
+    display: var(--logo-light-display);
+  }
+
+  .logo-dark {
+    display: var(--logo-dark-display);
   }
 }

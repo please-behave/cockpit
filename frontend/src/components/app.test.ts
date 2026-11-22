@@ -35,13 +35,13 @@ test('pb-app renders its content in the application shell', async () => {
   await shell.updateComplete;
 
   const root = shell.shadowRoot!;
-  expect(root.querySelector('header img')?.getAttribute('src')).toContain('logo.svg');
-  expect(root.querySelector('header source')?.getAttribute('srcset')).toContain('logo-dark.svg');
+  expect(root.querySelector('header .logo-light')?.getAttribute('src')).toContain('logo.svg');
+  expect(root.querySelector('header .logo-dark')?.getAttribute('src')).toContain('logo-dark.svg');
   expect(root.querySelector('header nav slot')?.getAttribute('name')).toBe('navigation');
   expect(root.querySelector('header slot[name="last-updated"]')).not.toBeNull();
   expect([...app.shadowRoot!.querySelectorAll('a[slot=navigation]')].map(link => [link.textContent, link.getAttribute('href')]))
     .toEqual([['Dashboard', '/'], ['Attestations', '/attestations']]);
-  expect(root.querySelector('header a')?.getAttribute('href')).toBe('/sign-out');
+  expect(root.querySelector('header a.sign-out')?.getAttribute('href')).toBe('/sign-out');
   expect(root.querySelector('main slot')).not.toBeNull();
 
   root.querySelector<HTMLAnchorElement>('.skip-link')!.click();

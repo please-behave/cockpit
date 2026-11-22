@@ -1,6 +1,7 @@
 import { css, html, LitElement } from 'lit';
 import logo from '../../brand/logo.svg';
 import logoDark from '../../brand/logo-dark.svg';
+import { chooseTheme, effectiveTheme, watchSystemTheme, type Theme } from '../theme';
 
 export class CockpitAppShell extends LitElement {
   static override styles = css`
@@ -48,14 +49,21 @@ export class CockpitAppShell extends LitElement {
         line-height: var(--line-heading);
       }
 
-      picture {
+      .logo {
         padding: 0.375rem;
       }
 
       img {
-        display: block;
         block-size: max(32px, 2.5rem);
         inline-size: auto;
+      }
+
+      .logo-light {
+        display: var(--logo-light-display);
+      }
+
+      .logo-dark {
+        display: var(--logo-dark-display);
       }
 
       nav {
@@ -69,8 +77,17 @@ export class CockpitAppShell extends LitElement {
         color: inherit;
       }
 
-      .sign-out {
+      .sign-out, .theme-toggle {
         padding: var(--space-2);
+      }
+
+      .theme-toggle {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-control);
+        background: var(--surface);
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
       }
 
       main {
@@ -98,6 +115,31 @@ export class CockpitAppShell extends LitElement {
     }
   `;
 
+  static override properties = { theme: { state: true } };
+  declare private theme: Theme;
+  private unwatchSystemTheme?: () => void;
+
+  constructor() {
+    super();
+    this.theme = effectiveTheme();
+  }
+
+  override connectedCallback() {
+    super.connectedCallback();
+    this.theme = effectiveTheme();
+    this.unwatchSystemTheme = watchSystemTheme(() => { this.theme = effectiveTheme(); });
+  }
+
+  override disconnectedCallback() {
+    this.unwatchSystemTheme?.();
+    super.disconnectedCallback();
+  }
+
+  private toggleTheme() {
+    chooseTheme(this.theme === 'dark' ? 'light' : 'dark');
+    this.theme = effectiveTheme();
+  }
+
   private skipToMain(event: MouseEvent) {
     event.preventDefault();
     this.renderRoot.querySelector('main')?.focus();
@@ -109,14 +151,17 @@ export class CockpitAppShell extends LitElement {
       <header>
         <div class="bar">
           <div class="brand">
-            <picture>
-              <source media="(prefers-color-scheme: dark)" srcset=${logoDark}>
-              <img src=${logo} alt="">
-            </picture>
+            <span class="logo">
+              <img class="logo-light" src=${logo} alt="">
+              <img class="logo-dark" src=${logoDark} alt="">
+            </span>
             <span>Please Behave Cockpit</span>
           </div>
           <nav aria-label="Main"><slot name="navigation"></slot></nav>
           <slot name="last-updated"></slot>
+          <button class="theme-toggle" type="button" @click=${this.toggleTheme}>
+            ${this.theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+          </button>
           <a class="sign-out" href="/sign-out">Sign out</a>
         </div>
       </header>
