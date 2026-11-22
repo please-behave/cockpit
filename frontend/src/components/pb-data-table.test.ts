@@ -70,3 +70,22 @@ test('retains rows by key through reordering, updates, insertion and removal', a
   expect(body.rows[1].cells[0].textContent).toBe('Four');
   expect(body.rows[2]).toBe(one);
 });
+
+// Verifies REQ-0018.
+test('keeps content columns on one line, truncates fill columns and leaves other columns wrapping', async () => {
+  const table = new DataTable();
+  table.columns = [{ label: 'Rule', mode: 'fill' }, { label: 'Kind', mode: 'content' }, 'Notes'];
+  table.rowHeaderColumn = 0;
+  table.rows = [{ key: 'one', cells: ['A very long rule', 'check', 'Wraps'] }];
+  document.body.append(table);
+  await table.updateComplete;
+
+  const root = table.shadowRoot!;
+  expect([...root.querySelectorAll('thead th')].map(cell => cell.className)).toEqual(['fill', 'content', '']);
+  const row = root.querySelector('tbody tr')!;
+  expect(Array.from(row.children).map(cell => cell.className)).toEqual(['fill', 'content', '']);
+  expect(row.querySelector('th')?.getAttribute('scope')).toBe('row');
+  const css = DataTable.styles.cssText;
+  expect(css).toMatch(/\.content\s*{[^}]*white-space:\s*nowrap/);
+  expect(css).toMatch(/\.fill\s*{[^}]*text-overflow:\s*ellipsis/);
+});

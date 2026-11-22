@@ -1,10 +1,19 @@
-import { css, html, LitElement, type TemplateResult } from 'lit';
+import { css, html, LitElement, nothing, type TemplateResult } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 
 export interface DataTableRow {
   /** Unique within the table and stable across updates. */
   key: string;
   cells: readonly (string | TemplateResult)[];
+}
+
+export interface DataTableColumn {
+  label: string;
+  /**
+   * `content` keeps the column on one line at its natural width. `fill` takes the
+   * remaining width and truncates with an ellipsis. Omit it to let content wrap.
+   */
+  mode?: 'content' | 'fill';
 }
 
 export class DataTable extends LitElement {
@@ -37,6 +46,19 @@ export class DataTable extends LitElement {
 
       td, th {
         overflow-wrap: anywhere;
+      }
+
+      .content {
+        inline-size: 1%;
+        white-space: nowrap;
+      }
+
+      .fill {
+        inline-size: 100%;
+        max-inline-size: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       .scroll:focus-visible {
@@ -73,7 +95,7 @@ export class DataTable extends LitElement {
   `;
 
   declare label: string;
-  declare columns: readonly string[];
+  declare columns: readonly (string | DataTableColumn)[];
   declare rows: readonly DataTableRow[];
   /** Zero-based column index. Use -1 for a table without row headers. */
   declare rowHeaderColumn: number;
@@ -87,18 +109,19 @@ export class DataTable extends LitElement {
   }
 
   override render() {
+    const columns = this.columns.map(column => typeof column === 'string' ? { label: column } : column);
     return html`
       <div class="scroll" role="region" aria-labelledby="caption" tabindex="0">
         <table>
           <caption id="caption">${this.label}</caption>
           <thead>
-            <tr>${this.columns.map(column => html`<th scope="col">${column}</th>`)}</tr>
+            <tr>${columns.map(({ label, mode }) => html`<th scope="col" class=${mode ?? nothing}>${label}</th>`)}</tr>
           </thead>
           <tbody>
             ${repeat(this.rows, row => row.key, row => html`
-              <tr>${this.columns.map((_, index) => index === this.rowHeaderColumn
-                ? html`<th scope="row">${row.cells[index]}</th>`
-                : html`<td>${row.cells[index]}</td>`)}</tr>
+              <tr>${columns.map(({ mode }, index) => index === this.rowHeaderColumn
+                ? html`<th scope="row" class=${mode ?? nothing}>${row.cells[index]}</th>`
+                : html`<td class=${mode ?? nothing}>${row.cells[index]}</td>`)}</tr>
             `)}
           </tbody>
         </table>

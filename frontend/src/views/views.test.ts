@@ -3,6 +3,7 @@ import { ApiError, getAttestation, latestAttestations, type Summary } from '../a
 import type { DataTable } from '../components/pb-data-table';
 import type { DefinitionList } from '../components/pb-definition-list';
 import type { ErrorState } from '../components/pb-error-state';
+import type { ShortName } from '../components/pb-short-name';
 import type { CockpitTime } from '../components/pb-time';
 import type { StatusPill } from '../components/pb-status-pill';
 import { DetailView } from './detail';
@@ -130,7 +131,7 @@ test('overview shows a ledger error without upstream details and retries', async
   expect(view.shadowRoot!.activeElement).toBe(view.shadowRoot!.querySelector('h1'));
 });
 
-// Verifies REQ-0004 and REQ-0010.
+// Verifies REQ-0004, REQ-0010, REQ-0017 and REQ-0018.
 test('detail presents evidence as reported and preserves rule order', async () => {
   const repository = 'org/<img src=x>';
   const value = summary('id', 'FAIL', repository, ['check', 'release']);
@@ -156,18 +157,19 @@ test('detail presents evidence as reported and preserves rule order', async () =
   await definitions.updateComplete;
   const metadata = definitions.shadowRoot!;
   expect([...metadata.querySelectorAll('dt')].map(term => term.textContent))
-    .toEqual(['Commit', 'Execution points', 'Sender', 'Overall', 'Reported']);
-  expect([...metadata.querySelectorAll('dd')].slice(0, 3).map(item => item.textContent))
-    .toEqual([value.commit, 'check, release', value.sender]);
+    .toEqual(['Attestation ID', 'Commit', 'Overall', 'Reported']);
+  expect([...metadata.querySelectorAll('dd')].slice(0, 2).map(item => item.textContent))
+    .toEqual([value.id, value.commit]);
   expect(metadata.querySelector<StatusPill>('pb-status-pill')?.status).toBe('FAIL');
   expect(metadata.querySelector<CockpitTime>('pb-time')?.value).toBe(receipt);
   expect(metadata.querySelector('img, script')).toBeNull();
 
   const table = await tableRoot(view);
   const rows = [...table.querySelectorAll<HTMLTableRowElement>('tbody tr')];
-  expect(rows.map(row => row.cells[0].textContent)).toEqual([
+  expect(rows.map(row => row.querySelector<ShortName>('pb-short-name')?.value)).toEqual([
     'z/<script>bad</script>', 'a/rule', 'a/rule',
   ]);
+  expect(table.querySelectorAll('thead th.fill, thead th.content')).toHaveLength(3);
   expect(rows.map(row => row.cells[1].textContent)).toEqual(['review', 'integrity', 'check']);
   expect(rows.map(row => row.querySelector<StatusPill>('pb-status-pill')?.status)).toEqual([
     'WARN', 'NOT_RUN', 'FAIL',

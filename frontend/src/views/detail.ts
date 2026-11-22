@@ -1,12 +1,18 @@
 import { html, nothing } from 'lit';
 import { getAttestation, type Attestation } from '../api/client';
+import type { DataTableColumn } from '../components/pb-data-table';
 import '../components/pb-data-table';
 import '../components/pb-definition-list';
+import '../components/pb-short-name';
 import '../components/pb-status-pill';
 import '../components/pb-time';
 import { CockpitView, reportedEvidence } from './cockpit-view';
 
-const columns = ['Rule', 'Kind', 'Status'];
+const columns: DataTableColumn[] = [
+  { label: 'Rule', mode: 'fill' },
+  { label: 'Kind', mode: 'content' },
+  { label: 'Status', mode: 'content' },
+];
 
 export class DetailView extends CockpitView<Attestation> {
   static override properties = { attestationId: { attribute: false } };
@@ -30,16 +36,15 @@ export class DetailView extends CockpitView<Attestation> {
 
   private results(attestation: Attestation) {
     const items = [
+      { term: 'Attestation ID', description: html`<code>${attestation.id}</code>` },
       { term: 'Commit', description: html`<code>${attestation.commit}</code>` },
-      { term: 'Execution points', description: attestation.execution_points.join(', ') },
-      { term: 'Sender', description: attestation.sender },
       { term: 'Overall', description: html`<pb-status-pill .status=${attestation.overall}></pb-status-pill>` },
       { term: 'Reported', description: html`<pb-time .value=${attestation.received_at}></pb-time>` },
     ];
     const rows = attestation.results.map((result, index) => ({
       key: String(index),
       cells: [
-        result.id,
+        html`<pb-short-name .value=${result.id}></pb-short-name>`,
         result.kind,
         html`<pb-status-pill .status=${result.status}></pb-status-pill>`,
       ],

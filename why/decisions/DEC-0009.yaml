@@ -1,0 +1,12 @@
+id: DEC-0009
+name: Declare Table Column Modes Instead of Sharing Width Evenly
+context: >-
+  An evenly shared table width breaks short columns such as kind and status
+  after a few characters when one column carries very long identifiers.
+decision: >-
+  A table column may declare that it keeps its content on one line at its
+  natural width, or that it takes the remaining width and truncates with an
+  ellipsis. Columns without a declaration wrap their content as before.
+rationale: >-
+  Short values stay readable at every viewport width, and long values are
+  truncated where a tooltip or another view provides the full value.

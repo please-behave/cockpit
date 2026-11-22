@@ -1,0 +1,13 @@
+id: DEC-0008
+name: Shorten Names to Their Last Segment
+context: >-
+  Rule identifiers of imported rule sets and repository names are long
+  slash-separated paths. Their last segment identifies them at a glance, but
+  the full value remains the reported evidence.
+decision: >-
+  Show the part of a name after its last slash, or the whole value if there is
+  none. Carry the full value as a tooltip and expose it to assistive
+  technology.
+rationale: >-
+  Viewers read the distinguishing segment without losing access to the exact
+  reported value.
