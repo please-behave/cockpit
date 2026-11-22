@@ -1,0 +1,9 @@
+purpose: Vite builds content-hashed frontend assets.
+problem: Frontend regressions can otherwise reach browser users.
+value: The repository verifies this frontend constraint before changes ship.
+conditions:
+  - statement: The entry points to a content-hashed script and the asset directory contains only content-hashed files.
+    rationale: The check must exercise the project's frontend configuration.
+success_criteria:
+  - The entry points to a content-hashed script and the asset directory contains only content-hashed files.
+placement: Local, because the check belongs to the cockpit frontend.

@@ -1,0 +1,9 @@
+id = "frontend-safe-dom"
+name = "Frontend DOM safety"
+description = "Frontend code avoids raw HTML insertion APIs"
+enabled = true
+run_at = ["pre-commit", "pre-push", "check"]
+
+[check]
+command = "node --test @rule/check.test.mjs"
+timeout_seconds = 120

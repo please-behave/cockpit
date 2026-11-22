@@ -20,9 +20,13 @@ jobs:
       - name: Install pinned tools
         uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
         with:
-          install_args: rust python aqua:boyter/scc aqua:taiki-e/cargo-llvm-cov
+          install_args: rust python node aqua:boyter/scc aqua:taiki-e/cargo-llvm-cov
           experimental: true
           version: 2026.11.11
+      - name: Build frontend assets
+        run: |
+          npm --prefix frontend ci --no-audit
+          mise run frontend-build
       - name: Run tests and calculate coverage
         run: |
           mkdir -p target/statistics

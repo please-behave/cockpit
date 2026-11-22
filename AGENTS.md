@@ -12,7 +12,7 @@
 - All data comes from the ledger's API. The only other external contact is the sign-in provider.
 - Authorization uses the provider's immutable user ID and never a login name.
 - The sign-in token is discarded once the identity is known. Sessions are sealed cookies with an expiry. Never log session or token values.
-- Escape all output, run no scripts and keep the content security policy free of inline code.
+- Escape dynamic output through Rust or Lit templates. Use no inline scripts or styles. Load scripts, styles and images and make connections only from the same origin. Use adopted stylesheets for Shadow DOM styles.
 
 ## GitHub issues
 

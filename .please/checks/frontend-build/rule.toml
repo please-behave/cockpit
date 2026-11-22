@@ -1,0 +1,9 @@
+id = "frontend-build"
+name = "Frontend build"
+description = "Vite builds content-hashed frontend assets"
+enabled = true
+run_at = ["pre-push", "check"]
+
+[check]
+command = "node --test @rule/check.test.mjs"
+timeout_seconds = 120

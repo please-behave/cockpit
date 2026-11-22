@@ -1,9 +1,13 @@
 id: REQ-0004
 name: Safe Page Rendering
 description: >-
-  Rust templates HTML-escape all dynamic output. Pages use no scripts or
-  inline styles. Every HTTP response carries a Content-Security-Policy that
-  allows only same-origin stylesheets and blocks framing, base URLs and form
-  submission, plus protective headers for MIME sniffing and referrer disclosure.
+  Rust and Lit templates escape all dynamic output. Pages use no inline
+  scripts or styles. Every HTTP response carries a Content-Security-Policy
+  that allows scripts, styles, images and connections only from the same
+  origin and blocks all other sources, framing, base URLs and form submission.
+  Every response also carries protective headers for MIME sniffing and
+  referrer disclosure.
 rationale: >-
   Reported values and other external input must remain inert in a browser.
+decisions:
+  - DEC-0005

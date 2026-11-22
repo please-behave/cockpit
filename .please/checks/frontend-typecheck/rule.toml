@@ -1,0 +1,9 @@
+id = "frontend-typecheck"
+name = "Frontend type check"
+description = "Frontend TypeScript passes strict checking"
+enabled = true
+run_at = ["pre-push", "check"]
+
+[check]
+command = "node --test @rule/check.test.mjs"
+timeout_seconds = 120

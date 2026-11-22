@@ -1,0 +1,9 @@
+id = "frontend-tests"
+name = "Frontend tests"
+description = "Frontend tests pass in jsdom and report coverage"
+enabled = true
+run_at = ["pre-push", "check"]
+
+[check]
+command = "node --test @rule/check.test.mjs"
+timeout_seconds = 120

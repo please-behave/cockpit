@@ -1,0 +1,9 @@
+purpose: Frontend code avoids raw HTML insertion APIs.
+problem: Frontend regressions can otherwise reach browser users.
+value: The repository verifies this frontend constraint before changes ship.
+conditions:
+  - statement: Every use of a forbidden raw HTML API fails the rule with a source location.
+    rationale: The check must exercise the project's frontend configuration.
+success_criteria:
+  - Every use of a forbidden raw HTML API fails the rule with a source location.
+placement: Local, because the check belongs to the cockpit frontend.

@@ -22,7 +22,12 @@ gh = "2.104.0"
 
 [tasks.build]
 description = "Build the release executable"
+depends = ["frontend-build"]
 run = "cargo build --release --locked"
+
+[tasks.frontend-build]
+description = "Build the frontend assets for embedding"
+run = "npm --prefix frontend run build"
 
 [tasks.format]
 description = "Format Rust and shell sources"
@@ -33,5 +38,5 @@ description = "Run the deterministic Please Behave checks and stop at the first 
 run = "please run --at pre-push --checks-only --fail-fast"
 
 [tasks.setup]
-description = "Fetch locked Cargo dependencies for CI and offline Git hooks"
-run = "cargo fetch --locked"
+description = "Install locked dependencies and build the frontend for Rust checks"
+run = ["npm --prefix frontend ci --no-audit", "mise run frontend-build", "cargo fetch --locked"]

@@ -1,4 +1,5 @@
 mod api;
+mod assets;
 
 use askama::Template;
 use axum::{
@@ -15,7 +16,7 @@ use crate::{
     ledger::{Attestation, LedgerClient, Overall, ReadError, Summary},
 };
 
-const CONTENT_SECURITY_POLICY: &str = "default-src 'none'; style-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
+const CONTENT_SECURITY_POLICY: &str = "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
 
 #[derive(Template)]
 #[template(
@@ -91,7 +92,9 @@ pub fn router(ledger: LedgerClient, auth: Auth) -> Router {
         .merge(auth.sign_in_routes())
         .route("/healthz", get(health))
         .route("/readyz", get(health))
-        .layer(SetResponseHeaderLayer::overriding(
+        .route("/assets/", get(|| async { StatusCode::NOT_FOUND }))
+        .route("/assets/{*path}", get(assets::get))
+        .layer(SetResponseHeaderLayer::if_not_present(
             header::CACHE_CONTROL,
             HeaderValue::from_static("no-store"),
         ))

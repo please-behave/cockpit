@@ -1,10 +1,12 @@
-// Verifies REQ-0001, REQ-0004, REQ-0005 and REQ-0008.
+// Verifies REQ-0001, REQ-0004, REQ-0005, REQ-0008 and REQ-0014.
 
 mod support;
 
 use std::{
+    fs,
     io::{BufRead, BufReader},
     net::{SocketAddr, TcpListener},
+    path::Path,
     process::{Child, Stdio},
     sync::mpsc,
     time::Duration,
@@ -111,7 +113,7 @@ fn startup_requires_valid_github_configuration() {
 }
 
 #[tokio::test]
-async fn health_and_protective_headers_work_without_a_responding_ledger() {
+async fn public_routes_and_protective_headers_work_without_a_responding_ledger() {
     let ledger = TcpListener::bind("127.0.0.1:0").unwrap();
     let mut cockpit = RunningCockpit(
         support::command()
@@ -145,6 +147,8 @@ async fn health_and_protective_headers_work_without_a_responding_ledger() {
         .timeout(Duration::from_secs(2))
         .build()
         .unwrap();
+    assert_frontend_assets(&client, address).await;
+
     for (path, method, status, content_type, text) in [
         (
             "/healthz",
@@ -191,10 +195,11 @@ async fn health_and_protective_headers_work_without_a_responding_ledger() {
         let headers = response.headers();
         assert_eq!(
             headers[header::CONTENT_SECURITY_POLICY],
-            "default-src 'none'; style-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+            "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
         );
         assert_eq!(headers[header::X_CONTENT_TYPE_OPTIONS], "nosniff");
         assert_eq!(headers[header::REFERRER_POLICY], "no-referrer");
+        assert_eq!(headers[header::CACHE_CONTROL], "no-store");
         if !content_type.is_empty() {
             assert!(
                 headers[header::CONTENT_TYPE]
@@ -206,6 +211,61 @@ async fn health_and_protective_headers_work_without_a_responding_ledger() {
         let body = response.text().await.unwrap();
         assert!(body.contains(text));
         assert!(!body.contains("<script"));
+    }
+}
+
+async fn assert_frontend_assets(client: &Client, address: SocketAddr) {
+    let directory = Path::new(env!("CARGO_MANIFEST_DIR")).join("frontend/dist");
+    let index = fs::read_to_string(directory.join("index.html")).unwrap();
+    let (asset_url, _) = index
+        .split_once(r#"src="/assets/"#)
+        .and_then(|(_, path)| path.split_once('"'))
+        .expect("built entry script in index.html");
+    let (name, hash) = asset_url
+        .strip_suffix(".js")
+        .and_then(|name| name.rsplit_once('-'))
+        .expect("content-hashed JavaScript name");
+    assert_eq!(name, "index");
+    assert!(hash.len() >= 8);
+
+    let url = format!("http://{address}/assets/{asset_url}");
+    let response = client.get(&url).send().await.unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let headers = response.headers();
+    assert!(matches!(
+        headers[header::CONTENT_TYPE].to_str().unwrap(),
+        "text/javascript" | "application/javascript"
+    ));
+    assert_eq!(
+        headers[header::CACHE_CONTROL],
+        "public, max-age=31536000, immutable"
+    );
+    assert_eq!(headers[header::X_CONTENT_TYPE_OPTIONS], "nosniff");
+    assert_eq!(
+        response.bytes().await.unwrap().as_ref(),
+        fs::read(directory.join("assets").join(asset_url)).unwrap()
+    );
+
+    let response = client.head(url).send().await.unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(
+        response.headers()[header::CACHE_CONTROL],
+        "public, max-age=31536000, immutable"
+    );
+    assert!(response.bytes().await.unwrap().is_empty());
+
+    for path in [
+        "/assets/",
+        "/assets/unknown.js",
+        "/assets/missing/nested.js",
+    ] {
+        let response = client
+            .get(format!("http://{address}{path}"))
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+        assert_eq!(response.headers()[header::CACHE_CONTROL], "no-store");
     }
 }
 

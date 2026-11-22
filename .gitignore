@@ -1,5 +1,8 @@
 /target/
 /dist/
+/frontend/dist/
+/frontend/node_modules/
+/frontend/coverage/
 .please/reports/*
 !.please/reports/.gitignore
 

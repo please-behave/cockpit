@@ -1,0 +1,9 @@
+purpose: Frontend TypeScript passes strict checking.
+problem: Frontend regressions can otherwise reach browser users.
+value: The repository verifies this frontend constraint before changes ship.
+conditions:
+  - statement: A type error fails the rule, including a strict nullability error.
+    rationale: The check must exercise the project's frontend configuration.
+success_criteria:
+  - A type error fails the rule, including a strict nullability error.
+placement: Local, because the check belongs to the cockpit frontend.

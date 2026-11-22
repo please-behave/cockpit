@@ -637,7 +637,7 @@ fn assert_api_headers(response: &Response) {
     assert_eq!(headers[header::REFERRER_POLICY], "no-referrer");
     assert_eq!(
         headers[header::CONTENT_SECURITY_POLICY],
-        "default-src 'none'; style-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+        "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
     );
     assert!(!headers.contains_key(header::LOCATION));
 }

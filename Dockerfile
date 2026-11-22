@@ -1,6 +1,14 @@
+FROM node:26.13.1-trixie-slim@sha256:e6bedef217677b276c591795e169840edd9096dbf13f29df8ef8d1856b8820bc AS frontend
+WORKDIR /src/frontend
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci --no-audit
+COPY frontend/ ./
+RUN npm run build
+
 FROM rust:1.100.0-slim-trixie@sha256:6f14b2b4b278ec0d50aa1d69541c304ce0f95e0f6268487aa9924af1c2e9aebe AS build
 WORKDIR /src
-COPY Cargo.toml Cargo.lock ./
+COPY Cargo.toml Cargo.lock build.rs ./
+COPY --from=frontend /src/frontend/dist/assets ./frontend/dist/assets
 COPY src ./src
 RUN cargo build --release --locked
 

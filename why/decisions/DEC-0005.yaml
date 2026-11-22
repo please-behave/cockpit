@@ -1,0 +1,13 @@
+id: DEC-0005
+name: Embedded Web Components Frontend
+context: >-
+  The browser interface needs reusable views and interactive updates. The
+  cockpit is deployed as a single service executable.
+decision: >-
+  Build the browser frontend as a strict TypeScript application using Lit Web
+  Components with Shadow DOM and adopted stylesheets. Prefix custom element
+  names with pb-. Vite builds content-hashed assets, which the Rust executable
+  embeds at compile time and serves from the same origin.
+rationale: >-
+  Web Components give views reusable browser-native boundaries, Lit provides
+  escaping through templates, and embedding keeps deployment to one executable.

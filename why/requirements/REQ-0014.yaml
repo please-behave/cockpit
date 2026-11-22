@@ -1,0 +1,11 @@
+id: REQ-0014
+name: Embedded Frontend Assets
+description: >-
+  The executable serves content-hashed frontend assets under /assets/ without
+  a session, with the correct media type and a public, immutable one-year cache
+  lifetime. Unknown assets return HTTP 404, and every response other than a
+  successful frontend asset response has Cache-Control no-store.
+rationale: >-
+  Browsers can reuse unchanged public assets while session data stays out of caches.
+decisions:
+  - DEC-0005

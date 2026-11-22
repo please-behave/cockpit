@@ -12,6 +12,33 @@ It is released as the container image `ghcr.io/please-behave/cockpit`. The purpo
 
 The cockpit keeps its [requirements, decisions and API contracts](why/README.md) alongside the code.
 
+## Build and test
+
+From a fresh checkout, run:
+
+```sh
+mise install
+mise run setup
+mise exec -- cargo test --locked
+```
+
+Setup installs frontend dependencies from `frontend/package-lock.json`, builds
+`frontend/dist`, and fetches locked Cargo dependencies. The Rust build embeds
+`frontend/dist/assets` at compile time. Run `mise run frontend-build` after
+editing the frontend and before invoking Cargo directly. `mise run build`
+builds the frontend and the release executable in that order. CI uses the
+setup task, and the container build generates the assets in its Node stage.
+
+Frontend type checks and tests can also run on their own:
+
+```sh
+mise exec -- npm --prefix frontend run typecheck
+mise exec -- npm --prefix frontend test
+```
+
+The executable serves the content-hashed bundles from `/assets/`. The Vite
+entry page is used to build the minimal `pb-app` component.
+
 ## Run locally
 
 Register a [GitHub OAuth app](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app)
@@ -27,10 +54,10 @@ Serve the Cockpit over HTTPS through a reverse proxy for browser sign-in.
 | `COCKPIT_COOKIE_KEY` | 64 random bytes encoded as 128 hex digits. Generate it with `openssl rand -hex 64` and give every instance of the deployment the same key. |
 | `COCKPIT_GITHUB_ALLOWED_IDS` | A comma-separated list of positive numeric GitHub user IDs, for example `12345,67890`. |
 
-Set those variables in the process environment before running:
+After setup, set those variables in the process environment before running:
 
 ```sh
-cargo run --locked
+mise exec -- cargo run --locked
 ```
 
 Set `COCKPIT_BIND_ADDR` to an IP address and port to override

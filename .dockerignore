@@ -1,3 +1,6 @@
 /target/
 /.git/
 /dist/
+/frontend/dist/
+/frontend/node_modules/
+/frontend/coverage/
