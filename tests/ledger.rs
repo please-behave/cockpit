@@ -7,7 +7,7 @@ use std::{
 
 use axum::{
     Router,
-    extract::Path,
+    extract::{Path, RawQuery},
     http::{StatusCode, header},
     routing::get,
 };
@@ -45,7 +45,8 @@ fn summary(id: &str, repository: &str) -> Value {
         "execution_points": ["check", "release"],
         "overall": "FAIL",
         "warn_count": 1,
-        "not_run_count": 1
+        "not_run_count": 1,
+        "result_count": 3
     })
 }
 
@@ -97,6 +98,7 @@ async fn reads_the_two_v0_contracts_and_preserves_reported_values() {
     assert_eq!(attestation.summary.overall, Overall::Fail);
     assert_eq!(attestation.summary.warn_count, 1);
     assert_eq!(attestation.summary.not_run_count, 1);
+    assert_eq!(attestation.summary.result_count, 3);
     assert_eq!(attestation.results[0].kind, ResultKind::Review);
     assert_eq!(attestation.results[0].status, ReportedStatus::Warn);
     assert_eq!(attestation.results[1].status, ReportedStatus::NotRun);
@@ -144,4 +146,44 @@ async fn ledger_read_has_a_request_deadline() {
     let result = tokio::time::timeout(Duration::from_secs(10), ledger.latest()).await;
     assert_eq!(result.unwrap(), Err(ReadError::Unavailable));
     assert!(start.elapsed() >= Duration::from_secs(4));
+}
+
+#[tokio::test]
+async fn reads_a_page_of_the_list_with_the_given_query() {
+    let router = Router::new().route(
+        "/v0/attestations",
+        get(|RawQuery(query): RawQuery| async move {
+            match query.as_deref() {
+                None => (
+                    StatusCode::OK,
+                    json!([summary(OTHER_ID, "org/second")]).to_string(),
+                ),
+                Some("limit=1&before=x") => (StatusCode::OK, "[]".to_owned()),
+                Some(_) => (StatusCode::BAD_REQUEST, String::new()),
+            }
+        }),
+    );
+    let (ledger, _mock) = mock_ledger(router).await;
+    assert_eq!(ledger.list(None).await.unwrap()[0].id, OTHER_ID);
+    assert!(
+        ledger
+            .list(Some("limit=1&before=x"))
+            .await
+            .unwrap()
+            .is_empty()
+    );
+    assert_eq!(
+        ledger.list(Some("limit=0")).await,
+        Err(ReadError::InvalidQuery)
+    );
+}
+
+#[tokio::test]
+async fn a_failed_list_read_is_a_ledger_failure() {
+    let router = Router::new().route(
+        "/v0/attestations",
+        get(|| async { (StatusCode::BAD_GATEWAY, "synthetic upstream detail") }),
+    );
+    let (ledger, _mock) = mock_ledger(router).await;
+    assert_eq!(ledger.list(None).await, Err(ReadError::Unavailable));
 }

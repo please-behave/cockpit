@@ -12,3 +12,8 @@ contracts:
     document: attestation.md
     schema: attestation.schema.json
     requirements: [REQ-0011, REQ-0012, REQ-0013]
+  - id: CON-0003
+    name: Attestation List
+    document: list.md
+    schema: list.schema.json
+    requirements: [REQ-0011, REQ-0012, REQ-0013]

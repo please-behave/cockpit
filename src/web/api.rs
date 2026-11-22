@@ -1,7 +1,7 @@
 use axum::{
     Router,
     body::Bytes,
-    extract::{Path, Request, State, rejection::PathRejection},
+    extract::{Path, RawQuery, Request, State, rejection::PathRejection},
     http::{Method, StatusCode, header},
     middleware::{self, Next},
     response::{IntoResponse, Response},
@@ -17,6 +17,7 @@ use crate::{
 
 pub(super) fn router(ledger: LedgerClient, auth: &Auth) -> Router {
     Router::new()
+        .route("/v0/attestations", get(list))
         .route("/v0/attestations/latest", get(latest))
         .route("/v0/attestations/{id}", get(attestation))
         .method_not_allowed_fallback(|| async { ApiError::MethodNotAllowed })
@@ -54,6 +55,14 @@ async fn latest(State(ledger): State<LedgerClient>) -> Result<Response, ApiError
     Ok(json_response(StatusCode::OK, body))
 }
 
+async fn list(
+    State(ledger): State<LedgerClient>,
+    RawQuery(query): RawQuery,
+) -> Result<Response, ApiError> {
+    let (_, body) = ledger.list_response(query.as_deref()).await?;
+    Ok(json_response(StatusCode::OK, body))
+}
+
 async fn attestation(
     State(ledger): State<LedgerClient>,
     id: Result<Path<String>, PathRejection>,
@@ -86,6 +95,9 @@ impl IntoResponse for ApiError {
             ),
             Self::Ledger(ReadError::InvalidId) => {
                 (StatusCode::BAD_REQUEST, r#"{"code":"invalid_identifier"}"#)
+            }
+            Self::Ledger(ReadError::InvalidQuery) => {
+                (StatusCode::BAD_REQUEST, r#"{"code":"invalid_query"}"#)
             }
             Self::Ledger(ReadError::NotFound) => {
                 (StatusCode::NOT_FOUND, r#"{"code":"attestation_not_found"}"#)

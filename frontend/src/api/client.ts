@@ -1,4 +1,4 @@
-// Browser Read v0: why/contracts/browser/{latest,attestation}.schema.json.
+// Browser Read v0: why/contracts/browser/{latest,list,attestation}.schema.json.
 export type Overall = 'PASS' | 'FAIL' | 'ERROR';
 
 export interface Summary {
@@ -11,6 +11,7 @@ export interface Summary {
   overall: Overall;
   warn_count: number;
   not_run_count: number;
+  result_count: number;
 }
 
 export interface Attestation extends Summary {
@@ -22,13 +23,16 @@ export interface Attestation extends Summary {
 }
 
 const errorCodes = {
-  400: 'invalid_identifier',
   401: 'unauthorized',
   404: 'attestation_not_found',
   503: 'ledger_unavailable',
 } as const;
 
-type ApiErrorCode = typeof errorCodes[keyof typeof errorCodes] | 'timeout' | 'request_failed';
+type ApiErrorCode = typeof errorCodes[keyof typeof errorCodes]
+  | 'invalid_identifier'
+  | 'invalid_query'
+  | 'timeout'
+  | 'request_failed';
 
 export class ApiError extends Error {
   constructor(readonly code: ApiErrorCode) {
@@ -40,7 +44,11 @@ export class ApiError extends Error {
 // Leave time for the cockpit's five-second ledger request to report its own outcome.
 const requestTimeout = 10_000;
 
-async function read<T>(path: string, signal: AbortSignal): Promise<T> {
+async function read<T>(
+  path: string,
+  signal: AbortSignal,
+  badRequest: 'invalid_identifier' | 'invalid_query' = 'invalid_identifier',
+): Promise<T> {
   const deadline = new AbortController();
   const timeout = window.setTimeout(() => deadline.abort(), requestTimeout);
   try {
@@ -55,7 +63,9 @@ async function read<T>(path: string, signal: AbortSignal): Promise<T> {
     if (response.status === 401) window.location.assign('/sign-in');
 
     if (!response.ok) {
-      const code = errorCodes[response.status as keyof typeof errorCodes];
+      const code = response.status === 400
+        ? badRequest
+        : errorCodes[response.status as keyof typeof errorCodes];
       throw new ApiError(code ?? 'request_failed');
     }
     return await response.json() as T;
@@ -71,6 +81,22 @@ async function read<T>(path: string, signal: AbortSignal): Promise<T> {
 
 export function latestAttestations(signal: AbortSignal): Promise<Summary[]> {
   return read('/v0/attestations/latest', signal);
+}
+
+export interface PageOptions {
+  before?: string;
+  limit?: number;
+}
+
+export function attestationPage(
+  { before, limit }: PageOptions,
+  signal: AbortSignal,
+): Promise<Summary[]> {
+  const query = new URLSearchParams();
+  if (limit !== undefined) query.set('limit', String(limit));
+  if (before !== undefined) query.set('before', before);
+  const suffix = query.size > 0 ? `?${query}` : '';
+  return read(`/v0/attestations${suffix}`, signal, 'invalid_query');
 }
 
 export async function getAttestation(id: string, signal: AbortSignal): Promise<Attestation> {

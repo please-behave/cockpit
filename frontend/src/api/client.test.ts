@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from 'vitest';
-import { getAttestation, latestAttestations } from './client';
+import { attestationPage, getAttestation, latestAttestations } from './client';
 
 afterEach(() => {
   vi.useRealTimers();
@@ -97,4 +97,33 @@ test('aborts the request at the deadline and reports a timeout', async () => {
   await result;
   expect(fetch.mock.calls[0][1].signal.aborted).toBe(true);
   expect(vi.getTimerCount()).toBe(0);
+});
+
+test('reads one page of the list with the given query', async () => {
+  const fetch = vi.fn().mockImplementation(async () => Response.json([]));
+  vi.stubGlobal('fetch', fetch);
+  const { signal } = new AbortController();
+
+  await expect(attestationPage({}, signal)).resolves.toEqual([]);
+  await attestationPage({ limit: 5 }, signal);
+  await attestationPage({ before: 'a b', limit: 200 }, signal);
+  expect(fetch.mock.calls.map(call => call[0])).toEqual([
+    '/v0/attestations',
+    '/v0/attestations?limit=5',
+    '/v0/attestations?limit=200&before=a+b',
+  ]);
+});
+
+test.each([
+  [400, 'invalid_query'],
+  [503, 'ledger_unavailable'],
+  [401, 'unauthorized'],
+])('maps HTTP %s of the list to %s', async (status, code) => {
+  vi.stubGlobal('window', {
+    setTimeout: window.setTimeout.bind(window),
+    clearTimeout: window.clearTimeout.bind(window),
+    location: { assign: vi.fn() },
+  });
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('upstream detail', { status })));
+  await expect(attestationPage({}, new AbortController().signal)).rejects.toMatchObject({ code });
 });

@@ -17,11 +17,12 @@ pub struct LedgerClient {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ReadError {
     InvalidId,
+    InvalidQuery,
     NotFound,
     Unavailable,
 }
 
-// Ledger read API v0 (ledger:CON-0002 and ledger:CON-0003).
+// Ledger read API v0 (ledger:CON-0002, ledger:CON-0003 and ledger:CON-0004).
 #[derive(Debug, Deserialize, Eq, PartialEq)]
 pub struct Summary {
     pub id: String,
@@ -33,6 +34,7 @@ pub struct Summary {
     pub overall: Overall,
     pub warn_count: u64,
     pub not_run_count: u64,
+    pub result_count: u64,
 }
 
 #[derive(Debug, Deserialize, Eq, PartialEq)]
@@ -73,6 +75,13 @@ pub enum ReportedStatus {
     Error,
     NotRun,
     Warn,
+}
+
+#[derive(Clone, Copy)]
+enum Endpoint<'a> {
+    Latest,
+    List,
+    Attestation(&'a str),
 }
 
 impl LedgerClient {
@@ -116,7 +125,20 @@ impl LedgerClient {
     }
 
     pub(crate) async fn latest_response(&self) -> Result<(Vec<Summary>, Bytes), ReadError> {
-        self.read("latest", false).await
+        self.read(Endpoint::Latest, None).await
+    }
+
+    pub async fn list(&self, query: Option<&str>) -> Result<Vec<Summary>, ReadError> {
+        self.list_response(query)
+            .await
+            .map(|(summaries, _)| summaries)
+    }
+
+    pub(crate) async fn list_response(
+        &self,
+        query: Option<&str>,
+    ) -> Result<(Vec<Summary>, Bytes), ReadError> {
+        self.read(Endpoint::List, query).await
     }
 
     pub(crate) async fn attestation_response(
@@ -126,18 +148,26 @@ impl LedgerClient {
         if matches!(id, "" | "." | ".." | "latest") {
             return Err(ReadError::InvalidId);
         }
-        self.read(id, true).await
+        self.read(Endpoint::Attestation(id), None).await
     }
 
     async fn read<T: DeserializeOwned>(
         &self,
-        segment: &str,
-        detail: bool,
+        endpoint: Endpoint<'_>,
+        query: Option<&str>,
     ) -> Result<(T, Bytes), ReadError> {
         let mut url = self.attestations_url.clone();
-        url.path_segments_mut()
-            .expect("a validated ledger URL has path segments")
-            .push(segment);
+        let segment = match endpoint {
+            Endpoint::Latest => Some("latest"),
+            Endpoint::Attestation(id) => Some(id),
+            Endpoint::List => None,
+        };
+        if let Some(segment) = segment {
+            url.path_segments_mut()
+                .expect("a validated ledger URL has path segments")
+                .push(segment);
+        }
+        url.set_query(query);
 
         let response = self.client.get(url).send().await.map_err(|error| {
             // The reqwest error may contain a URL. Log only the failure class.
@@ -150,11 +180,12 @@ impl LedgerClient {
             ReadError::Unavailable
         })?;
 
-        match response.status() {
-            StatusCode::OK => validated_body(response).await,
-            StatusCode::BAD_REQUEST if detail => Err(ReadError::InvalidId),
-            StatusCode::NOT_FOUND if detail => Err(ReadError::NotFound),
-            status => {
+        match (response.status(), endpoint) {
+            (StatusCode::OK, _) => validated_body(response).await,
+            (StatusCode::BAD_REQUEST, Endpoint::Attestation(_)) => Err(ReadError::InvalidId),
+            (StatusCode::BAD_REQUEST, Endpoint::List) => Err(ReadError::InvalidQuery),
+            (StatusCode::NOT_FOUND, Endpoint::Attestation(_)) => Err(ReadError::NotFound),
+            (status, _) => {
                 tracing::warn!(status = status.as_u16(), "Unexpected ledger status");
                 Err(ReadError::Unavailable)
             }

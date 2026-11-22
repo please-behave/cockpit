@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Attestation list",
+  "description": "One page of all attestations, newest first, as summaries.",
+  "type": "array",
+  "items": { "$ref": "attestation.schema.json#/$defs/summary" }
+}

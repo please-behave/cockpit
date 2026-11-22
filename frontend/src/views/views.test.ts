@@ -30,6 +30,7 @@ const summary = (id: string, overall: Summary['overall'], repository: string,
   commit: '0123456789abcdef',
   warn_count: 2,
   not_run_count: 3,
+  result_count: 7,
 });
 
 afterEach(() => {

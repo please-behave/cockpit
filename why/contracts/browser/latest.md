@@ -11,7 +11,7 @@ array. Fields and values are preserved as reported.
 
 ## Session, headers and errors
 
-Both endpoints require a live Cockpit session for a currently allowed user.
+All endpoints require a live Cockpit session for a currently allowed user.
 Responses carry `Content-Type: application/json`, `Cache-Control: no-store`,
 `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer` and the
 Content Security Policy specified by REQ-0004.
@@ -27,5 +27,5 @@ headers as GET with an empty body.
 
 Unknown routes under `/v0` return HTTP 404 with `{"code":"route_not_found"}`
 regardless of session state. The [frontend API client](../../../frontend/src/api/client.ts)
-defines the TypeScript types for both endpoint responses. Update those types
+defines the TypeScript types for the endpoint responses. Update those types
 with any change to the response schemas.

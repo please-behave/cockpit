@@ -8,7 +8,7 @@ use std::{collections::HashMap, future::pending, time::Duration};
 
 use axum::{
     Router,
-    extract::Path,
+    extract::{Path, RawQuery},
     http::{HeaderMap, StatusCode, header},
     response::IntoResponse,
     routing::{get, post},
@@ -28,6 +28,7 @@ const STATE: &str = "__Host-cockpit-state";
 const SESSION: &str = "__Host-cockpit-session";
 const ATTESTATION: &str = "00000000-0000-0000-0000-000000000001";
 const API_LATEST: &str = "/v0/attestations/latest";
+const API_LIST: &str = "/v0/attestations";
 const API_DETAIL: &str = "/v0/attestations/00000000-0000-0000-0000-000000000001";
 const DETAIL_PATH: &str = "/attestations/00000000-0000-0000-0000-000000000001";
 
@@ -336,7 +337,7 @@ async fn only_live_untampered_sessions_grant_access() {
         assert_eq!(response.status(), StatusCode::SEE_OTHER);
         assert_eq!(location(&response), "/sign-in");
     }
-    for path in [API_LATEST, API_DETAIL] {
+    for path in [API_LATEST, API_LIST, API_DETAIL] {
         let response = site.get(path).send().await.unwrap();
         assert_api_error(response, StatusCode::UNAUTHORIZED, "unauthorized").await;
     }
@@ -471,7 +472,8 @@ fn reported_summary(id: &str, repository: &str, point: &str, overall: &str) -> V
         "commit": "e2c8d2abcde01234",
         "overall": overall,
         "warn_count": 3,
-        "not_run_count": 5
+        "not_run_count": 5,
+        "result_count": 9
     })
 }
 
@@ -688,4 +690,86 @@ async fn browser_api_hides_ledger_failures() {
         )
         .await;
     }
+}
+
+#[tokio::test]
+async fn browser_api_forwards_the_list_and_its_query() {
+    let page = json!([
+        reported_summary(
+            "00000000-0000-0000-0000-000000000003",
+            "b/second",
+            "check",
+            "PASS"
+        ),
+        reported_summary(ATTESTATION, "a/first", "release", "FAIL")
+    ])
+    .to_string();
+    let ledger_page = page.clone();
+    let site = TestSite::start_with_ledger(Router::new().route(
+        API_LIST,
+        get(move |RawQuery(query): RawQuery| async move {
+            match query.as_deref() {
+                None | Some("limit=2&before=00000000-0000-0000-0000-000000000009") => {
+                    (StatusCode::OK, ledger_page)
+                }
+                Some("limit=0") => (StatusCode::BAD_REQUEST, "synthetic upstream message".into()),
+                Some(_) => (StatusCode::BAD_GATEWAY, String::new()),
+            }
+        }),
+    ))
+    .await;
+    let session = cookie_header(&cookie(&site.sign_in("allowed").await, SESSION).unwrap());
+    for path in [
+        API_LIST,
+        "/v0/attestations?limit=2&before=00000000-0000-0000-0000-000000000009",
+    ] {
+        let response = site
+            .get(path)
+            .header(header::COOKIE, &session)
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_api_headers(&response);
+        assert_eq!(response.text().await.unwrap(), page);
+    }
+    let response = site
+        .get("/v0/attestations?limit=0")
+        .header(header::COOKIE, &session)
+        .send()
+        .await
+        .unwrap();
+    assert_api_error(response, StatusCode::BAD_REQUEST, "invalid_query").await;
+    let response = site
+        .get("/v0/attestations?limit=3")
+        .header(header::COOKIE, &session)
+        .send()
+        .await
+        .unwrap();
+    assert_api_error(
+        response,
+        StatusCode::SERVICE_UNAVAILABLE,
+        "ledger_unavailable",
+    )
+    .await;
+}
+
+#[tokio::test]
+async fn browser_api_list_hides_an_unreachable_ledger() {
+    let site = TestSite::start().await;
+    let unreachable = TestSite::start_cockpit(&site.github, "http://127.0.0.1:0", "42").await;
+    let session = cookie_header(&cookie(&site.sign_in("allowed").await, SESSION).unwrap());
+    let response = site
+        .client
+        .get(format!("{}{API_LIST}", unreachable.origin))
+        .header(header::COOKIE, &session)
+        .send()
+        .await
+        .unwrap();
+    assert_api_error(
+        response,
+        StatusCode::SERVICE_UNAVAILABLE,
+        "ledger_unavailable",
+    )
+    .await;
 }
