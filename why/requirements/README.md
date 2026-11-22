@@ -1,6 +1,6 @@
 # Requirements
 
-A requirement states one binding, verifiable condition the cockpit must satisfy. The [schema](schema.json) defines its fields.
+A requirement states one binding, verifiable condition the cockpit must satisfy. The [requirement schema](https://github.com/please-behave/why/blob/main/standard/requirement.schema.json) of the Why standard defines its fields.
 
 Describe an observable condition that holds across refactorings. Explain why it matters in one sentence in `rationale`. Reference facts defined elsewhere. Tests cite the requirements they verify.
 

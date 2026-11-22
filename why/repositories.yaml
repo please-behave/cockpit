@@ -1,0 +1,8 @@
+repository:
+  alias: cockpit
+  source: github:please-behave/cockpit
+linked:
+  - alias: why
+    source: github:please-behave/why
+  - alias: ledger
+    source: github:please-behave/ledger
