@@ -1,0 +1,299 @@
+import { afterEach, beforeEach, expect, test, vi } from 'vitest';
+import { ApiError, attestationPage, type Summary } from '../api/client';
+import type { CommitLink } from '../components/pb-commit-link';
+import type { DataTable } from '../components/pb-data-table';
+import type { ErrorState } from '../components/pb-error-state';
+import type { ShortName } from '../components/pb-short-name';
+import type { StatusPill } from '../components/pb-status-pill';
+import type { CockpitTime } from '../components/pb-time';
+import { HistoryView } from './history';
+
+vi.mock(import('../api/client'), async original => ({
+  ...await original(),
+  attestationPage: vi.fn(),
+}));
+
+const page = vi.mocked(attestationPage);
+
+let observers: MockObserver[];
+
+class MockObserver {
+  readonly observed = new Set<Element>();
+  constructor(readonly callback: IntersectionObserverCallback, readonly options?: IntersectionObserverInit) {
+    observers.push(this);
+  }
+  observe(element: Element) { this.observed.add(element); }
+  unobserve(element: Element) { this.observed.delete(element); }
+  disconnect() { this.observed.clear(); }
+  reach() {
+    this.callback([{ isIntersecting: true } as IntersectionObserverEntry], this as unknown as IntersectionObserver);
+  }
+}
+
+const summary = (n: number, repository = 'github.com/acme/widget'): Summary => ({
+  id: `id-${String(n).padStart(4, '0')}`,
+  overall: n % 2 ? 'FAIL' : 'PASS',
+  repository,
+  execution_points: ['check'],
+  received_at: '2026-11-22T11:18:19Z',
+  sender: 'sender',
+  commit: '0123456789abcdef',
+  warn_count: 0,
+  not_run_count: 0,
+  result_count: 1,
+});
+
+const range = (from: number, count: number) => Array.from({ length: count }, (_, index) => summary(from + index));
+
+beforeEach(() => {
+  observers = [];
+  vi.stubGlobal('IntersectionObserver', MockObserver);
+});
+
+afterEach(() => {
+  document.body.replaceChildren();
+  vi.unstubAllGlobals();
+  vi.resetAllMocks();
+});
+
+async function mount() {
+  const view = new HistoryView();
+  document.body.append(view);
+  await vi.waitFor(() => expect(view.shadowRoot!.querySelector('pb-data-table, pb-empty-state, pb-error-state')).not.toBeNull());
+  await view.updateComplete;
+  return view;
+}
+
+async function tableRoot(view: HistoryView) {
+  const table = view.shadowRoot!.querySelector<DataTable>('pb-data-table')!;
+  await table.updateComplete;
+  return table.shadowRoot!;
+}
+
+const hrefs = (view: HistoryView) => [...view.shadowRoot!.querySelectorAll('pb-data-table')]
+  .flatMap(table => [...table.shadowRoot!.querySelectorAll('tbody a[data-route]')])
+  .map(link => link.getAttribute('href'));
+
+async function rowCount(view: HistoryView) {
+  const root = await tableRoot(view);
+  return root.querySelectorAll('tbody tr').length;
+}
+
+const sentinel = (view: HistoryView) => view.shadowRoot!.querySelector('.sentinel')!;
+const announcement = (view: HistoryView) => view.shadowRoot!.querySelector('.assistive[role=status]')?.textContent;
+
+async function reach(view: HistoryView) {
+  observers.at(-1)!.reach();
+  await vi.waitFor(() => expect(view.shadowRoot!.querySelector('[role=status]:not(.assistive)')).toBeNull());
+  await view.updateComplete;
+}
+
+// Verifies REQ-0021.
+test('loads the first page of 100, shows the loading state and the heading', async () => {
+  let complete!: (summaries: Summary[]) => void;
+  page.mockReturnValue(new Promise<Summary[]>(resolve => { complete = resolve; }));
+  const view = new HistoryView();
+  document.body.append(view);
+  await view.updateComplete;
+  const root = view.shadowRoot!;
+  expect(root.querySelector('[role=status]')?.textContent).toBe('Loading…');
+  expect(root.activeElement).toBe(root.querySelector('h1'));
+  expect(document.title).toBe('Attestations | Please Behave');
+  expect(page).toHaveBeenCalledWith({ limit: 100 }, expect.any(AbortSignal));
+
+  complete(range(1, 100));
+  await vi.waitFor(() => expect(root.querySelector('pb-data-table')).not.toBeNull());
+  expect(root.querySelector('[role=status]:not(.assistive)')).toBeNull();
+  expect(root.textContent).toContain('shown as reported');
+});
+
+// Verifies REQ-0021.
+test('shows one row per attestation with its columns, links and tooltips', async () => {
+  const report = { ...summary(1, 'github.com/acme/widget'), id: 'first?query', received_at: '2026-11-22T12:00:00Z' };
+  page.mockResolvedValue([report, summary(2, 'gitlab.com/acme/other')]);
+  const view = await mount();
+  const root = await tableRoot(view);
+  expect([...root.querySelectorAll('thead th')].map(cell => cell.textContent))
+    .toEqual(['Reported', 'Repository', 'Commit', 'Overall']);
+  expect([...root.querySelectorAll('thead th')].map(cell => cell.className)).toEqual(['content', 'fill', 'content', 'content']);
+
+  const [first, second] = [...root.querySelectorAll('tbody tr')];
+  const time = first.querySelector<CockpitTime>('pb-time')!;
+  expect(time.value).toBe('2026-11-22T12:00:00Z');
+  await time.updateComplete;
+  expect(time.shadowRoot!.querySelector('time')!.title).toBe('2026-11-22T12:00:00Z');
+
+  const link = first.querySelector<HTMLAnchorElement>('a[data-route]')!;
+  expect(link.getAttribute('href')).toBe('/attestations/first%3Fquery');
+  expect(link.querySelector<ShortName>('pb-short-name')!.value).toBe('github.com/acme/widget');
+
+  const commit = first.querySelector<CommitLink>('pb-commit-link')!;
+  await commit.updateComplete;
+  const external = commit.shadowRoot!.querySelector<HTMLAnchorElement>('a')!;
+  expect(external.getAttribute('href')).toBe('https://github.com/acme/widget/commit/0123456789abcdef');
+  expect(external.target).toBe('_blank');
+  expect(external.rel).toBe('noopener noreferrer');
+  expect(external.querySelector('code')!.textContent).toBe('0123456');
+  expect(external.textContent).toContain('(opens in a new tab)');
+
+  const plain = second.querySelector<CommitLink>('pb-commit-link')!;
+  await plain.updateComplete;
+  expect(plain.shadowRoot!.querySelector('a')).toBeNull();
+  expect(plain.shadowRoot!.querySelector('code')!.textContent).toBe('0123456');
+
+  expect([...root.querySelectorAll<StatusPill>('pb-status-pill')].map(pill => pill.status)).toEqual(['FAIL', 'PASS']);
+});
+
+// Verifies REQ-0021.
+test('has an explicit empty state without table and sentinel', async () => {
+  page.mockResolvedValue([]);
+  const view = await mount();
+  const root = view.shadowRoot!;
+  expect(root.querySelector('pb-empty-state')!.getAttribute('message'))
+    .toBe('No attestations have been reported yet.');
+  expect(root.querySelector('pb-data-table, .sentinel')).toBeNull();
+});
+
+// Verifies REQ-0022.
+test('loads follow-up pages with the cursor until a short page ends the list', async () => {
+  page.mockResolvedValueOnce(Array.from({ length: 100 }, (_, i) => summary(1000 - i)));
+  const view = await mount();
+  expect(observers).toHaveLength(1);
+  expect(observers[0].options?.rootMargin).toBe('100% 0px');
+  expect(observers[0].observed.has(sentinel(view))).toBe(true);
+  expect(announcement(view)).toBe('100 attestations loaded.');
+  const lastOfFirst = 'id-0901';
+  expect(page.mock.calls).toHaveLength(1);
+
+  page.mockResolvedValueOnce(Array.from({ length: 100 }, (_, i) => summary(900 - i)));
+  await reach(view);
+  expect(page).toHaveBeenLastCalledWith({ before: lastOfFirst, limit: 100 }, expect.any(AbortSignal));
+  expect(await rowCount(view)).toBe(200);
+  expect(view.shadowRoot!.querySelector('.end')).toBeNull();
+  expect(announcement(view)).toBe('200 attestations loaded.');
+
+  page.mockResolvedValueOnce([summary(800), summary(799)]);
+  await reach(view);
+  expect(page).toHaveBeenLastCalledWith({ before: 'id-0801', limit: 100 }, expect.any(AbortSignal));
+  expect(await rowCount(view)).toBe(202);
+  expect(view.shadowRoot!.querySelector('.end')!.textContent).toBe('No older attestations exist.');
+  expect(announcement(view)).toBe('All 202 attestations loaded.');
+
+  observers[0].reach();
+  await view.updateComplete;
+  expect(page).toHaveBeenCalledTimes(3);
+  expect(new Set(hrefs(view)).size).toBe(202);
+  expect(hrefs(view)[0]).toBe('/attestations/id-1000');
+  expect(hrefs(view).at(-1)).toBe('/attestations/id-0799');
+});
+
+// Verifies REQ-0022.
+test('does not load more after a short first page and states that nothing older exists', async () => {
+  page.mockResolvedValue(range(1, 1));
+  const view = await mount();
+  expect(view.shadowRoot!.querySelector('.end')!.textContent).toBe('No older attestations exist.');
+  expect(announcement(view)).toBe('All 1 attestation loaded.');
+  observers[0].reach();
+  await view.updateComplete;
+  expect(page).toHaveBeenCalledTimes(1);
+});
+
+// Verifies REQ-0022.
+test('shows rows that arrive twice once and keeps their order', async () => {
+  const firstPage = Array.from({ length: 100 }, (_, i) => summary(500 - i));
+  page.mockResolvedValueOnce(firstPage);
+  const view = await mount();
+  page.mockResolvedValueOnce([summary(401), summary(400), ...Array.from({ length: 98 }, (_, i) => summary(399 - i))]);
+  await reach(view);
+  expect(await rowCount(view)).toBe(199);
+  expect(new Set(hrefs(view)).size).toBe(199);
+  expect(hrefs(view).slice(98, 101)).toEqual(['/attestations/id-0402', '/attestations/id-0401', '/attestations/id-0400']);
+  expect(page).toHaveBeenLastCalledWith({ before: 'id-0401', limit: 100 }, expect.any(AbortSignal));
+});
+
+// Verifies REQ-0022.
+test('stops when a full page adds no new row instead of asking for it again', async () => {
+  const firstPage = Array.from({ length: 100 }, (_, i) => summary(500 - i));
+  page.mockResolvedValueOnce(firstPage);
+  const view = await mount();
+  page.mockResolvedValueOnce(firstPage);
+  await reach(view);
+  expect(await rowCount(view)).toBe(100);
+  expect(view.shadowRoot!.querySelector('.end')).not.toBeNull();
+  observers[0].reach();
+  await view.updateComplete;
+  expect(page).toHaveBeenCalledTimes(2);
+});
+
+// Verifies REQ-0022.
+test('loads one page at a time and checks the sentinel again after each page', async () => {
+  page.mockResolvedValueOnce(Array.from({ length: 100 }, (_, i) => summary(900 - i)));
+  const view = await mount();
+  let complete!: (summaries: Summary[]) => void;
+  page.mockReturnValueOnce(new Promise<Summary[]>(resolve => { complete = resolve; }));
+  observers[0].reach();
+  await vi.waitFor(() => expect(view.shadowRoot!.querySelector('[role=status]:not(.assistive)')?.textContent)
+    .toBe('Loading older attestations…'));
+  observers[0].reach();
+  expect(page).toHaveBeenCalledTimes(2);
+  expect(announcement(view)).toBe('');
+  const rows = await rowCount(view);
+
+  complete([summary(800)]);
+  await vi.waitFor(() => expect(view.shadowRoot!.querySelector('.end')).not.toBeNull());
+  expect(await rowCount(view)).toBe(rows + 1);
+  expect(observers[0].observed.has(sentinel(view))).toBe(true);
+});
+
+// Verifies REQ-0022.
+test('keeps loaded rows on a failed later page, offers an inline retry and continues', async () => {
+  page.mockResolvedValueOnce(Array.from({ length: 100 }, (_, i) => summary(900 - i)));
+  const view = await mount();
+  page.mockRejectedValueOnce(new ApiError('ledger_unavailable'));
+  observers[0].reach();
+  await vi.waitFor(() => expect(view.shadowRoot!.querySelector('pb-error-state')).not.toBeNull());
+  const error = view.shadowRoot!.querySelector<ErrorState>('pb-error-state')!;
+  await error.updateComplete;
+  expect(error.heading).toBe('Older attestations unavailable');
+  expect(await rowCount(view)).toBe(100);
+  expect(view.shadowRoot!.querySelector('[role=status]:not(.assistive)')).toBeNull();
+  expect(announcement(view)).toBe('');
+
+  observers[0].reach();
+  await view.updateComplete;
+  expect(page).toHaveBeenCalledTimes(2);
+
+  page.mockResolvedValueOnce([summary(800)]);
+  error.shadowRoot!.querySelector('button')!.click();
+  await vi.waitFor(() => expect(view.shadowRoot!.querySelector('.end')).not.toBeNull());
+  expect(view.shadowRoot!.querySelector('pb-error-state')).toBeNull();
+  expect(await rowCount(view)).toBe(101);
+  expect(page).toHaveBeenLastCalledWith({ before: 'id-0801', limit: 100 }, expect.any(AbortSignal));
+});
+
+// Verifies REQ-0003.
+test('shows the existing error state for a failed first page and retries it', async () => {
+  page.mockRejectedValueOnce(new ApiError('ledger_unavailable')).mockResolvedValueOnce(range(1, 2));
+  const view = await mount();
+  const error = view.shadowRoot!.querySelector<ErrorState>('pb-error-state')!;
+  await error.updateComplete;
+  expect(error.heading).toBe('Ledger unavailable');
+  expect(view.shadowRoot!.querySelector('.sentinel, pb-data-table')).toBeNull();
+
+  error.shadowRoot!.querySelector('button')!.click();
+  await vi.waitFor(() => expect(view.shadowRoot!.querySelector('pb-data-table')).not.toBeNull());
+  expect(await rowCount(view)).toBe(2);
+  expect(view.shadowRoot!.activeElement).toBe(view.shadowRoot!.querySelector('h1'));
+});
+
+// Verifies REQ-0022.
+test('abandons a pending page when the view is removed', async () => {
+  page.mockResolvedValueOnce(Array.from({ length: 100 }, (_, i) => summary(900 - i)));
+  const view = await mount();
+  page.mockReturnValueOnce(new Promise(() => {}));
+  observers[0].reach();
+  await vi.waitFor(() => expect(page).toHaveBeenCalledTimes(2));
+  view.remove();
+  expect(page.mock.calls[1][1].aborted).toBe(true);
+  expect(observers[0].observed.size).toBe(0);
+});

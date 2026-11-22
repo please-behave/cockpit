@@ -1,0 +1,191 @@
+import { css, html, nothing, type CSSResult } from 'lit';
+import { attestationPage, type Summary } from '../api/client';
+import type { DataTableColumn } from '../components/pb-data-table';
+import '../components/pb-commit-link';
+import '../components/pb-data-table';
+import '../components/pb-empty-state';
+import '../components/pb-error-state';
+import '../components/pb-short-name';
+import '../components/pb-status-pill';
+import '../components/pb-time';
+import { CockpitView, reportedEvidence } from './cockpit-view';
+
+const pageSize = 100;
+
+const columns: DataTableColumn[] = [
+  { label: 'Reported', mode: 'content' },
+  { label: 'Repository', mode: 'fill' },
+  { label: 'Commit', mode: 'content' },
+  { label: 'Overall', mode: 'content' },
+];
+
+function withoutDuplicates(summaries: readonly Summary[], known = new Set<string>()): Summary[] {
+  return summaries.filter(summary => {
+    if (known.has(summary.id)) return false;
+    known.add(summary.id);
+    return true;
+  });
+}
+
+export class HistoryView extends CockpitView<Summary[]> {
+  static override properties = {
+    loaded: { state: true },
+    ended: { state: true },
+    loadingMore: { state: true },
+    moreFailed: { state: true },
+  };
+
+  static override styles = [CockpitView.styles as CSSResult, css`
+    @layer components {
+      .sentinel {
+        block-size: 1px;
+      }
+
+      .end, pb-error-state {
+        margin-block-start: var(--space-4);
+      }
+
+      .end {
+        color: var(--text-muted);
+      }
+    }
+
+    @layer utilities {
+      .assistive {
+        position: absolute;
+        inline-size: 1px;
+        block-size: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
+    }
+  `];
+
+  declare loaded: Summary[];
+  declare ended: boolean;
+  declare loadingMore: boolean;
+  declare moreFailed: boolean;
+  private observer?: IntersectionObserver;
+  private more?: AbortController;
+  private watching?: Element;
+
+  constructor() {
+    super();
+    this.loaded = [];
+    this.ended = false;
+    this.loadingMore = false;
+    this.moreFailed = false;
+  }
+
+  override connectedCallback() {
+    super.connectedCallback();
+    this.observer = new IntersectionObserver(
+      entries => {
+        if (entries.some(entry => entry.isIntersecting)) void this.loadMore();
+      },
+      { rootMargin: '100% 0px' },
+    );
+  }
+
+  override disconnectedCallback() {
+    this.more?.abort();
+    this.more = undefined;
+    this.observer?.disconnect();
+    this.observer = undefined;
+    this.watching = undefined;
+    super.disconnectedCallback();
+  }
+
+  protected override async read(signal: AbortSignal) {
+    this.more?.abort();
+    this.more = undefined;
+    this.loadingMore = false;
+    this.moreFailed = false;
+    const page = await attestationPage({ limit: pageSize }, signal);
+    this.loaded = withoutDuplicates(page);
+    this.ended = page.length < pageSize;
+    return page;
+  }
+
+  protected override heading() {
+    return 'Attestations';
+  }
+
+  protected override content(page?: Summary[]) {
+    return html`
+      ${reportedEvidence}
+      ${page === undefined ? nothing : this.history()}
+    `;
+  }
+
+  protected override updated() {
+    super.updated();
+    // Observing again reports the sentinel's current position, which a page that
+    // did not push it out of range needs in order to load the next page.
+    const sentinel = this.renderRoot.querySelector('.sentinel');
+    if (this.watching) this.observer?.unobserve(this.watching);
+    this.watching = sentinel ?? undefined;
+    if (sentinel) this.observer?.observe(sentinel);
+  }
+
+  private async loadMore() {
+    const last = this.loaded.at(-1);
+    if (!last || this.ended || this.loadingMore || this.moreFailed) return;
+
+    const request = new AbortController();
+    this.more = request;
+    this.loadingMore = true;
+    try {
+      const page = await attestationPage({ before: last.id, limit: pageSize }, request.signal);
+      const fresh = withoutDuplicates(page, new Set(this.loaded.map(summary => summary.id)));
+      this.loaded = [...this.loaded, ...fresh];
+      // A full page without a new row would ask for the same page again.
+      this.ended = page.length < pageSize || fresh.length === 0;
+    } catch {
+      if (request.signal.aborted) return;
+      this.moreFailed = true;
+    }
+    this.loadingMore = false;
+  }
+
+  private retryMore() {
+    this.moreFailed = false;
+    void this.loadMore();
+  }
+
+  private history() {
+    if (this.loaded.length === 0) {
+      return html`<pb-empty-state heading="No attestations"
+        message="No attestations have been reported yet."></pb-empty-state>`;
+    }
+
+    const rows = this.loaded.map(summary => ({
+      key: summary.id,
+      cells: [
+        html`<pb-time .value=${summary.received_at}></pb-time>`,
+        html`<a data-route href=${`/attestations/${encodeURIComponent(summary.id)}`}>
+          <pb-short-name .value=${summary.repository}></pb-short-name></a>`,
+        html`<pb-commit-link .repository=${summary.repository} .commit=${summary.commit}></pb-commit-link>`,
+        html`<pb-status-pill .status=${summary.overall}></pb-status-pill>`,
+      ],
+    }));
+    const count = `${this.loaded.length} ${this.loaded.length === 1 ? 'attestation' : 'attestations'}`;
+
+    return html`
+      <pb-data-table label="Attestations" .columns=${columns} .rows=${rows}></pb-data-table>
+      <div class="sentinel"></div>
+      ${this.loadingMore ? html`<p role="status">Loading older attestations…</p>` : nothing}
+      ${this.moreFailed
+        ? html`<pb-error-state heading="Older attestations unavailable"
+          message="Cockpit could not load older attestations." retryable
+          @retry=${this.retryMore}></pb-error-state>`
+        : nothing}
+      ${this.ended ? html`<p class="end">No older attestations exist.</p>` : nothing}
+      <p class="assistive" role="status">${this.loadingMore || this.moreFailed ? nothing
+        : this.ended ? `All ${count} loaded.` : `${count} loaded.`}</p>
+    `;
+  }
+}
+
+customElements.define('pb-history', HistoryView);

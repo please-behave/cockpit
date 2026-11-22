@@ -1,20 +1,23 @@
 import { afterEach, expect, test, vi } from 'vitest';
-import { getAttestation, latestAttestations } from '../api/client';
+import { attestationPage, getAttestation, latestAttestations } from '../api/client';
 import { CockpitApp } from './app';
 import type { DetailView } from '../views/detail';
 import type { DashboardView } from '../views/dashboard';
+import type { HistoryView } from '../views/history';
 import { CockpitAppShell } from './app-shell';
 
 vi.mock(import('../api/client'), async original => ({
   ...await original(),
   latestAttestations: vi.fn(async () => []),
   getAttestation: vi.fn(),
+  attestationPage: vi.fn(async () => []),
 }));
 
 afterEach(() => {
   document.body.replaceChildren();
   window.history.replaceState(null, '', '/');
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 // Verifies REQ-0015.
@@ -36,7 +39,8 @@ test('pb-app renders its content in the application shell', async () => {
   expect(root.querySelector('header source')?.getAttribute('srcset')).toContain('logo-dark.svg');
   expect(root.querySelector('header nav slot')?.getAttribute('name')).toBe('navigation');
   expect(root.querySelector('header slot[name="last-updated"]')).not.toBeNull();
-  expect(app.shadowRoot!.querySelector('a[slot=navigation]')?.textContent).toBe('Dashboard');
+  expect([...app.shadowRoot!.querySelectorAll('a[slot=navigation]')].map(link => [link.textContent, link.getAttribute('href')]))
+    .toEqual([['Dashboard', '/'], ['Attestations', '/attestations']]);
   expect(root.querySelector('header a')?.getAttribute('href')).toBe('/sign-out');
   expect(root.querySelector('main slot')).not.toBeNull();
 
@@ -75,4 +79,17 @@ test('mounts a deep link, disposes it on history navigation and focuses the next
   expect(window.location.pathname).toBe('/');
   expect(latestAttestations).toHaveBeenCalled();
   expect(dashboard.shadowRoot!.activeElement?.textContent).toBe('Dashboard');
+});
+
+// Verifies REQ-0021.
+test('mounts the history at its route', async () => {
+  vi.stubGlobal('IntersectionObserver', class { observe() {} unobserve() {} disconnect() {} });
+  window.history.replaceState(null, '', '/attestations');
+  const app = new CockpitApp();
+  document.body.append(app);
+  await app.updateComplete;
+  const history = app.shadowRoot!.querySelector<HistoryView>('pb-history')!;
+  await history.updateComplete;
+  expect(history.shadowRoot!.querySelector('h1')?.textContent).toBe('Attestations');
+  expect(attestationPage).toHaveBeenCalledWith({ limit: 100 }, expect.any(AbortSignal));
 });

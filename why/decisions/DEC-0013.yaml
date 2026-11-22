@@ -1,0 +1,14 @@
+id: DEC-0013
+name: Page the History by the Last Loaded Identifier
+context: >-
+  The history can hold more attestations than a viewer reads at once, and new
+  attestations arrive while the viewer scrolls. Page numbers would shift under
+  the viewer, and the list is not refreshed automatically.
+decision: >-
+  The history loads pages of 100 through the paged list read and uses the
+  identifier of the last loaded row as the cursor. A short page ends the list.
+  A full page that adds no new row also ends it, so that a ledger repeating a
+  page cannot cause endless requests.
+rationale: >-
+  The cursor is stable when attestations are added, and every attestation is
+  requested at most once.

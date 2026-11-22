@@ -76,8 +76,9 @@ execution-point combination, with a header counting the tiles that pass and
 those that do not. Sort the tiles by last attestation or by name. The sort
 choice is the `sort` query parameter. The dashboard refreshes every minute
 while the tab is visible. Select a repository to see the rules and outcomes
-for that attestation. If the ledger is unavailable, the view shows an error
-with a retry action.
+for that attestation. The **Attestations** page lists every attestation, newest
+first, and loads older ones in pages of 100 while you scroll. If the ledger
+is unavailable, the view shows an error with a retry action.
 
 Browser clients can use the [session-protected JSON read API](why/contracts/browser/latest.md).
 

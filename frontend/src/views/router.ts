@@ -1,10 +1,12 @@
 export type Route =
   | { view: 'dashboard' }
+  | { view: 'history' }
   | { view: 'detail'; id: string }
   | { view: 'not-found' };
 
 export function routeFor(path: string): Route {
   if (path === '/') return { view: 'dashboard' };
+  if (path === '/attestations') return { view: 'history' };
   const detail = /^\/attestations\/([^/]+)$/.exec(path);
   if (detail) {
     try {
