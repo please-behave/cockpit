@@ -62,25 +62,28 @@ test('has a loading state, then an explicit empty state without header and tiles
   await vi.waitFor(() => expect(root.querySelector('pb-empty-state')).not.toBeNull());
   expect(root.querySelector('pb-empty-state')!.getAttribute('message'))
     .toBe('No attestations have been reported yet.');
-  expect(root.querySelector('[role=status], .tiles, .header, fieldset')).toBeNull();
+  expect(root.querySelector('[role=status], .tiles, .summary, fieldset')).toBeNull();
 });
 
-test('states the overall state with text and icon for passing and failing tiles', async () => {
+test('states the overall state in a banner with text and icon for passing and failing tiles', async () => {
   latest.mockResolvedValue([
     summary('1', 'PASS', 'a/one'), summary('2', 'FAIL', 'a/two'),
     summary('3', 'ERROR', 'a/three'), summary('4', 'PASS', 'a/four'),
   ]);
   const view = await mount();
   const root = view.shadowRoot!;
-  expect(root.querySelector('h2')!.textContent).toBe('2 of 4 not passing');
-  const figures = [...root.querySelectorAll('.figure')];
-  expect(figures.map(figure => figure.textContent!.replace(/\s+/g, ' ').trim()))
-    .toEqual(['✓ 2 passing', '× 2 not passing']);
-  expect(figures.every(figure => figure.querySelector('[aria-hidden=true]'))).toBe(true);
+  const banner = root.querySelector('.banner')!;
+  expect(banner.querySelector('h2')!.textContent).toBe('2 not passing, 2 passing');
+  expect(banner.classList.contains('failed')).toBe(true);
+  expect(banner.querySelector('.icon')!.textContent).toBe('×');
+  expect(banner.querySelector('.icon')!.getAttribute('aria-hidden')).toBe('true');
+  expect(root.querySelector('.figure')).toBeNull();
 
   latest.mockResolvedValue([summary('1', 'PASS', 'a/one'), summary('2', 'PASS', 'a/two')]);
   await view.load();
   await vi.waitFor(() => expect(root.querySelector('h2')!.textContent).toBe('All 2 passing'));
+  expect(root.querySelector('.banner')!.classList.contains('passed')).toBe(true);
+  expect(root.querySelector('.banner .icon')!.textContent).toBe('✓');
 });
 
 test('arranges one tile per combination and shows execution points only for repeated repositories', async () => {

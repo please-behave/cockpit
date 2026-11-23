@@ -67,35 +67,49 @@ export class DashboardView extends CockpitView<Summary[]> {
 
   static override styles = [CockpitView.styles as CSSResult, css`
     @layer components {
-      h2 {
-        margin-block: 0;
-        font-size: var(--type-brand);
-        line-height: var(--line-heading);
-      }
-
-      .header {
+      .summary {
         display: flex;
         flex-wrap: wrap;
-        align-items: baseline;
-        gap: var(--space-2) var(--space-6);
+        align-items: center;
+        gap: var(--space-4);
         margin-block-end: var(--space-6);
       }
 
-      .figures, .tiles {
+      .banner {
+        display: flex;
+        flex: 1 1 20rem;
+        align-items: center;
+        gap: var(--space-4);
+        padding: var(--space-4) var(--space-6);
+        border: 1px solid var(--panel-border);
+        border-inline-start: 0.5rem solid var(--panel-border);
+        border-radius: var(--radius-panel);
+        background: var(--panel-surface);
+      }
+
+      .banner.passed { border-inline-start-color: var(--status-passed); color: var(--status-passed); }
+      .banner.failed { border-inline-start-color: var(--status-failed); color: var(--status-failed); }
+
+      .banner .icon {
+        font-size: var(--type-heading);
+        line-height: var(--line-heading);
+      }
+
+      .banner h2 {
+        margin-block: 0;
+        font-size: var(--type-heading);
+        line-height: var(--line-heading);
+        overflow-wrap: anywhere;
+      }
+
+      .tiles {
         margin: 0;
         padding: 0;
         list-style: none;
       }
 
-      .figures {
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--space-4);
-        font-weight: var(--weight-semibold);
-      }
-
       .sort {
-        margin: 0 0 var(--space-4);
+        margin: 0 0 0 auto;
         padding: 0;
         border: 0;
       }
@@ -119,9 +133,6 @@ export class DashboardView extends CockpitView<Summary[]> {
       .tiles > li {
         display: grid;
       }
-
-      .passed .figure, .figure.passed { color: var(--status-passed); }
-      .figure.failed { color: var(--status-failed); }
     }
   `];
 
@@ -192,9 +203,8 @@ export class DashboardView extends CockpitView<Summary[]> {
 
     const passing = summaries.filter(summary => summary.overall === 'PASS').length;
     const failing = summaries.length - passing;
-    const headline = failing === 0
-      ? `All ${summaries.length} passing`
-      : `${failing} of ${summaries.length} not passing`;
+    const passed = failing === 0;
+    const headline = passed ? `All ${summaries.length} passing` : `${failing} not passing, ${passing} passing`;
     const tilesPerRepository = new Map<string, number>();
     for (const { repository } of summaries) {
       tilesPerRepository.set(repository, (tilesPerRepository.get(repository) ?? 0) + 1);
@@ -202,18 +212,17 @@ export class DashboardView extends CockpitView<Summary[]> {
     const sorted = [...summaries].sort(this.sort === 'name' ? compareByName : compareByTime);
 
     return html`
-      <div class="header">
-        <h2>${headline}</h2>
-        <ul class="figures">
-          <li class="figure passed"><span aria-hidden="true">✓</span> ${passing} passing</li>
-          <li class="figure failed"><span aria-hidden="true">×</span> ${failing} not passing</li>
-        </ul>
+      <div class="summary">
+        <div class="banner ${passed ? 'passed' : 'failed'}">
+          <span class="icon" aria-hidden="true">${passed ? '✓' : '×'}</span>
+          <h2>${headline}</h2>
+        </div>
+        <fieldset class="sort">
+          <legend>Sort by</legend>
+          ${sortOptions.map(option => html`<label><input type="radio" name="sort" .value=${option.value}
+            ?checked=${this.sort === option.value} @change=${this.changeSort}> ${option.label}</label>`)}
+        </fieldset>
       </div>
-      <fieldset class="sort">
-        <legend>Sort by</legend>
-        ${sortOptions.map(option => html`<label><input type="radio" name="sort" .value=${option.value}
-          ?checked=${this.sort === option.value} @change=${this.changeSort}> ${option.label}</label>`)}
-      </fieldset>
       <ul class="tiles" aria-label="Repositories">
         ${repeat(sorted, tileKey, summary => html`
           <li><pb-repository-tile .summary=${summary}
