@@ -134,7 +134,7 @@ test('pages the registered rules in ledger order and rejects invalid cursors', (
     `${fixtureTargets.rules}?${new URLSearchParams({ before: JSON.stringify(before) })}`;
   const next = body<RegisteredRule[]>(target(cursor));
   expect(id).toBe('sample-a');
-  expect(next.map(rule => rule.id)).toEqual(['sample-b', 'zebra']);
+  expect(next.map(rule => rule.id)).toEqual(['sample-b', 'versioned-review', 'zebra']);
   expect([...first, ...next]).toEqual(body<RegisteredRule[]>(`${fixtureTargets.rules}?limit=200`));
   const names = [...first, ...next].map(rule => (rule.name ?? rule.id).toLowerCase());
   expect(names).toEqual(names.toSorted());

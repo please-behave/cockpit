@@ -25,8 +25,9 @@ export class CockpitApp extends LitElement {
 
   /** Keep the view for the immediate return from its detail page. */
   private keep(path: string, origin?: Origin, traversal = false) {
-    const target = routeFor(path).view;
-    const current = this.path === undefined ? undefined : routeFor(this.path).view;
+    const target = routeFor(path);
+    const current = this.path === undefined ? undefined : routeFor(this.path);
+    if (target.view === 'rule' && current?.view === 'rule' && target.search === current.search) return;
     this.restored = undefined;
     if (traversal && this.kept?.path === path) {
       this.restored = this.kept.view;
@@ -36,9 +37,9 @@ export class CockpitApp extends LitElement {
     }
 
     let view: Element | null = null;
-    if (target === 'detail' && origin === 'history' && current === 'history') {
+    if (target.view === 'detail' && origin === 'history' && current?.view === 'history') {
       view = this.renderRoot.querySelector('pb-history');
-    } else if (target === 'rule' && typeof origin === 'object' && origin.attestationPath === this.path) {
+    } else if (target.view === 'rule' && typeof origin === 'object' && origin.attestationPath === this.path) {
       view = this.renderRoot.querySelector('pb-attestation');
     }
     this.kept = view ? { path: this.path, view, scroll: window.scrollY } : undefined;
@@ -67,17 +68,23 @@ export class CockpitApp extends LitElement {
       case 'detail': return this.restored ?? html`<pb-attestation .attestationId=${route.id}
         .origin=${typeof this.origin === 'string' ? this.origin : undefined}></pb-attestation>`;
       case 'rules': return html`<pb-rules .search=${route.search}></pb-rules>`;
-      case 'rule': return html`<pb-rule .search=${route.search}
+      case 'rule': return html`<pb-rule .search=${route.search} .requestedVersion=${route.version}
+        @version-change=${this.selectRuleVersion}
         .origin=${typeof this.origin === 'object' ? this.origin : undefined}></pb-rule>`;
       case 'not-found': return html`<pb-not-found></pb-not-found>`;
     }
   }
 
+  private selectRuleVersion(event: CustomEvent<string>) {
+    this.router.selectRuleVersion(event.detail);
+  }
+
   override render() {
     const route = routeFor(this.path);
+    const key = route.view === 'rule' ? `/rules/detail?${route.search}` : this.path;
     return html`
       <pb-app-shell .currentView=${route.view}>
-        ${keyed(this.path, this.view(route))}
+        ${keyed(key, this.view(route))}
       </pb-app-shell>
     `;
   }

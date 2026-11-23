@@ -1,4 +1,5 @@
 import { css, html, nothing, type CSSResult } from 'lit';
+import { live } from 'lit/directives/live.js';
 import { registeredVersions, type RegisteredVersion } from '../api/client';
 import '../components/pb-badge';
 import '../components/pb-fact-strip';
@@ -8,6 +9,8 @@ import '../components/pb-time';
 import '../components/pb-tooltip';
 import { CockpitView } from './cockpit-view';
 import { followHistoryBack, type AttestationOrigin } from './router';
+
+const optionTime = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 
 const knowledgeFields = {
   purpose: 'Purpose',
@@ -54,7 +57,9 @@ function knowledgeDocument(knowledge: Record<string, unknown> | undefined) {
 }
 
 export class RuleView extends CockpitView<RegisteredVersion[]> {
-  static override properties = { search: { attribute: false }, origin: { attribute: false } };
+  static override properties = {
+    search: { attribute: false }, requestedVersion: { attribute: false }, origin: { attribute: false },
+  };
   static override styles = [CockpitView.styles as CSSResult, css`
     @layer components {
       pb-panel {
@@ -101,6 +106,24 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
       .introduction { overflow-wrap: anywhere; }
       pb-fact-strip { margin-block-start: var(--space-4); }
 
+      .version-field {
+        display: flex;
+        flex-direction: column;
+        align-items: start;
+        gap: var(--space-1);
+      }
+
+      .version-field select {
+        max-inline-size: 100%;
+        min-block-size: 2.75rem;
+        padding: var(--space-1) var(--space-2);
+        border: 1px solid var(--panel-border);
+        border-radius: var(--radius-control);
+        background: var(--surface);
+        color: var(--text);
+        font: inherit;
+      }
+
       .identity {
         display: flex;
         flex-wrap: wrap;
@@ -119,30 +142,30 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
   `];
 
   declare search: string;
+  declare requestedVersion: string | null;
   declare origin?: AttestationOrigin;
   private positioned = false;
 
-  private get requestedVersion() {
-    return new URLSearchParams(this.search).get('version');
+  private selection(versions?: RegisteredVersion[]) {
+    return versions?.find(version => version.version === this.requestedVersion) ?? versions?.at(-1);
   }
 
   protected override read(signal: AbortSignal) {
-    const identity = new URLSearchParams(this.search);
-    identity.delete('version');
-    return registeredVersions(identity, signal);
+    return registeredVersions(new URLSearchParams(this.search), signal);
   }
 
   protected override heading(versions?: RegisteredVersion[]) {
-    const latest = versions?.at(-1);
-    return latest ? latest.name || latest.id : 'Registered rule';
+    const selected = this.selection(versions);
+    return selected ? selected.name || selected.id : 'Registered rule';
   }
 
   protected override updated() {
     super.updated();
     if (this.positioned) return;
-    const target = this.renderRoot.querySelector<HTMLElement>('[data-requested-version]');
+    const target = this.renderRoot.querySelector<HTMLElement>('article h2');
     if (!target) return;
     this.positioned = true;
+    if (!target.hasAttribute('data-requested-version')) return;
     // The view's initial heading focus runs when the update completes.
     void this.updateComplete.then(() => {
       if (!target.isConnected) return;
@@ -152,39 +175,61 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
   }
 
   protected override content(versions?: RegisteredVersion[]) {
+    const selected = this.selection(versions);
     const latest = versions?.at(-1);
     const requested = this.requestedVersion;
     return html`
-      ${latest ? this.summary(latest) : nothing}
+      ${selected ? this.summary(selected) : nothing}
       <p>${this.origin
         ? html`<a href=${this.origin.attestationPath} @click=${followHistoryBack}>Back to attestation</a>`
         : html`<a data-route href="/rules">Back to registered rules</a>`}</p>
-      ${latest ? html`
-        ${requested !== null && !versions?.some(version => version.version === requested)
+      ${selected && versions ? html`
+        ${requested !== null && selected.version !== requested
           ? html`<p>Version <code>${requested}</code> is unavailable.</p>` : nothing}
-        ${versions?.slice().reverse().map(version => this.version(version, requested, version === latest))}
+        ${versions.length > 1 ? this.selector(versions, selected) : nothing}
+        ${this.version(selected, requested, selected === latest)}
       ` : nothing}
     `;
   }
 
-  private summary(latest: RegisteredVersion) {
+  private selector(versions: RegisteredVersion[], selected: RegisteredVersion) {
+    const latest = versions.at(-1);
+    return html`<label class="version-field">
+      Version
+      <select @change=${this.changeVersion}>
+        ${versions.slice().reverse().map(version => {
+          const date = new Date(version.registered_at);
+          const time = Number.isNaN(date.getTime()) ? version.registered_at : optionTime.format(date);
+          const label = `${version.version} · ${time}${version === latest ? ' · Latest' : ''}`;
+          return html`<option value=${version.version} .selected=${live(version === selected)}>${label}</option>`;
+        })}
+      </select>
+    </label>`;
+  }
+
+  private changeVersion(event: Event) {
+    const select = event.currentTarget as HTMLSelectElement;
+    this.dispatchEvent(new CustomEvent('version-change', { detail: select.value }));
+  }
+
+  private summary(version: RegisteredVersion) {
     const facts = [
-      { term: 'Kind', description: html`<pb-badge>${latest.kind}</pb-badge>` },
+      { term: 'Kind', description: html`<pb-badge>${version.kind}</pb-badge>` },
     ];
-    if (latest.kind === 'review') {
-      facts.push({ term: 'Blocking', description: this.blockingBadge(latest.blocking) });
+    if (version.kind === 'review') {
+      facts.push({ term: 'Blocking', description: this.blockingBadge(version.blocking) });
     }
-    facts.push({ term: 'Registered', description: html`<pb-time .value=${latest.registered_at}></pb-time>` });
+    facts.push({ term: 'Registered', description: html`<pb-time .value=${version.registered_at}></pb-time>` });
 
     return html`
-      ${latest.description ? html`<p class="introduction plain-text">${latest.description}</p>` : nothing}
+      ${version.description ? html`<p class="introduction plain-text">${version.description}</p>` : nothing}
       <pb-fact-strip .items=${facts}></pb-fact-strip>
       <dl class="identity">
         <div><dt>Repository</dt><dd>
-          <pb-tooltip hint .description=${latest.source}><code>${shortName(latest.source)}</code></pb-tooltip>
+          <pb-tooltip hint .description=${version.source}><code>${shortName(version.source)}</code></pb-tooltip>
         </dd></div>
-        <div><dt>Path</dt><dd><code>${latest.path}</code></dd></div>
-        <div><dt>Rule ID</dt><dd><code>${latest.id}</code></dd></div>
+        <div><dt>Path</dt><dd><code>${version.path}</code></dd></div>
+        <div><dt>Rule ID</dt><dd><code>${version.id}</code></dd></div>
       </dl>
     `;
   }

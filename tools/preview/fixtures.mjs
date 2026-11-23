@@ -52,6 +52,13 @@ const rules = [
       references: [`<a href="javascript:alert(1)">${markup}</a>`],
     },
   }),
+  rule('review', 'reviews/versioned', 'versioned-review', ['1.0', '1.2', '2.0'], {
+    name: 'Versioned review',
+    description: 'Review the scope of the change.',
+    prompt: `Does the change match its stated scope?\nTreat ${markup} as plain text.`,
+    blocking: true,
+    knowledge: { purpose: 'Keep the change within its intended scope.' },
+  }),
   rule('check', 'checks/sample', 'sample-b', ['1.0'], { name: 'Tie at page boundary' }),
   rule('check', 'checks/sample', 'sample-a', ['1.0', '2.0'], { name: 'tie at page boundary' }),
   rule('check', 'checks/sample', 'zebra', ['1.0'], { name: 'Zebra' }),

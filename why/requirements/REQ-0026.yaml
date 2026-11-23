@@ -8,17 +8,22 @@ description: >-
   text badge, and any description. The kind column stays on one line at its
   natural width. The description takes the remaining width and wraps without
   truncation. The table scrolls horizontally when necessary. Its detail page
-  uses CON-0005. It opens with the latest registered name or local ID as
+  uses CON-0005. It uses the selected version's registered name or local ID as
   the headline, its description as an introduction when present, and a
   fact strip with Kind, Blocking for reviews, and Registered, in that
   order. Beneath the strip, three muted, labeled fields show Repository,
   Path and Rule ID and wrap on narrow screens. Repository shows the short
-  name and exposes the full name in a tooltip. The detail displays all
-  registered versions from greatest to
-  smallest in numeric version order, each in a separate panel. The newest
-  version has a Latest badge and an accent stripe. Each version shows its
-  kind as a text badge, its description and registration time, and, for a
-  review, its effective blocking value as a text badge. A review prompt has
+  name and exposes the full name in a tooltip. The detail shows one version in a
+  panel and defaults to the newest. When several versions exist, a native
+  keyboard-operable dropdown named Version lists them in descending numeric
+  order with their registration times and marks the newest as Latest. The
+  version query parameter selects the version on open. Changing the selection
+  replaces the current history entry and preserves its origin. If the requested
+  version is unavailable, the view shows a notice and displays the newest.
+  The newest version's panel has a Latest badge and an accent stripe. The
+  selected version shows its kind as a text badge, its description and
+  registration time, and, for a review, its effective blocking value as a text
+  badge. A review prompt has
   its own block and preserves line breaks. The detail displays
   known knowledge fields including purpose, problem, value, conditions and
   their reasons, success criteria, out of scope, limitations, placement and

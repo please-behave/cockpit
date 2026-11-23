@@ -121,6 +121,40 @@ test.each([
   }
 });
 
+// Verifies REQ-0026.
+test('replaces the rule version in history and keeps the attestation as the Back destination', async () => {
+  const from = '/attestations/id';
+  window.history.replaceState(null, '', from);
+  vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+  const host = document.createElement('div');
+  const link = document.createElement('a');
+  link.href = rule;
+  link.setAttribute('data-route', '');
+  host.append(link);
+  const navigate = vi.fn();
+  const router = new Router(host, navigate);
+  router.connect();
+
+  try {
+    link.click();
+    const length = window.history.length;
+    router.selectRuleVersion('2.0');
+    const selected = rule.replace('version=1.0', 'version=2.0');
+    expect(window.history.length).toBe(length);
+    expect(navigate).toHaveBeenLastCalledWith(selected, { attestationPath: from }, false);
+    expect(routeFor(selected)).toEqual({
+      view: 'rule', search: 'source=example&path=checks%2Fexample&id=example', version: '2.0',
+    });
+
+    const back = new Promise<void>(resolve => window.addEventListener('popstate', () => resolve(), { once: true }));
+    window.history.back();
+    await back;
+    expect(navigate).toHaveBeenLastCalledWith(from, undefined, true);
+  } finally {
+    router.disconnect();
+  }
+});
+
 test.each([
   ['/attestations/first', '/attestations/second'],
   [rule, '/rules'],

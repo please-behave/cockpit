@@ -5,7 +5,7 @@ export type Route =
   | { view: 'history' }
   | { view: 'detail'; id: string }
   | { view: 'rules'; search: string }
-  | { view: 'rule'; search: string }
+  | { view: 'rule'; search: string; version: string | null }
   | { view: 'not-found' };
 
 export type AttestationOrigin = { attestationPath: string };
@@ -36,7 +36,12 @@ export function routeFor(location: string): Route {
   if (path === '/') return { view: 'dashboard' };
   if (path === '/attestations') return { view: 'history' };
   if (path === '/rules') return { view: 'rules', search };
-  if (path === '/rules/detail') return { view: 'rule', search };
+  if (path === '/rules/detail') {
+    const identity = new URLSearchParams(search);
+    const version = identity.get('version');
+    identity.delete('version');
+    return { view: 'rule', search: identity.toString(), version };
+  }
   const detail = /^\/attestations\/([^/]+)$/.exec(path);
   if (detail) {
     try {
@@ -70,6 +75,13 @@ export class Router {
   disconnect() {
     this.host.removeEventListener('click', this.click);
     window.removeEventListener('popstate', this.traverse);
+  }
+
+  selectRuleVersion(version: string) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('version', version);
+    window.history.replaceState(window.history.state, '', url);
+    this.pop(false);
   }
 
   private readonly traverse = () => this.pop(true);
