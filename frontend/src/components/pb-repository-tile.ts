@@ -6,10 +6,6 @@ import './pb-relative-time';
 import { ownerName } from './pb-short-name';
 import './pb-status-pill';
 
-function plural(count: number, singular: string) {
-  return `${count} ${singular}${count === 1 ? '' : 's'}`;
-}
-
 export class RepositoryTile extends LitElement {
   static override properties = {
     summary: { attribute: false },
@@ -130,8 +126,7 @@ export class RepositoryTile extends LitElement {
           ? html`<a class="commit" href=${url} target="_blank" rel="noopener noreferrer"><code>${commit}</code>
             <span aria-hidden="true">↗</span><span class="assistive">(opens in a new tab)</span></a>`
           : html`<code>${commit}</code>`}</span>
-        <span class="meta">Reported <pb-relative-time .value=${summary.received_at}></pb-relative-time></span>
-        <span class="meta">${plural(summary.result_count, 'rule')} · ${plural(summary.warn_count, 'warning')} · ${summary.not_run_count} not run</span>
+        <span class="meta">Reported <pb-relative-time .value=${summary.received_at}></pb-relative-time> · ${summary.result_count} ${summary.result_count === 1 ? 'rule' : 'rules'}</span>
       </div>
     `;
   }

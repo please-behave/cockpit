@@ -37,7 +37,7 @@ afterEach(() => {
 });
 
 // Verifies REQ-0019.
-test('shows the status, owner, shortened name, execution points, counts and reported time', async () => {
+test('shows the status, owner, shortened name, execution points, reported time and rule count', async () => {
   vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-11-22T12:05:00Z') });
   const root = await mount(report, true);
   expect(root.querySelector('.tile')!.classList.contains('failed')).toBe(true);
@@ -51,12 +51,12 @@ test('shows the status, owner, shortened name, execution points, counts and repo
   await name.updateComplete;
   expect(name.shadowRoot!.querySelector('.short')!.textContent).toBe('widget');
   expect(root.textContent).toContain('deploy');
-  expect(root.textContent).toContain('1 rule · 1 warning · 0 not run');
+  expect(root.textContent).not.toMatch(/warning|not run/);
   expect(root.textContent).not.toContain('shown as reported');
 
   const relative = root.querySelector<RelativeTime>('pb-relative-time')!;
-  expect(relative.parentElement!.textContent!.trim()).toBe('Reported');
   await relative.updateComplete;
+  expect(relative.parentElement!.textContent!.replace(/\s+/g, ' ').trim()).toBe('Reported · 1 rule');
   const time = relative.shadowRoot!.querySelector('time')!;
   expect(time.textContent).toBe('5 minutes ago');
   expect(time.dateTime).toBe(report.received_at);
@@ -67,7 +67,8 @@ test('hides execution points by default and labels an empty combination when sho
   const root = await mount({ ...report, overall: 'PASS', warn_count: 2, not_run_count: 3, result_count: 7 });
   expect(root.querySelector('.tile')!.classList.contains('passed')).toBe(true);
   expect(root.textContent).not.toContain('deploy');
-  expect(root.textContent).toContain('7 rules · 2 warnings · 3 not run');
+  expect(root.textContent).toContain('· 7 rules');
+  expect(root.textContent).not.toMatch(/warning|not run/);
 
   const empty = await mount({ ...report, overall: 'ERROR', execution_points: [] }, true);
   expect(empty.querySelector('.tile')!.classList.contains('error')).toBe(true);

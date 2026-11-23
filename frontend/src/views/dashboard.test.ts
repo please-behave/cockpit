@@ -187,9 +187,9 @@ test('refreshes every 60 seconds while visible, keeps focus, sort and tiles, and
   link.focus();
   expect(latest).toHaveBeenCalledTimes(1);
 
-  latest.mockResolvedValue(reports.map(report => ({ ...report, id: `${report.id}2`, warn_count: 9 })));
+  latest.mockResolvedValue(reports.map(report => ({ ...report, id: `${report.id}2`, result_count: 9 })));
   await vi.advanceTimersByTimeAsync(60_000);
-  await vi.waitFor(() => expect(tiles(view)[0].shadowRoot!.textContent).toContain('9 warnings'));
+  await vi.waitFor(() => expect(tiles(view)[0].shadowRoot!.textContent).toContain('9 rules'));
   expect(latest).toHaveBeenCalledTimes(2);
   expect(tiles(view)[0]).toBe(firstTile);
   expect(view.shadowRoot!.activeElement).toBe(firstTile);

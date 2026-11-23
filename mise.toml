@@ -30,6 +30,11 @@ run = "cargo build --release --locked"
 description = "Build the frontend assets for embedding"
 run = "npm --prefix frontend run build"
 
+[tasks.preview]
+description = "Serve the built frontend with fixture data, without a ledger or sign-in"
+depends = ["frontend-build"]
+run = "node tools/preview/server.mjs"
+
 [tasks.format]
 description = "Format Rust and shell sources"
 run = ["cargo fmt --all", "git ls-files -z '*.sh' | xargs -0 -r shfmt -w"]

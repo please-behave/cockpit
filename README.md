@@ -36,6 +36,19 @@ mise exec -- npm --prefix frontend run typecheck
 mise exec -- npm --prefix frontend test
 ```
 
+Preview the frontend with fixture data, without a ledger, database, network
+or sign-in:
+
+```sh
+mise run preview
+```
+
+The task builds the frontend and serves it at `http://127.0.0.1:8090/` (set
+`PREVIEW_PORT` to change the port). `tools/preview/` answers the read API with
+fixtures for every view, including all outcomes, several execution points,
+verified and unverified results, rule versions, very long texts and markup.
+The preview is a developer tool and is not part of the executable.
+
 The executable serves the content-hashed bundles from `/assets/` and the Vite
 sign-in page from `/sign-in`. Signed-in viewers get the application shell on
 page routes, including direct links to individual attestations. The browser

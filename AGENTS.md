@@ -14,6 +14,11 @@
 - The sign-in token is discarded once the identity is known. Sessions are sealed cookies with an expiry. Never log session or token values.
 - Escape dynamic output through Rust or Lit templates. Use no inline scripts or styles. Load scripts, styles and images and make connections only from the same origin. Use adopted stylesheets for Shadow DOM styles.
 
+## Visual checks
+
+- Check visual changes in a real browser with browser automation against the fixture preview (`mise run preview`, see the README), not against a deployed cockpit. Cover the light and dark theme, 320 CSS pixels width, 200 percent zoom and visible keyboard focus. Keep screenshots out of commits.
+- Add a fixture for every new visual case to `tools/preview/fixtures.mjs`; the fixture test keeps the responses in the shape of the API client.
+
 ## GitHub issues
 
 - Product development normally starts from a GitHub issue. Each issue references the relevant Why artifacts by ID or path where they exist. Identify missing references and resolve missing or conflicting requirements before coding. Explicit direct instructions in this chat authorize focused work without an issue.

@@ -8,8 +8,10 @@ export default defineConfig({
       input: ['index.html', 'sign-in.html'],
     },
   },
+  server: { fs: { allow: ['..'] } },
   test: {
     environment: 'jsdom',
+    include: ['src/**/*.test.ts', '../tools/**/*.test.ts'],
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
