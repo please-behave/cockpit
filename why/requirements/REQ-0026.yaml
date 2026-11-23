@@ -3,8 +3,11 @@ name: Registered Rule Views
 description: >-
   The Rules navigation opens a paged list of registered rules from CON-0004.
   Each identity appears once with its name or local ID, latest version, kind
-  and any description. Its detail page uses CON-0005 and displays all
-  registered versions from greatest to smallest in numeric version order.
+  and any description. The latest version and kind columns stay on one line
+  at their natural width. The description wraps without truncation, and the
+  table scrolls horizontally when necessary. Its detail page uses CON-0005
+  and displays all registered versions from greatest to smallest in numeric
+  version order.
   Each version shows its kind, description, registration time and, for a
   review, its effective blocking value and prompt. The detail displays
   known knowledge fields including purpose, problem, value, conditions and
@@ -17,6 +20,7 @@ rationale: >-
 decisions:
   - DEC-0005
   - DEC-0006
+  - DEC-0009
   - why:DEC-0011
   - why:DEC-0012
   - why:DEC-0014

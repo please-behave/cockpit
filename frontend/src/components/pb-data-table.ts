@@ -10,6 +10,8 @@ export interface DataTableRow {
 
 export interface DataTableColumn {
   label: string;
+  /** Optional CSS part name for the column header and cells. */
+  part?: string;
   /**
    * `content` keeps the column on one line at its natural width. `fill` takes the
    * remaining width and truncates with an ellipsis. Omit it to let content wrap.
@@ -114,13 +116,14 @@ export class DataTable extends LitElement {
         <table>
           <caption id="caption">${this.label}</caption>
           <thead>
-            <tr>${columns.map(({ label, mode }) => html`<th scope="col" class=${mode ?? nothing}>${label}</th>`)}</tr>
+            <tr>${columns.map(({ label, mode, part }) => html`
+              <th scope="col" class=${mode ?? nothing} part=${part ?? nothing}>${label}</th>`)}</tr>
           </thead>
           <tbody>
             ${repeat(this.rows, row => row.key, row => html`
-              <tr>${columns.map(({ mode }, index) => index === this.rowHeaderColumn
-                ? html`<th scope="row" class=${mode ?? nothing}>${row.cells[index]}</th>`
-                : html`<td class=${mode ?? nothing}>${row.cells[index]}</td>`)}</tr>
+              <tr>${columns.map(({ mode, part }, index) => index === this.rowHeaderColumn
+                ? html`<th scope="row" class=${mode ?? nothing} part=${part ?? nothing}>${row.cells[index]}</th>`
+                : html`<td class=${mode ?? nothing} part=${part ?? nothing}>${row.cells[index]}</td>`)}</tr>
             `)}
           </tbody>
         </table>

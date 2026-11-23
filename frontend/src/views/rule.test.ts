@@ -45,6 +45,23 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+// Verifies REQ-0026.
+test('keeps the version and kind on one line and lets descriptions wrap', async () => {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json([summary])));
+  const app = open('/rules');
+  await app.updateComplete;
+  const view = app.shadowRoot!.querySelector<RulesView>('pb-rules')!;
+  const table = await tableFrom(view);
+
+  const headers = [...table.querySelectorAll('thead th')];
+  const cells = [...table.querySelectorAll('tbody tr > *')];
+  expect(headers.map(cell => cell.textContent)).toEqual(['Rule', 'Latest version', 'Kind', 'Description']);
+  expect(headers.map(cell => cell.className)).toEqual(['', 'content', 'content', '']);
+  expect(cells.map(cell => cell.className)).toEqual(['', 'content', 'content', '']);
+  expect(headers.map(cell => cell.getAttribute('part'))).toEqual(['rule-name', null, null, 'rule-description']);
+  expect(cells.map(cell => cell.getAttribute('part'))).toEqual(['rule-name', null, null, 'rule-description']);
+});
+
 // Verifies REQ-0004, REQ-0025 and REQ-0026.
 test('opens a registered rule and shows its complete history newest first with escaped text', async () => {
   const fetch = vi.fn()

@@ -1,14 +1,34 @@
-import { html, nothing } from 'lit';
+import { css, html, nothing, type CSSResult } from 'lit';
 import { registeredRules, rulePageSize, type RegisteredRule } from '../api/client';
 import '../components/pb-data-table';
+import type { DataTableColumn } from '../components/pb-data-table';
 import '../components/pb-empty-state';
 import { CockpitView } from './cockpit-view';
 import { rulePath } from './router';
 
-const columns = ['Rule', 'Latest version', 'Kind', 'Description'];
+const columns: readonly DataTableColumn[] = [
+  { label: 'Rule', part: 'rule-name' },
+  { label: 'Latest version', mode: 'content' },
+  { label: 'Kind', mode: 'content' },
+  { label: 'Description', part: 'rule-description' },
+];
 
 export class RulesView extends CockpitView<RegisteredRule[]> {
   static override properties = { search: { attribute: false } };
+
+  static override styles = [CockpitView.styles as CSSResult, css`
+    @layer components {
+      pb-data-table::part(rule-name) {
+        min-inline-size: 12ch;
+      }
+
+      pb-data-table::part(rule-description) {
+        inline-size: 100%;
+        min-inline-size: 24ch;
+      }
+    }
+  `];
+
   declare search: string;
 
   private get cursor() {
