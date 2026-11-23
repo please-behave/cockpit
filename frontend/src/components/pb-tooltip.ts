@@ -1,13 +1,14 @@
-import { css, html, LitElement } from 'lit';
+import { css, html, LitElement, nothing, type PropertyValues } from 'lit';
 
 const hoverDelay = 100;
 const viewportGutter = 8;
 
-/** A short description for a non-interactive label supplied through the default slot. */
+/** A short description for a label or an existing, already named control. */
 export class Tooltip extends LitElement {
   static override properties = {
     description: { type: String },
     hint: { type: Boolean },
+    externalTrigger: { type: Boolean, attribute: 'external-trigger', reflect: true },
   };
 
   static override styles = css`
@@ -15,6 +16,10 @@ export class Tooltip extends LitElement {
       :host {
         display: inline-block;
         max-inline-size: 100%;
+      }
+
+      :host([external-trigger]) {
+        display: inline;
       }
 
       button {
@@ -98,28 +103,39 @@ export class Tooltip extends LitElement {
 
   declare description: string;
   declare hint: boolean;
+  declare externalTrigger: boolean;
 
   private timer?: ReturnType<typeof setTimeout>;
   private listeners?: AbortController;
   private coordinates?: CSSStyleDeclaration;
+  private pointerOverTrigger = false;
 
   constructor() {
     super();
     this.description = '';
     this.hint = false;
+    this.externalTrigger = false;
   }
 
   override disconnectedCallback() {
+    this.pointerOverTrigger = false;
     this.dismiss();
     super.disconnectedCallback();
   }
 
+  protected override updated(changed: PropertyValues<this>) {
+    if (changed.has('description') && !this.popup.hidden) this.place();
+  }
+
   override render() {
     return html`
-      <span @pointerenter=${this.enter} @pointerleave=${this.leave}>
-        <button type="button" class=${this.hint ? 'hint' : ''} aria-describedby="description"
-          @focus=${this.focusTrigger} @blur=${this.dismiss} @click=${this.activate}><slot></slot></button>
-        <span id="description" role="tooltip" popover="manual" hidden>
+      <span @pointerenter=${this.enter} @pointermove=${this.move} @pointerleave=${this.leave}
+        @focusin=${this.focusTrigger} @focusout=${this.dismiss} @click=${this.activate}>
+        ${this.externalTrigger ? html`<slot></slot>` : html`
+          <button type="button" class=${this.hint ? 'hint' : ''} aria-describedby="description"><slot></slot></button>
+        `}
+        <span id="description" role="tooltip" popover="manual" hidden
+          aria-hidden=${this.externalTrigger ? 'true' : nothing}>
           <span class="surface">${this.description}</span>
         </span>
       </span>
@@ -127,22 +143,60 @@ export class Tooltip extends LitElement {
   }
 
   private enter(event: PointerEvent) {
-    if (event.pointerType === 'touch' || !this.popup.hidden || this.timer !== undefined) return;
+    if (event.pointerType === 'touch') return;
+    if (this.externalTrigger) this.move(event);
+    else this.scheduleHover();
+  }
+
+  private scheduleHover() {
+    if (!this.popup.hidden || this.timer !== undefined) return;
     this.listenForDismissal();
     this.timer = setTimeout(() => this.open(), hoverDelay);
   }
 
-  private leave(event: PointerEvent) {
-    if (event.pointerType !== 'touch' && !this.trigger.matches(':focus-visible')) {
-      this.dismiss();
+  private move(event: PointerEvent) {
+    if (!this.externalTrigger || event.pointerType === 'touch' || event.composedPath().includes(this.popup)) return;
+    // A stretched link can receive pointer events outside the visible label.
+    const over = this.overTrigger(event);
+    if (over === this.pointerOverTrigger) return;
+    if (over) {
+      this.pointerOverTrigger = true;
+      this.scheduleHover();
+    } else {
+      this.leave(event);
     }
   }
 
+  private overTrigger(event: PointerEvent) {
+    const { left, right, top, bottom } = this.trigger.getBoundingClientRect();
+    return event.clientX >= left && event.clientX <= right && event.clientY >= top && event.clientY <= bottom;
+  }
+
+  private leave(event: PointerEvent) {
+    if (event.pointerType === 'touch') return;
+    this.pointerOverTrigger = false;
+    if (!this.trigger.matches(':focus-visible')) this.dismiss();
+  }
+
   private focusTrigger() {
-    if (this.trigger.matches(':focus-visible')) this.open();
+    if (!this.trigger.matches(':focus-visible')) return;
+    if (this.externalTrigger) this.trigger.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+    this.open();
   }
 
   private activate(event: PointerEvent) {
+    if (!event.composedPath().includes(this.trigger)) return;
+    if (this.externalTrigger) {
+      if (event.pointerType !== 'touch' || !this.overTrigger(event)) return;
+      if (this.trigger instanceof HTMLAnchorElement && this.popup.hidden) {
+        // Let the first tap reveal the complete value and a second follow the link.
+        event.preventDefault();
+        this.open();
+      } else if (this.trigger instanceof HTMLButtonElement) {
+        this.open();
+      }
+      return;
+    }
     if (event.pointerType === 'touch' || event.detail === 0) {
       if (this.popup.hidden) this.open();
       else this.dismiss();
@@ -171,7 +225,9 @@ export class Tooltip extends LitElement {
     popup.hidden = false;
     popup.showPopover?.();
     this.place();
-    this.getRootNode().addEventListener('scroll', this.place, { signal, capture: true });
+    for (let root = this.getRootNode(); root instanceof ShadowRoot; root = root.host.getRootNode()) {
+      root.addEventListener('scroll', this.place, { signal, capture: true });
+    }
     const viewport = this.ownerDocument.defaultView!;
     viewport.addEventListener('scroll', this.place, { signal, capture: true });
     viewport.addEventListener('resize', this.place, { signal });
@@ -194,7 +250,9 @@ export class Tooltip extends LitElement {
   }
 
   private get trigger() {
-    return this.shadowRoot!.querySelector('button')!;
+    return this.externalTrigger
+      ? this.shadowRoot!.querySelector('slot')!.assignedElements()[0] as HTMLElement
+      : this.shadowRoot!.querySelector('button')!;
   }
 
   private place = () => {

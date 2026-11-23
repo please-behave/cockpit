@@ -1,6 +1,7 @@
-import { css, html, LitElement } from 'lit';
+import { css, html, LitElement, nothing } from 'lit';
 import { commitUrl } from '../commit-link';
 import { linkStyles } from '../styles/links';
+import './pb-tooltip';
 
 export class CommitLink extends LitElement {
   static override properties = {
@@ -46,11 +47,17 @@ export class CommitLink extends LitElement {
 
   override render() {
     const label = this.full ? this.commit : Array.from(this.commit).slice(0, 7).join('');
+    const shortened = label !== this.commit;
     const url = commitUrl(this.repository, this.commit);
-    if (!url) return html`<code>${label}</code>`;
+    if (!url) {
+      const code = html`<code>${label}</code>`;
+      return shortened ? html`<pb-tooltip .description=${this.commit}>${code}</pb-tooltip>` : code;
+    }
 
-    return html`<a href=${url} target="_blank" rel="noopener noreferrer"><code>${label}</code>
-      <span aria-hidden="true">↗</span><span class="assistive">(opens in a new tab)</span></a>`;
+    const link = html`<a href=${url} target="_blank" rel="noopener noreferrer"><code
+      aria-hidden=${shortened ? 'true' : nothing}>${label}</code>
+      <span aria-hidden="true">↗</span><span class="assistive">${shortened ? `${this.commit} ` : nothing}(opens in a new tab)</span></a>`;
+    return shortened ? html`<pb-tooltip external-trigger .description=${this.commit}>${link}</pb-tooltip>` : link;
   }
 }
 

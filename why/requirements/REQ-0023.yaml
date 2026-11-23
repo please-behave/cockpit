@@ -4,6 +4,7 @@ description: >-
   The application shell offers a square icon button next to the sign-out link.
   It shows a sun in dark mode and a moon in light mode. Its accessible name
   and tooltip state the action, `Switch to dark theme` or `Switch to light theme`.
+  The tooltip is available on hover and keyboard focus.
   The icon is hidden from assistive technology. The button has a hover state
   and visible keyboard focus and can be activated with the keyboard. Until
   the viewer chooses, the cockpit follows the system theme, including a change

@@ -35,7 +35,7 @@ export class ShortName extends LitElement {
   override render() {
     if (!this.value) return nothing;
 
-    return html`<span title=${this.value}><span aria-hidden="true" class="short">${shortName(this.value)}</span><span class="assistive">${this.value}</span></span>`;
+    return html`<span aria-hidden="true" class="short">${shortName(this.value)}</span><span class="assistive">${this.value}</span>`;
   }
 }
 

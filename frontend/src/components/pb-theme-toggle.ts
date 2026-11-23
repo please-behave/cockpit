@@ -1,5 +1,6 @@
 import { css, html, LitElement, svg } from 'lit';
 import { chooseTheme, effectiveTheme, watchSystemTheme, type Theme } from '../theme';
+import './pb-tooltip';
 
 const sun = svg`
   <circle cx="12" cy="12" r="4"/>
@@ -66,12 +67,14 @@ export class ThemeToggle extends LitElement {
     const dark = this.theme === 'dark';
     const action = dark ? 'Switch to light theme' : 'Switch to dark theme';
     return html`
-      <button type="button" aria-label=${action} title=${action} @click=${this.toggleTheme}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          ${dark ? sun : moon}
-        </svg>
-      </button>
+      <pb-tooltip external-trigger .description=${action}>
+        <button type="button" aria-label=${action} @click=${this.toggleTheme}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            ${dark ? sun : moon}
+          </svg>
+        </button>
+      </pb-tooltip>
     `;
   }
 }

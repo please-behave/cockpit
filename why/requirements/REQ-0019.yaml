@@ -11,8 +11,10 @@ description: >-
   ledger:CON-0002 returns, with the status, the repository owner above the
   shortened repository name, the first seven characters of the commit, the
   ledger receipt time labeled "Reported" and shown relative to now with the
-  exact time as tooltip, followed in the same line by the rule count. The tile
-  shows no counts of warnings or rules not run.
+  localized exact time in a tooltip and accessible description, followed in
+  the same line by the rule count. A tooltip and assistive technology
+  expose the full value of a shortened commit. The tile shows no counts of
+  warnings or rules not run.
   The shortened name links to the attestation, and the whole tile follows that
   link. Execution points are shown only for a repository with more than one
   tile. An empty ledger has an explicit empty state.

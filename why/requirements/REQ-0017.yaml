@@ -2,10 +2,12 @@ id: REQ-0017
 name: Shortened Names
 description: >-
   Where the cockpit shortens a name, it shows the part after the last slash,
-  or the whole value if there is none. The full value is available as a
-  tooltip and to assistive technology. The detail view shows the shortened
-  rule identifier in its rules table, while its heading keeps the full
-  repository name.
+  or the whole value if there is none. The full repository name is available
+  in a tooltip on its link and as the link's accessible name. Hover or
+  keyboard focus shows the tooltip. On touch, a tap on the shortened name
+  shows it and a second tap follows the link. The detail view shows the
+  shortened rule identifier in its rules table, while its heading keeps the
+  full repository name.
 rationale: >-
   Viewers recognize long names quickly without losing the exact reported
   value.

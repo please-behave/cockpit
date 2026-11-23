@@ -19,7 +19,7 @@ async function mount() {
 }
 
 function pointer(target: Element, type: string, pointerType = 'mouse') {
-  target.dispatchEvent(new PointerEvent(type, { pointerType }));
+  target.dispatchEvent(new PointerEvent(type, { pointerType, bubbles: type === 'click' }));
 }
 
 afterEach(() => {
@@ -91,6 +91,33 @@ test('toggles with a touch tap and dismisses on an outside press', async () => {
   pointer(trigger, 'click', 'touch');
   pointer(document.body, 'pointerdown', 'touch');
   expect(tooltip.hidden).toBe(true);
+});
+
+test('keeps a slotted link as the only control with keyboard and touch access', async () => {
+  const component = new Tooltip();
+  component.externalTrigger = true;
+  component.description = 'Full link name';
+  const link = document.createElement('a');
+  link.href = window.location.href;
+  link.textContent = 'Full link name';
+  component.append(link);
+  document.body.append(component);
+  await component.updateComplete;
+  const root = component.shadowRoot!;
+  const tooltip = root.querySelector<HTMLElement>('[role="tooltip"]')!;
+  expect(root.querySelector('button')).toBeNull();
+  expect(tooltip.getAttribute('aria-hidden')).toBe('true');
+  link.focus();
+  expect(tooltip.hidden).toBe(false);
+  link.blur();
+  expect(tooltip.hidden).toBe(true);
+
+  const tap = () => link.dispatchEvent(new PointerEvent('click', {
+    pointerType: 'touch', bubbles: true, composed: true, cancelable: true,
+  }));
+  expect(tap()).toBe(false);
+  expect(tooltip.hidden).toBe(false);
+  expect(tap()).toBe(true);
 });
 
 test('positions above a trigger near the bottom and clamps to the viewport edge', async () => {

@@ -23,7 +23,8 @@ async function mountToggle() {
 function expectAction(button: HTMLButtonElement, target: 'light' | 'dark') {
   const name = `Switch to ${target} theme`;
   expect(button.getAttribute('aria-label')).toBe(name);
-  expect(button.title).toBe(name);
+  expect(button.hasAttribute('title')).toBe(false);
+  expect(button.parentElement).toMatchObject({ localName: 'pb-tooltip', description: name, hint: false });
   const icon = button.querySelector('svg');
   expect(icon?.getAttribute('aria-hidden')).toBe('true');
   expect(icon?.querySelector('circle') !== null).toBe(target === 'light');

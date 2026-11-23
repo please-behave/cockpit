@@ -6,8 +6,10 @@ context: >-
 decision: >-
   Display valid timestamps in the browser's locale and default time zone with
   a medium date and a long time, including seconds and a time zone label.
-  Preserve the original value in the time element's datetime attribute and
-  tooltip. Show unparseable values as plain text.
+  Preserve the original value in the time element's datetime attribute.
+  When the visible text shows a relative time, make the localized exact
+  time available in the tooltip and as an accessible description. Show
+  unparseable values as plain text.
 rationale: >-
   Localized timestamps are familiar to viewers, while the original value
   retains the reported instant and precision.

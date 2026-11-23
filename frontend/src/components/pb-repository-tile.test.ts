@@ -1,11 +1,13 @@
 import { afterEach, expect, test, vi } from 'vitest';
 import type { Summary } from '../api/client';
 import { Router } from '../views/router';
+import type { CommitLink } from './pb-commit-link';
 import type { RelativeTime } from './pb-relative-time';
 import { RepositoryTile } from './pb-repository-tile';
 import type { ShortName } from './pb-short-name';
 import type { StatusPill } from './pb-status-pill';
 import { formatTime } from './pb-time';
+import type { Tooltip } from './pb-tooltip';
 
 const report: Summary = {
   id: 'first?query',
@@ -45,7 +47,10 @@ test('shows the status, owner, shortened name, execution points, reported time a
   const owner = root.querySelector('.owner')!;
   expect(owner.textContent).toBe('acme');
   const repository = root.querySelector<HTMLAnchorElement>('a.repository')!;
-  expect(owner.nextElementSibling).toBe(repository);
+  const nameTooltip = repository.parentElement as Tooltip;
+  expect(owner.nextElementSibling).toBe(nameTooltip);
+  expect(nameTooltip.description).toBe(report.repository);
+  expect(nameTooltip.hint).toBe(false);
   const name = repository.querySelector<ShortName>('pb-short-name')!;
   expect(name.value).toBe(report.repository);
   await name.updateComplete;
@@ -60,7 +65,9 @@ test('shows the status, owner, shortened name, execution points, reported time a
   const time = relative.shadowRoot!.querySelector('time')!;
   expect(time.textContent).toBe('5 minutes ago');
   expect(time.dateTime).toBe(report.received_at);
-  expect(time.title).toBe(formatTime(new Date(report.received_at)));
+  expect(time.hasAttribute('title')).toBe(false);
+  expect(relative.shadowRoot!.querySelector<Tooltip>('pb-tooltip')?.description)
+    .toBe(formatTime(new Date(report.received_at)));
 });
 
 test('hides execution points by default and labels an empty combination when shown', async () => {
@@ -80,7 +87,9 @@ test('routes the repository link through shadow DOM and leaves the commit link i
   document.body.append(host);
   const root = await mount(report, false, host);
   const repository = root.querySelector<HTMLAnchorElement>('a.repository')!;
-  const commit = root.querySelector<HTMLAnchorElement>('a.commit')!;
+  const component = root.querySelector<CommitLink>('pb-commit-link')!;
+  await component.updateComplete;
+  const commit = component.shadowRoot!.querySelector('a')!;
   expect(repository.getAttribute('href')).toBe('/attestations/first%3Fquery');
   expect(repository.hasAttribute('data-route')).toBe(true);
   expect(commit.getAttribute('href')).toBe('https://github.com/acme/widget/commit/0123456789abcdef');
@@ -119,8 +128,10 @@ test.each(['gitlab.com/acme/widget', 'github.com/acme/widget/<script>'])(
   'shows a plain commit for %s',
   async repository => {
     const root = await mount({ ...report, repository });
-    expect(root.querySelector('a.commit')).toBeNull();
-    expect(root.querySelector('code')!.textContent).toBe('0123456');
+    const commit = root.querySelector<CommitLink>('pb-commit-link')!;
+    await commit.updateComplete;
+    expect(commit.shadowRoot!.querySelector('a')).toBeNull();
+    expect(commit.shadowRoot!.querySelector('code')!.textContent).toBe('0123456');
   },
 );
 
@@ -138,7 +149,10 @@ test('renders reported markup as text and encodes the attestation identifier', a
   expect(root.querySelector('.owner')!.textContent).toBe(markup);
   expect(name.shadowRoot!.querySelector('.short')!.textContent).toBe(markup);
   expect(root.textContent).toContain(markup);
-  expect(root.querySelector('code')!.textContent).toBe('<b>text');
-  expect(root.querySelector('a.commit, b')).toBeNull();
+  const commit = root.querySelector<CommitLink>('pb-commit-link')!;
+  await commit.updateComplete;
+  expect(commit.shadowRoot!.querySelector('code')!.textContent).toBe('<b>text');
+  expect(commit.shadowRoot!.querySelector('a, b')).toBeNull();
+  expect(root.querySelector('b')).toBeNull();
   expect(name.shadowRoot!.querySelector('b')).toBeNull();
 });

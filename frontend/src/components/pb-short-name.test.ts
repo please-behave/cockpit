@@ -14,14 +14,14 @@ test.each([
 });
 
 // Verifies REQ-0017.
-test('shows the short name, carries the full value as tooltip and reads it to assistive technology', async () => {
+test('shows the short name and exposes the full value to assistive technology', async () => {
   const element = new ShortName();
   element.value = 'org/<img src=x>/name';
   document.body.append(element);
   await element.updateComplete;
 
   const root = element.shadowRoot!;
-  expect(root.querySelector('[title]')?.getAttribute('title')).toBe('org/<img src=x>/name');
+  expect(root.querySelector('[title]')).toBeNull();
   expect(root.querySelector('.short')?.textContent).toBe('name');
   expect(root.querySelector('.short')?.getAttribute('aria-hidden')).toBe('true');
   expect(root.querySelector('.assistive')?.textContent).toBe('org/<img src=x>/name');

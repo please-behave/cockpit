@@ -8,6 +8,7 @@ import '../components/pb-error-state';
 import '../components/pb-short-name';
 import '../components/pb-status-pill';
 import '../components/pb-time';
+import '../components/pb-tooltip';
 import { CockpitView } from './cockpit-view';
 
 const pageSize = 100;
@@ -160,8 +161,10 @@ export class HistoryView extends CockpitView<Summary[]> {
       key: summary.id,
       cells: [
         html`<pb-time .value=${summary.received_at}></pb-time>`,
-        html`<a data-route href=${`/attestations/${encodeURIComponent(summary.id)}`}>
-          <pb-short-name .value=${summary.repository}></pb-short-name></a>`,
+        html`<pb-tooltip external-trigger .description=${summary.repository}>
+          <a data-route href=${`/attestations/${encodeURIComponent(summary.id)}`}>
+            <pb-short-name .value=${summary.repository}></pb-short-name></a>
+        </pb-tooltip>`,
         html`<pb-commit-link .repository=${summary.repository} .commit=${summary.commit}></pb-commit-link>`,
         html`<pb-status-pill .status=${summary.overall}></pb-status-pill>`,
       ],

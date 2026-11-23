@@ -13,7 +13,7 @@ test('formats the instant in the viewer locale and time zone and retains the ori
 
   const element = time.shadowRoot!.querySelector('time')!;
   expect(element.dateTime).toBe(value);
-  expect(element.title).toBe(value);
+  expect(element.hasAttribute('title')).toBe(false);
   expect(element.textContent).toBe(new Intl.DateTimeFormat(undefined, {
     dateStyle: 'medium',
     timeStyle: 'long',

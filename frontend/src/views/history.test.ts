@@ -121,11 +121,14 @@ test('shows one row per attestation with its columns, links and tooltips', async
   const time = first.querySelector<CockpitTime>('pb-time')!;
   expect(time.value).toBe('2026-11-22T12:00:00Z');
   await time.updateComplete;
-  expect(time.shadowRoot!.querySelector('time')!.title).toBe('2026-11-22T12:00:00Z');
+  const timestamp = time.shadowRoot!.querySelector('time')!;
+  expect(timestamp.dateTime).toBe(report.received_at);
+  expect(timestamp.hasAttribute('title')).toBe(false);
 
   const link = first.querySelector<HTMLAnchorElement>('a[data-route]')!;
   expect(link.getAttribute('href')).toBe('/attestations/first%3Fquery');
   expect(link.querySelector<ShortName>('pb-short-name')!.value).toBe('github.com/acme/widget');
+  expect(link.parentElement).toMatchObject({ localName: 'pb-tooltip', description: report.repository });
 
   const commit = first.querySelector<CommitLink>('pb-commit-link')!;
   await commit.updateComplete;
