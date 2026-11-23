@@ -7,12 +7,16 @@ description: >-
   at their natural width. The description wraps without truncation, and the
   table scrolls horizontally when necessary. Its detail page uses CON-0005
   and displays all registered versions from greatest to smallest in numeric
-  version order.
-  Each version shows its kind, description, registration time and, for a
-  review, its effective blocking value and prompt. The detail displays
+  version order, each in a separate panel. The newest version has a Latest
+  badge and an accent stripe. Each version shows its kind as a text badge,
+  its description and registration time, and, for a review, its effective
+  blocking value as a text badge. A review prompt has its own block and
+  preserves line breaks. The detail displays
   known knowledge fields including purpose, problem, value, conditions and
   their reasons, success criteria, out of scope, limitations, placement and
-  references. It tolerates absent and unfamiliar fields and renders
+  references. On wide screens, small muted labels sit beside the knowledge
+  text. On narrow screens, labels sit above the text. The detail tolerates
+  absent and unfamiliar fields and renders
   registered text as escaped plain text in both themes.
   The rule detail links back to the attestation when opened from an
   attestation result. The router keeps the source address in the history

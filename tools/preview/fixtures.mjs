@@ -34,9 +34,13 @@ const rules = [
   rule('review', 'reviews/long', 'long-review', ['1.0', '1.1'], {
     name: 'Review with long texts',
     description: longText,
-    prompt: longText,
+    prompt: `${longText}\n${markup}`,
     blocking: false,
-    knowledge: { purpose: longText, conditions: [{ statement: longText, rationale: longText }] },
+    knowledge: {
+      purpose: longText,
+      conditions: [{ statement: longText, rationale: longText }, { statement: 'Allow conditions without a reason.' }],
+      future_field: { text: markup },
+    },
   }),
   rule('check', 'checks/markup', 'markup', ['1.0'], {
     name: `<b>${markup}</b>`,
