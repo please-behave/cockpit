@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import { CockpitAppShell } from './components/app-shell';
+import { ThemeToggle } from './components/pb-theme-toggle';
 import { applyStoredTheme, effectiveTheme } from './theme';
 
 function stubSystemTheme(dark: boolean) {
@@ -12,12 +12,22 @@ function stubSystemTheme(dark: boolean) {
   return listeners;
 }
 
-async function shell() {
-  const element = new CockpitAppShell();
+async function mountToggle() {
+  const element = new ThemeToggle();
   document.body.append(element);
   await element.updateComplete;
-  const button = element.shadowRoot!.querySelector<HTMLButtonElement>('button.theme-toggle')!;
+  const button = element.shadowRoot!.querySelector<HTMLButtonElement>('button')!;
   return { element, button };
+}
+
+function expectAction(button: HTMLButtonElement, target: 'light' | 'dark') {
+  const name = `Switch to ${target} theme`;
+  expect(button.getAttribute('aria-label')).toBe(name);
+  expect(button.title).toBe(name);
+  const icon = button.querySelector('svg');
+  expect(icon?.getAttribute('aria-hidden')).toBe('true');
+  expect(icon?.querySelector('circle') !== null).toBe(target === 'light');
+  expect(icon?.querySelector('path')).toBeTruthy();
 }
 
 afterEach(() => {
@@ -34,40 +44,48 @@ describe('theme choice', () => {
     const listeners = stubSystemTheme(true);
     applyStoredTheme();
     expect(document.documentElement.dataset.theme).toBeUndefined();
-    const { button } = await shell();
-    expect(button.textContent?.trim()).toBe('Switch to light theme');
+    const { button } = await mountToggle();
+    expectAction(button, 'light');
     expect(button.type).toBe('button');
     expect(listeners).toHaveLength(1);
   });
 
   test('reacts to a system change while no choice exists', async () => {
     const listeners = stubSystemTheme(false);
-    const { element, button } = await shell();
-    expect(button.textContent?.trim()).toBe('Switch to dark theme');
+    const { element, button } = await mountToggle();
+    expectAction(button, 'dark');
     vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: true, addEventListener() {}, removeEventListener() {} })));
     listeners[0]();
     await element.updateComplete;
-    expect(button.textContent?.trim()).toBe('Switch to light theme');
+    expectAction(button, 'light');
     element.remove();
     expect(listeners).toHaveLength(0);
   });
 
   test('a choice overrides the system theme and persists', async () => {
-    stubSystemTheme(true);
-    const { element, button } = await shell();
+    const listeners = stubSystemTheme(true);
+    const { element, button } = await mountToggle();
     button.click();
     await element.updateComplete;
     expect(document.documentElement.dataset.theme).toBe('light');
     expect(localStorage.getItem('cockpit-theme')).toBe('light');
-    expect(button.textContent?.trim()).toBe('Switch to dark theme');
+    expectAction(button, 'dark');
 
-    document.body.replaceChildren();
+    listeners[0]();
+    await element.updateComplete;
+    expectAction(button, 'dark');
+
+    element.remove();
     delete document.documentElement.dataset.theme;
     applyStoredTheme();
+    const reloaded = await mountToggle();
     expect(document.documentElement.dataset.theme).toBe('light');
     expect(effectiveTheme()).toBe('light');
-    button.click();
+    expectAction(reloaded.button, 'dark');
+    reloaded.button.click();
+    await reloaded.element.updateComplete;
     expect(localStorage.getItem('cockpit-theme')).toBe('dark');
+    expectAction(reloaded.button, 'light');
   });
 
   test('ignores an unknown stored value', () => {
@@ -83,15 +101,15 @@ describe('theme choice', () => {
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new DOMException('blocked'); });
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new DOMException('blocked'); });
     applyStoredTheme();
-    const { element, button } = await shell();
-    expect(button.textContent?.trim()).toBe('Switch to light theme');
+    const { element, button } = await mountToggle();
+    expectAction(button, 'light');
     button.click();
     await element.updateComplete;
     expect(document.documentElement.dataset.theme).toBe('light');
-    expect(button.textContent?.trim()).toBe('Switch to dark theme');
+    expectAction(button, 'dark');
     button.click();
     await element.updateComplete;
     expect(document.documentElement.dataset.theme).toBe('dark');
-    expect(button.textContent?.trim()).toBe('Switch to light theme');
+    expectAction(button, 'light');
   });
 });

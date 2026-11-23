@@ -2,9 +2,9 @@ import { css, html, LitElement } from 'lit';
 import logo from '../../brand/logo.svg';
 import logoDark from '../../brand/logo-dark.svg';
 import { linkStyles } from '../styles/links';
-import { chooseTheme, effectiveTheme, watchSystemTheme, type Theme } from '../theme';
 import type { Route } from '../views/router';
 import './pb-nav-tab';
+import './pb-theme-toggle';
 
 export class CockpitAppShell extends LitElement {
   static override styles = css`
@@ -77,19 +77,11 @@ export class CockpitAppShell extends LitElement {
         padding-inline: var(--space-2);
       }
 
-      .sign-out, .theme-toggle {
+      .sign-out {
         padding: var(--space-2);
       }
 
-      .theme-toggle {
-        border: 0;
-        background: var(--surface-raised);
-        color: inherit;
-        font: inherit;
-        cursor: pointer;
-      }
-
-      .theme-toggle:hover, .sign-out:hover {
+      .sign-out:hover {
         background: var(--surface-hover);
       }
 
@@ -127,33 +119,9 @@ export class CockpitAppShell extends LitElement {
   `;
 
   static override properties = {
-    theme: { state: true },
     currentView: { attribute: false },
   };
-  declare private theme: Theme;
   declare currentView: Route['view'];
-  private unwatchSystemTheme?: () => void;
-
-  constructor() {
-    super();
-    this.theme = effectiveTheme();
-  }
-
-  override connectedCallback() {
-    super.connectedCallback();
-    this.theme = effectiveTheme();
-    this.unwatchSystemTheme = watchSystemTheme(() => { this.theme = effectiveTheme(); });
-  }
-
-  override disconnectedCallback() {
-    this.unwatchSystemTheme?.();
-    super.disconnectedCallback();
-  }
-
-  private toggleTheme() {
-    chooseTheme(this.theme === 'dark' ? 'light' : 'dark');
-    this.theme = effectiveTheme();
-  }
 
   private skipToMain(event: MouseEvent) {
     event.preventDefault();
@@ -180,9 +148,7 @@ export class CockpitAppShell extends LitElement {
           </nav>
           <div class="actions">
             <slot name="last-updated"></slot>
-            <button class="theme-toggle" type="button" @click=${this.toggleTheme}>
-              ${this.theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
-            </button>
+            <pb-theme-toggle></pb-theme-toggle>
             <a class="sign-out" href="/sign-out">Sign out</a>
           </div>
         </div>

@@ -1,9 +1,11 @@
 id: REQ-0023
 name: Theme Choice
 description: >-
-  The application shell offers a button next to the sign-out link that switches
-  between the light and the dark theme. Its visible text and accessible name
-  state the action, `Switch to dark theme` or `Switch to light theme`. Until
+  The application shell offers a square icon button next to the sign-out link.
+  It shows a sun in dark mode and a moon in light mode. Its accessible name
+  and tooltip state the action, `Switch to dark theme` or `Switch to light theme`.
+  The icon is hidden from assistive technology. The button has a hover state
+  and visible keyboard focus and can be activated with the keyboard. Until
   the viewer chooses, the cockpit follows the system theme, including a change
   of it while the page is open. A choice overrides the system theme on the
   whole document and its Shadow DOM components, and it is remembered across
