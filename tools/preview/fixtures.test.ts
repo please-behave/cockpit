@@ -95,6 +95,9 @@ test('serves registered rules and their versions in the client shape', () => {
     expect(rule.scan.registrations).toBeGreaterThanOrEqual(rules.length);
   }
   expect(rules).toHaveLength(fixtureTargets.ruleDetails.length);
+  const longIdentity = rules.find(rule => rule.name === 'Review with long texts')!;
+  expect([longIdentity.source.split('/').at(-1), longIdentity.path, longIdentity.id])
+    .toSatisfy((fields: string[]) => fields.every(field => field.length > 70));
 
   let longest = 0;
   for (const target of fixtureTargets.ruleDetails) {

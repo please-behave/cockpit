@@ -1,8 +1,11 @@
 import { css, html, nothing, type CSSResult } from 'lit';
 import { registeredVersions, type RegisteredVersion } from '../api/client';
 import '../components/pb-badge';
+import '../components/pb-fact-strip';
 import '../components/pb-panel';
+import { shortName } from '../components/pb-short-name';
 import '../components/pb-time';
+import '../components/pb-tooltip';
 import { CockpitView } from './cockpit-view';
 import { followHistoryBack, type AttestationOrigin } from './router';
 
@@ -95,7 +98,23 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
         border-radius: var(--radius-control);
         background: var(--surface);
       }
-      .identity { overflow-wrap: anywhere; }
+      .introduction { overflow-wrap: anywhere; }
+      pb-fact-strip { margin-block-start: var(--space-4); }
+
+      .identity {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-3) var(--space-6);
+        color: var(--text-muted);
+        font-size: 0.875rem;
+        overflow-wrap: anywhere;
+      }
+
+      .identity > div {
+        flex: 1 1 10rem;
+        min-inline-size: 0;
+        margin: 0;
+      }
     }
   `];
 
@@ -136,16 +155,42 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
     const latest = versions?.at(-1);
     const requested = this.requestedVersion;
     return html`
+      ${latest ? this.summary(latest) : nothing}
       <p>${this.origin
         ? html`<a href=${this.origin.attestationPath} @click=${followHistoryBack}>Back to attestation</a>`
         : html`<a data-route href="/rules">Back to registered rules</a>`}</p>
       ${latest ? html`
-        <p class="identity"><code>${latest.source}</code> · <code>${latest.path}</code> · <code>${latest.id}</code></p>
         ${requested !== null && !versions?.some(version => version.version === requested)
           ? html`<p>Version <code>${requested}</code> is unavailable.</p>` : nothing}
         ${versions?.slice().reverse().map(version => this.version(version, requested, version === latest))}
       ` : nothing}
     `;
+  }
+
+  private summary(latest: RegisteredVersion) {
+    const facts = [
+      { term: 'Kind', description: html`<pb-badge>${latest.kind}</pb-badge>` },
+    ];
+    if (latest.kind === 'review') {
+      facts.push({ term: 'Blocking', description: this.blockingBadge(latest.blocking) });
+    }
+    facts.push({ term: 'Registered', description: html`<pb-time .value=${latest.registered_at}></pb-time>` });
+
+    return html`
+      ${latest.description ? html`<p class="introduction plain-text">${latest.description}</p>` : nothing}
+      <pb-fact-strip .items=${facts}></pb-fact-strip>
+      <dl class="identity">
+        <div><dt>Repository</dt><dd>
+          <pb-tooltip hint .description=${latest.source}><code>${shortName(latest.source)}</code></pb-tooltip>
+        </dd></div>
+        <div><dt>Path</dt><dd><code>${latest.path}</code></dd></div>
+        <div><dt>Rule ID</dt><dd><code>${latest.id}</code></dd></div>
+      </dl>
+    `;
+  }
+
+  private blockingBadge(blocking: boolean | undefined) {
+    return html`<pb-badge>${blocking ? 'Blocking' : 'Non-blocking'}</pb-badge>`;
   }
 
   private version(version: RegisteredVersion, requested: string | null, latest: boolean) {
@@ -162,7 +207,7 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
             <div><dt>Registered</dt><dd><pb-time .value=${version.registered_at}></pb-time></dd></div>
             ${version.description ? html`<div><dt>Description</dt><dd class="plain-text">${version.description}</dd></div>` : nothing}
             ${version.kind === 'review' ? html`
-              <div><dt>Blocking</dt><dd><pb-badge>${version.blocking ? 'Blocking' : 'Non-blocking'}</pb-badge></dd></div>
+              <div><dt>Blocking</dt><dd>${this.blockingBadge(version.blocking)}</dd></div>
               <div><dt>Prompt</dt><dd class="prompt plain-text">${version.prompt}</dd></div>
             ` : nothing}
           </dl>

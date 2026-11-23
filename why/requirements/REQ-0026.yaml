@@ -8,7 +8,13 @@ description: >-
   text badge, and any description. The kind column stays on one line at its
   natural width. The description takes the remaining width and wraps without
   truncation. The table scrolls horizontally when necessary. Its detail page
-  uses CON-0005 and displays all registered versions from greatest to
+  uses CON-0005. It opens with the latest registered name or local ID as
+  the headline, its description as an introduction when present, and a
+  fact strip with Kind, Blocking for reviews, and Registered, in that
+  order. Beneath the strip, three muted, labeled fields show Repository,
+  Path and Rule ID and wrap on narrow screens. Repository shows the short
+  name and exposes the full name in a tooltip. The detail displays all
+  registered versions from greatest to
   smallest in numeric version order, each in a separate panel. The newest
   version has a Latest badge and an accent stripe. Each version shows its
   kind as a text badge, its description and registration time, and, for a

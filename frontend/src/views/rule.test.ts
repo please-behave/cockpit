@@ -91,6 +91,19 @@ test('opens a registered rule and shows its complete history newest first with e
   await vi.waitFor(() => expect(root.querySelectorAll('article')).toHaveLength(2));
   expect(root.querySelector('h1')?.textContent).toBe(markup);
   expect(root.querySelector('h1')?.classList.contains('assistive')).toBe(false);
+  expect([...root.children].slice(0, 4).map(element => element.localName))
+    .toEqual(['h1', 'p', 'pb-fact-strip', 'dl']);
+  expect(root.querySelector('.introduction')?.textContent).toBe(markup);
+  const facts = root.querySelector('pb-fact-strip')!.shadowRoot!;
+  expect([...facts.querySelectorAll('dt')].map(term => term.textContent)).toEqual(['Kind', 'Blocking', 'Registered']);
+  expect([...facts.querySelectorAll('pb-badge')].map(badge => badge.textContent)).toEqual(['review', 'Non-blocking']);
+  expect(facts.querySelector('pb-time')?.shadowRoot?.querySelector('time')?.dateTime)
+    .toBe('2026-11-22T09:00:00Z');
+  expect([...root.querySelectorAll('.identity dt')].map(term =>
+    [term.textContent, term.nextElementSibling?.textContent?.trim()]))
+    .toEqual([['Repository', 'catalog+more'], ['Path', identity.path], ['Rule ID', identity.id]]);
+  expect(root.querySelector('.identity pb-tooltip')?.shadowRoot?.querySelector('[role=tooltip]')?.textContent?.trim())
+    .toBe(identity.source);
   expect([...root.querySelectorAll('h2')].map(heading => heading.textContent)).toEqual(['Version 1.10', 'Version 1.2']);
   const panels = [...root.querySelectorAll('pb-panel')];
   expect(panels.map(panel => panel.hasAttribute('accent'))).toEqual([true, false]);
@@ -117,6 +130,18 @@ test('opens a registered rule and shows its complete history newest first with e
     '/v0/rules?limit=100',
     '/v0/rules/detail?source=github.com%2Fteam%2Fcatalog%2Bmore&path=.please%2Fchecks%2Fshell%26tools&id=example',
   ]);
+});
+
+// Verifies REQ-0026.
+test('uses the local ID and omits the introduction and blocking fact for an unnamed check without a description', async () => {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json([{ ...history[0], description: undefined }])));
+  const app = open(`/rules/detail?${new URLSearchParams(identity)}`);
+  await app.updateComplete;
+  const root = app.shadowRoot!.querySelector<RuleView>('pb-rule')!.shadowRoot!;
+  await vi.waitFor(() => expect(root.querySelector('h1')?.textContent).toBe(identity.id));
+  expect(root.querySelector('.introduction')).toBeNull();
+  const facts = root.querySelector('pb-fact-strip')!.shadowRoot!;
+  expect([...facts.querySelectorAll('dt')].map(term => term.textContent)).toEqual(['Kind', 'Registered']);
 });
 
 // Verifies REQ-0025 and REQ-0026.

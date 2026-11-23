@@ -31,7 +31,8 @@ const rules = [
     name: `Rule with a very long name: ${longText}`,
     description: longText,
   }),
-  rule('review', 'reviews/long', 'long-review', ['1.0', '1.1'], {
+  rule('review', `reviews/${longName}`, `review-${longName}`, ['1.0', '1.1'], {
+    source: `github.com/${longOwner}/${longName}`,
     name: 'Review with long texts',
     description: longText,
     prompt: `${longText}\n${markup}`,
