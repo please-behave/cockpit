@@ -1,4 +1,5 @@
 id = "frontend-colors"
+version = "1.0"
 name = "Frontend color tokens"
 description = "Frontend colors use layered tokens with accessible contrast"
 enabled = true

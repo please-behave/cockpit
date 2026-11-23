@@ -1,4 +1,5 @@
 id = "frontend-safe-dom"
+version = "1.0"
 name = "Frontend DOM safety"
 description = "Frontend code avoids raw HTML insertion APIs"
 enabled = true
