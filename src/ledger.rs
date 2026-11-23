@@ -117,6 +117,13 @@ mod registry {
         #[serde(flatten)]
         identity: RegisteredRuleSummary,
         kind: RegisteredRuleKind,
+        scan: RuleScan,
+    }
+
+    #[derive(Deserialize)]
+    struct RuleScan {
+        through: i64,
+        registrations: std::num::NonZeroU64,
     }
 
     #[derive(Deserialize)]

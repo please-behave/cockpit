@@ -8,12 +8,13 @@ import type { RulesView } from './rules';
 const identity = { source: 'github.com/team/catalog+more', path: '.please/checks/shell&tools', id: 'example' };
 const markup = '<img src=x onerror=alert(1)>';
 const prompt = `Review the build.\n${markup}`;
-const summary: RegisteredRule = { ...identity, version: '1.10', kind: 'review', name: markup, description: markup };
+const registration = { ...identity, version: '1.10', kind: 'review' as const, name: markup, description: markup };
+const summary: RegisteredRule = { ...registration, scan: { through: 1795334400123456, registrations: 254 } };
 const history: RegisteredVersion[] = [
   { ...identity, version: '1.2', kind: 'check', description: 'First version',
     digest: 'first', commit: 'a'.repeat(40), registered_at: '2026-11-20T09:00:00Z',
     knowledge: { purpose: 'Check the build', unknown: markup, conditions: [{ statement: 'Use locked tools' }] } },
-  { ...summary, digest: 'second', commit: 'b'.repeat(40), registered_at: '2026-11-22T09:00:00Z',
+  { ...registration, digest: 'second', commit: 'b'.repeat(40), registered_at: '2026-11-22T09:00:00Z',
     kind: 'review', blocking: false, prompt,
     knowledge: {
       purpose: 'Review the build', problem: 'Unstable builds', value: 'Predictable runs',
@@ -118,23 +119,48 @@ test('opens a registered rule and shows its complete history newest first with e
   ]);
 });
 
-// Verifies REQ-0026.
-test('continues a full page using the last identity as the cursor', async () => {
-  const fullPage = Array.from({ length: rulePageSize }, (_, index) => ({ ...summary, id: `rule-${index}` }));
-  const fetch = vi.fn().mockResolvedValueOnce(Response.json(fullPage)).mockResolvedValueOnce(Response.json([]));
+// Verifies REQ-0025 and REQ-0026.
+test('continues using the last summary and displays each page in ledger order', async () => {
+  const fullPage = Array.from({ length: rulePageSize }, (_, index) => ({
+    ...summary, id: String(rulePageSize - index), name: `Audit ${String(index).padStart(2, '0')}`,
+  }));
+  // These names come after Audit, in code point order after lowercasing.
+  const secondPage = [{ ...summary, id: 'b', name: 'Zebra' }, { ...summary, id: 'a', name: 'Åudit' }];
+  const fetch = vi.fn()
+    .mockResolvedValueOnce(Response.json(fullPage))
+    .mockResolvedValueOnce(Response.json(secondPage));
   vi.stubGlobal('fetch', fetch);
   const app = open('/rules');
   await app.updateComplete;
   const view = app.shadowRoot!.querySelector<RulesView>('pb-rules')!;
-  await tableFrom(view);
-  view.shadowRoot!.querySelector('a')!.click();
+  const table = await tableFrom(view);
+  expect([...table.querySelectorAll('tbody a')].map(link => link.textContent))
+    .toEqual(fullPage.map(rule => rule.name));
+
+  const link = view.shadowRoot!.querySelector<HTMLAnchorElement>('a')!;
+  expect(link.textContent).toBe('Next page');
+  const cursor = new URL(link.href).searchParams.get('before')!;
+  expect(JSON.parse(cursor)).toEqual({ ...identity, id: '1', version: summary.version, scan: summary.scan });
+  link.click();
   await app.updateComplete;
 
   const next = app.shadowRoot!.querySelector<RulesView>('pb-rules')!;
-  await vi.waitFor(() => expect(next.shadowRoot?.querySelector('pb-empty-state')).not.toBeNull());
-  expect(next.shadowRoot!.querySelector('a')?.getAttribute('href')).toBe('/rules');
+  const nextTable = await tableFrom(next);
+  expect([...nextTable.querySelectorAll('tbody a')].map(link => link.textContent)).toEqual(['Zebra', 'Åudit']);
+  expect([...next.shadowRoot!.querySelectorAll('a')].map(link => link.textContent)).toEqual(['First page']);
   const query = new URL(fetch.mock.calls[1][0], window.location.origin).searchParams;
-  expect(JSON.parse(query.get('before')!)).toEqual({ ...identity, id: 'rule-99' });
+  expect(query.get('before')).toBe(cursor);
+});
+
+// Verifies REQ-0026.
+test('shows the existing invalid page error when the ledger rejects the cursor', async () => {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ code: 'invalid_query' }, { status: 400 })));
+  const app = open('/rules?before=invalid');
+  await app.updateComplete;
+  const view = app.shadowRoot!.querySelector<RulesView>('pb-rules')!;
+  await vi.waitFor(() => expect(view.shadowRoot?.querySelector('pb-error-state')?.getAttribute('heading'))
+    .toBe('Invalid page'));
+  expect(view.shadowRoot?.querySelector('pb-data-table')).toBeNull();
 });
 
 // Verifies REQ-0027.

@@ -45,6 +45,10 @@ export class RulesView extends CockpitView<RegisteredRule[]> {
 
   protected override readonly headingVisible = false;
 
+  private nextPage({ source, path, id, version, scan }: RegisteredRule) {
+    return new URLSearchParams({ before: JSON.stringify({ source, path, id, version, scan }) });
+  }
+
   protected override content(rules?: RegisteredRule[]) {
     if (!rules) return html``;
     const rows = rules.map(rule => ({
@@ -55,10 +59,7 @@ export class RulesView extends CockpitView<RegisteredRule[]> {
         rule.description ?? '',
       ],
     }));
-    const last = rules.at(-1);
-    const next = rules.length === rulePageSize && last
-      ? new URLSearchParams({ before: JSON.stringify({ source: last.source, path: last.path, id: last.id }) })
-      : undefined;
+    const next = rules.length === rulePageSize ? this.nextPage(rules[rulePageSize - 1]) : undefined;
     return html`
       ${rules.length > 0
         ? html`<pb-data-table label="Rules" .columns=${columns} .rows=${rows}

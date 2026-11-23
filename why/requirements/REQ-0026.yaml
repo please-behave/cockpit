@@ -2,9 +2,11 @@ id: REQ-0026
 name: Registered Rule Views
 description: >-
   The Rules navigation opens a paged list of registered rules from CON-0004.
-  Each identity appears once with its name or local ID, kind as a text badge,
-  and any description. The kind column stays on one line at its natural
-  width. The description takes the remaining width and wraps without
+  The list preserves the ledger's display-name order across pages and builds
+  the next-page cursor from the last summary of each full page as CON-0004
+  defines it. Each identity appears once with its name or local ID, kind as a
+  text badge, and any description. The kind column stays on one line at its
+  natural width. The description takes the remaining width and wraps without
   truncation. The table scrolls horizontally when necessary. Its detail page
   uses CON-0005 and displays all registered versions from greatest to
   smallest in numeric version order, each in a separate panel. The newest

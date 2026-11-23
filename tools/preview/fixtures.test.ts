@@ -20,7 +20,7 @@ function expectSummary(summary: Summary) {
   expect([summary.warn_count, summary.not_run_count, summary.result_count].every(isCount)).toBe(true);
 }
 
-function expectRule(rule: RegisteredRule) {
+function expectRule(rule: RegisteredRule | RegisteredVersion) {
   expect([rule.source, rule.path, rule.id]).toSatisfy((values: string[]) => values.every(value => isString(value) && value));
   expect(rule.version).toMatch(/^(0|[1-9]\d*)\.(0|[1-9]\d*)$/);
   expect(['check', 'review']).toContain(rule.kind);
@@ -83,8 +83,12 @@ test('serves every attestation in the client shape with matching counts', () => 
 });
 
 test('serves registered rules and their versions in the client shape', () => {
-  const rules = body<RegisteredRule[]>(fixtureTargets.rules);
-  rules.forEach(expectRule);
+  const rules = body<RegisteredRule[]>(`${fixtureTargets.rules}?limit=200`);
+  for (const rule of rules) {
+    expectRule(rule);
+    expect(Number.isInteger(rule.scan.through)).toBe(true);
+    expect(rule.scan.registrations).toBeGreaterThanOrEqual(rules.length);
+  }
   expect(rules).toHaveLength(fixtureTargets.ruleDetails.length);
 
   let longest = 0;
@@ -111,6 +115,30 @@ test('serves registered rules and their versions in the client shape', () => {
   expect(longest).toBeGreaterThan(2);
   expect(respond('/v0/rules/detail?source=a&path=b&id=c')!.status).toBe(404);
   expect(respond('/v0/rules/detail')!.status).toBe(400);
+});
+
+test('pages the registered rules in ledger order and rejects invalid cursors', () => {
+  const first = body<RegisteredRule[]>(fixtureTargets.rules);
+  expect(first).toHaveLength(100);
+  const { source, path, id, version, scan } = first.at(-1)!;
+  const cursor = { source, path, id, version, scan };
+  const target = (before: unknown) =>
+    `${fixtureTargets.rules}?${new URLSearchParams({ before: JSON.stringify(before) })}`;
+  const next = body<RegisteredRule[]>(target(cursor));
+  expect(id).toBe('sample-a');
+  expect(next.map(rule => rule.id)).toEqual(['sample-b', 'zebra']);
+  expect([...first, ...next]).toEqual(body<RegisteredRule[]>(`${fixtureTargets.rules}?limit=200`));
+  const names = [...first, ...next].map(rule => (rule.name ?? rule.id).toLowerCase());
+  expect(names).toEqual(names.toSorted());
+  for (const invalid of [
+    { source, path, id },
+    { ...cursor, id: 'missing' },
+    { ...cursor, version: '1.0' },
+    { ...cursor, scan: { ...scan, through: scan.through - 1 } },
+    { ...cursor, scan: { ...scan, registrations: scan.registrations - 1 } },
+  ]) {
+    expect(respond(target(invalid))).toEqual({ status: 400, body: { code: 'invalid_query' } });
+  }
 });
 
 test('answers unknown API routes and leaves other paths to the server', () => {

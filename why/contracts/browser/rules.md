@@ -7,9 +7,12 @@ latest registered version. An empty page returns an empty array.
 
 Cockpit forwards the ledger's `limit` and `before` query unchanged. The limit
 is an integer from 1 to 200 and defaults to 100. To continue a full page,
-pass the last summary's `source`, `path` and `id` as a URL-encoded JSON
-object in `before`. A shorter page ends the scan. Cockpit forwards the
-ledger's fields, values and order intact.
+copy the last summary's `source`, `path`, `id`, `version` and `scan` into
+the URL-encoded JSON object in `before`. The `scan` object contains the
+inclusive registration time bound (`through`, in integer microseconds
+since the Unix epoch) and the registration count (`registrations`).
+A shorter page ends the scan. Cockpit forwards the ledger's fields and
+values intact, in the display-name order defined by `ledger:CON-0007`.
 
 The [session, headers and errors](latest.md#session-headers-and-errors) apply.
 A rejected query returns HTTP 400 with `{"code":"invalid_query"}`.

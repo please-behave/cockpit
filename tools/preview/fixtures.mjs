@@ -51,6 +51,13 @@ const rules = [
       references: [`<a href="javascript:alert(1)">${markup}</a>`],
     },
   }),
+  rule('check', 'checks/sample', 'sample-b', ['1.0'], { name: 'Tie at page boundary' }),
+  rule('check', 'checks/sample', 'sample-a', ['1.0', '2.0'], { name: 'tie at page boundary' }),
+  rule('check', 'checks/sample', 'zebra', ['1.0'], { name: 'Zebra' }),
+  ...Array.from({ length: 92 }, (_, index) => {
+    const number = String(index + 1).padStart(2, '0');
+    return rule('check', 'checks/sample', `sample-${number}`, ['1.0'], { name: `Sample rule ${number}` });
+  }),
 ];
 
 function rule(kind, path, id, versions, details) {
@@ -167,14 +174,23 @@ for (let number = total; number >= 1; number -= 1) {
 
 const latest = history.slice(0, newest.length);
 
+const scan = {
+  through: Math.max(...rules.flat().map(version => Date.parse(version.registered_at))) * 1000,
+  registrations: rules.flat().length,
+};
+
+// The fixture names use ASCII, so lowercased strings compare in ledger order.
+const compare = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
+const displayName = rule => (rule.name ?? rule.id).toLowerCase();
 const ruleSummaries = rules
   .map(versions => versions.at(-1))
   .map(({ source, path, id, version, kind, name, description }) => ({
-    source, path, id, version, kind,
+    source, path, id, version, kind, scan,
     ...(name ? { name } : {}),
     ...(description ? { description } : {}),
   }))
-  .sort((a, b) => `${a.source}\n${a.path}\n${a.id}`.localeCompare(`${b.source}\n${b.path}\n${b.id}`));
+  .sort((a, b) => compare(displayName(a), displayName(b))
+    || compare(a.source, b.source) || compare(a.path, b.path) || compare(a.id, b.id));
 
 const json = (status, body) => ({ status, body });
 const code = (status, value) => json(status, { code: value });
@@ -200,8 +216,16 @@ function ruleList(params) {
   let start = 0;
   if (before !== null) {
     try {
-      const { source, path, id } = JSON.parse(before);
-      start = ruleSummaries.findIndex(item => item.source === source && item.path === path && item.id === id) + 1;
+      const cursor = JSON.parse(before);
+      const { source, path, id, version, scan: bound } = cursor;
+      if (Object.keys(cursor).length !== 5 || !bound || Object.keys(bound).length !== 2
+          || bound.through !== scan.through || bound.registrations !== scan.registrations) {
+        return code(400, 'invalid_query');
+      }
+      const index = ruleSummaries.findIndex(item =>
+        item.source === source && item.path === path && item.id === id && item.version === version);
+      if (index === -1) return code(400, 'invalid_query');
+      start = index + 1;
     } catch {
       return code(400, 'invalid_query');
     }

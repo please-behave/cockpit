@@ -579,7 +579,7 @@ async fn assert_api_error(response: Response, status: StatusCode, code: &str) {
 async fn browser_registry_reads_preserve_ledger_texts_order_and_encoded_queries() {
     const IDENTITY: &str =
         "source=github.com%2Fteam%2Frules%2Bmore&path=checks%2Fshell%26tools&id=shell";
-    const CURSOR: &str = "limit=100&before=%7B%22source%22%3A%22github.com%2Fteam%2Frules%2Bmore%22%2C%22path%22%3A%22checks%2Fshell%26tools%22%2C%22id%22%3A%22shell%22%7D";
+    const CURSOR: &str = "limit=100&before=%7B%22source%22%3A%22github.com%2Fteam%2Frules%2Bmore%22%2C%22path%22%3A%22checks%2Fshell%26tools%22%2C%22id%22%3A%22shell%22%2C%22version%22%3A%221.10%22%2C%22scan%22%3A%7B%22through%22%3A1795334400123456%2C%22registrations%22%3A254%7D%7D";
     const MARKUP: &str = "<img src=x onerror=alert(1)>";
     let summary = json!({
         "source": "github.com/team/rules+more", "path": "checks/shell&tools", "id": "shell",
@@ -595,7 +595,14 @@ async fn browser_registry_reads_preserve_ledger_texts_order_and_encoded_queries(
     let mut first = latest.clone();
     first["version"] = json!("1.2");
     first.as_object_mut().unwrap().remove("knowledge");
-    let list = serde_json::to_string_pretty(&json!([summary])).unwrap();
+    let mut listed = summary;
+    listed["scan"] = json!({"through": 1795334400123456_i64, "registrations": 254});
+    let mut second = listed.clone();
+    second["id"] = json!("second");
+    second["name"] = json!("Zebra");
+    let list = serde_json::to_string_pretty(&json!([listed, second])).unwrap();
+    listed.as_object_mut().unwrap().remove("scan");
+    let missing_scan = json!([listed]).to_string();
     let versions = serde_json::to_string_pretty(&json!([first, latest])).unwrap();
     first.as_object_mut().unwrap().remove("prompt");
     let malformed = json!([first]).to_string();
@@ -608,7 +615,10 @@ async fn browser_registry_reads_preserve_ledger_texts_order_and_encoded_queries(
                 get(move |RawQuery(query): RawQuery| async move {
                     match query.as_deref() {
                         Some(CURSOR) => (StatusCode::OK, upstream_list),
-                        Some("limit=0") => (StatusCode::BAD_REQUEST, "upstream query error".into()),
+                        Some("before=invalid") => {
+                            (StatusCode::BAD_REQUEST, "upstream query error".into())
+                        }
+                        Some("limit=1") => (StatusCode::OK, missing_scan),
                         _ => panic!("unexpected registry query"),
                     }
                 }),
@@ -649,9 +659,14 @@ async fn browser_registry_reads_preserve_ledger_texts_order_and_encoded_queries(
     }
     for (path, status, code) in [
         (
-            "/v0/rules?limit=0",
+            "/v0/rules?before=invalid",
             StatusCode::BAD_REQUEST,
             "invalid_query",
+        ),
+        (
+            "/v0/rules?limit=1",
+            StatusCode::SERVICE_UNAVAILABLE,
+            "ledger_unavailable",
         ),
         (
             "/v0/rules/detail?id=invalid",

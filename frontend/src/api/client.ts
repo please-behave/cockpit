@@ -43,6 +43,7 @@ interface Registration extends RuleIdentity {
 
 export interface RegisteredRule extends Registration {
   kind: 'check' | 'review';
+  scan: { through: number; registrations: number };
 }
 
 export type RegisteredVersion = Registration & {
