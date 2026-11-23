@@ -168,6 +168,8 @@ export class DashboardView extends CockpitView<Summary[]> {
     return 'Dashboard';
   }
 
+  protected override readonly headingVisible = false;
+
   protected override content(summaries?: Summary[]) {
     return html`
       ${summaries === undefined ? nothing : this.results(summaries)}

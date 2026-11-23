@@ -21,6 +21,17 @@ export abstract class CockpitView<T = never> extends LitElement {
       }
     }
 
+    @layer utilities {
+      .assistive {
+        position: absolute;
+        inline-size: 1px;
+        block-size: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
+    }
+
     @layer components {
       :host {
         display: block;
@@ -38,6 +49,8 @@ export abstract class CockpitView<T = never> extends LitElement {
   private refreshing = false;
   private stale = false;
 
+  /** Top-level views hide the headline visually; it stays exposed and focusable. */
+  protected readonly headingVisible: boolean = true;
   protected abstract heading(data?: T): string;
   protected abstract content(data?: T): TemplateResult;
   protected read?(signal: AbortSignal): Promise<T>;
@@ -142,7 +155,7 @@ export abstract class CockpitView<T = never> extends LitElement {
 
   override render() {
     return html`
-      <h1 tabindex="-1">${this.heading(this.data)}</h1>
+      <h1 tabindex="-1" class=${this.headingVisible ? nothing : 'assistive'}>${this.heading(this.data)}</h1>
       ${this.content(this.data)}
       ${this.error ? this.renderError(this.error) : nothing}
       ${this.stale ? html`<p role="status">The data could not be refreshed. Showing the last data received.</p>` : nothing}

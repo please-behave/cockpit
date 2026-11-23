@@ -43,6 +43,8 @@ export class RulesView extends CockpitView<RegisteredRule[]> {
     return 'Registered rules';
   }
 
+  protected override readonly headingVisible = false;
+
   protected override content(rules?: RegisteredRule[]) {
     if (!rules) return html``;
     const rows = rules.map(rule => ({

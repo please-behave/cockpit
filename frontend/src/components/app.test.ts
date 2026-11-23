@@ -31,6 +31,7 @@ test('pb-app renders its content in the application shell', async () => {
   const dashboard = app.shadowRoot!.querySelector<DashboardView>('pb-dashboard')!;
   await dashboard.updateComplete;
   expect(dashboard.shadowRoot?.querySelector('h1')?.textContent).toBe('Dashboard');
+  expect(dashboard.shadowRoot?.querySelector('h1')?.classList.contains('assistive')).toBe(true);
   const shell = app.shadowRoot?.querySelector('pb-app-shell') as CockpitAppShell;
   expect(shell).toBeInstanceOf(CockpitAppShell);
   await shell.updateComplete;
@@ -134,6 +135,7 @@ test('mounts the history at its route', async () => {
   const history = app.shadowRoot!.querySelector<HistoryView>('pb-history')!;
   await history.updateComplete;
   expect(history.shadowRoot!.querySelector('h1')?.textContent).toBe('Attestations');
+  expect(history.shadowRoot!.querySelector('h1')?.classList.contains('assistive')).toBe(true);
   expect(attestationPage).toHaveBeenCalledWith({ limit: 100 }, expect.any(AbortSignal));
 });
 

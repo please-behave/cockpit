@@ -49,17 +49,6 @@ export class HistoryView extends CockpitView<Summary[]> {
         color: var(--text-muted);
       }
     }
-
-    @layer utilities {
-      .assistive {
-        position: absolute;
-        inline-size: 1px;
-        block-size: 1px;
-        overflow: hidden;
-        clip-path: inset(50%);
-        white-space: nowrap;
-      }
-    }
   `];
 
   declare loaded: Summary[];
@@ -113,6 +102,8 @@ export class HistoryView extends CockpitView<Summary[]> {
   protected override heading() {
     return 'Attestations';
   }
+
+  protected override readonly headingVisible = false;
 
   protected override content(page?: Summary[]) {
     return html`

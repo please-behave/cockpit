@@ -10,7 +10,10 @@ description: >-
   brand (dashboard), Attestations, and Rules. The current segment exposes
   aria-current="page", including on attestation and rule detail routes.
   Segments provide a hover state and inset keyboard focus, and wrap when
-  space is constrained. The theme control and sign-out link appear as
+  space is constrained. The headline of the dashboard, attestations, and
+  rules views is hidden visually but remains exposed to assistive technology
+  and receives focus after navigation; detail pages show their headline.
+  The theme control and sign-out link appear as
   separate actions at the end of the header.
   Text links in the shared views are underlined. In both themes, link text
   contrasts with the page, raised, hover, badge, and panel surfaces. Primary

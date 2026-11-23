@@ -73,6 +73,7 @@ test('opens a registered rule and shows its complete history newest first with e
   await app.updateComplete;
   const view = app.shadowRoot!.querySelector<RulesView>('pb-rules')!;
   const table = await tableFrom(view);
+  expect(view.shadowRoot!.querySelector('h1')?.classList.contains('assistive')).toBe(true);
   const rows = [...table.querySelectorAll('tbody tr')];
   expect(rows).toHaveLength(2);
   expect(rows[0].textContent).toContain('1.10');
@@ -88,6 +89,7 @@ test('opens a registered rule and shows its complete history newest first with e
   const root = detail.shadowRoot!;
   await vi.waitFor(() => expect(root.querySelectorAll('article')).toHaveLength(2));
   expect(root.querySelector('h1')?.textContent).toBe(markup);
+  expect(root.querySelector('h1')?.classList.contains('assistive')).toBe(false);
   expect([...root.querySelectorAll('h2')].map(heading => heading.textContent)).toEqual(['Version 1.10', 'Version 1.2']);
   const [latest, first] = [...root.querySelectorAll('article')].map(article =>
     Object.fromEntries([...article.querySelectorAll('dt')].map(term =>
