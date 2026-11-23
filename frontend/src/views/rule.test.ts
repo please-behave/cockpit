@@ -47,7 +47,7 @@ afterEach(() => {
 });
 
 // Verifies REQ-0026.
-test('keeps the version and kind on one line and lets descriptions wrap', async () => {
+test('shows the kind as a one-line badge and lets descriptions wrap', async () => {
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json([summary])));
   const app = open('/rules');
   await app.updateComplete;
@@ -56,11 +56,12 @@ test('keeps the version and kind on one line and lets descriptions wrap', async 
 
   const headers = [...table.querySelectorAll('thead th')];
   const cells = [...table.querySelectorAll('tbody tr > *')];
-  expect(headers.map(cell => cell.textContent)).toEqual(['Rule', 'Latest version', 'Kind', 'Description']);
-  expect(headers.map(cell => cell.className)).toEqual(['', 'content', 'content', '']);
-  expect(cells.map(cell => cell.className)).toEqual(['', 'content', 'content', '']);
-  expect(headers.map(cell => cell.getAttribute('part'))).toEqual(['rule-name', null, null, 'rule-description']);
-  expect(cells.map(cell => cell.getAttribute('part'))).toEqual(['rule-name', null, null, 'rule-description']);
+  expect(headers.map(cell => cell.textContent)).toEqual(['Rule', 'Kind', 'Description']);
+  expect(headers.map(cell => cell.className)).toEqual(['', 'content', '']);
+  expect(cells.map(cell => cell.className)).toEqual(['', 'content', '']);
+  expect(headers.map(cell => cell.getAttribute('part'))).toEqual(['rule-name', null, 'rule-description']);
+  expect(cells.map(cell => cell.getAttribute('part'))).toEqual(['rule-name', null, 'rule-description']);
+  expect(cells[1].querySelector('pb-badge')?.textContent).toBe('review');
 });
 
 // Verifies REQ-0004, REQ-0025 and REQ-0026.
@@ -77,8 +78,6 @@ test('opens a registered rule and shows its complete history newest first with e
   expect(view.shadowRoot!.querySelector('h1')?.classList.contains('assistive')).toBe(true);
   const rows = [...table.querySelectorAll('tbody tr')];
   expect(rows).toHaveLength(2);
-  expect(rows[0].textContent).toContain('1.10');
-  expect(rows[0].textContent).toContain('review');
   expect(rows[0].querySelector('td:last-child')?.textContent).toBe(markup);
   expect(rows[1].querySelector('a')?.textContent).toBe('unnamed');
   expect(rows[0].querySelector('a')?.textContent).toBe(markup);

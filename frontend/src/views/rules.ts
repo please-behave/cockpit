@@ -1,5 +1,6 @@
 import { css, html, nothing, type CSSResult } from 'lit';
 import { registeredRules, rulePageSize, type RegisteredRule } from '../api/client';
+import '../components/pb-badge';
 import '../components/pb-data-table';
 import type { DataTableColumn } from '../components/pb-data-table';
 import '../components/pb-empty-state';
@@ -8,7 +9,6 @@ import { rulePath } from './router';
 
 const columns: readonly DataTableColumn[] = [
   { label: 'Rule', part: 'rule-name' },
-  { label: 'Latest version', mode: 'content' },
   { label: 'Kind', mode: 'content' },
   { label: 'Description', part: 'rule-description' },
 ];
@@ -51,8 +51,7 @@ export class RulesView extends CockpitView<RegisteredRule[]> {
       key: rulePath(rule),
       cells: [
         html`<a data-route href=${rulePath(rule)}>${rule.name || rule.id}</a>`,
-        rule.version,
-        rule.kind,
+        html`<pb-badge>${rule.kind}</pb-badge>`,
         rule.description ?? '',
       ],
     }));

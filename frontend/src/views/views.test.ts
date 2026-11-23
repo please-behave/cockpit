@@ -109,7 +109,8 @@ test.each(['light', 'dark'])('detail presents reported results and verification 
   expect(rows.map(row => [...row.querySelectorAll('td.content')])).toEqual(
     rows.map(row => [...row.cells].slice(1)),
   );
-  expect(rows.map(row => row.cells[1].textContent)).toEqual(['review', 'integrity', 'check', 'review', 'review']);
+  expect(rows.map(row => row.cells[1].querySelector('pb-badge')?.textContent))
+    .toEqual(['review', 'integrity', 'check', 'review', 'review']);
   expect(rows.map(row => row.cells[2].querySelector<StatusPill>('pb-status-pill')?.status)).toEqual([
     'FAIL', 'NOT_RUN', 'PASS', 'WARN', 'PASS',
   ]);

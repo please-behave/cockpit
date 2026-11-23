@@ -6,6 +6,7 @@ description: >-
   receipt time labeled "Reported" under the full repository name. The commit
   uses the same link target rules as the dashboard and attestation history.
   It shows rules in reported order with their kinds, statuses and verification.
+  The Kind column shows each kind as a text badge.
   Results with a registered version show the link described by REQ-0027.
   Other results show the plain local rule ID, or the run-scoped result ID
   when no rule identity was reported. A link at the top returns to the
