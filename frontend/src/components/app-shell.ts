@@ -1,11 +1,12 @@
 import { css, html, LitElement } from 'lit';
 import logo from '../../brand/logo.svg';
 import logoDark from '../../brand/logo-dark.svg';
+import { linkStyles } from '../styles/links';
 import { chooseTheme, effectiveTheme, watchSystemTheme, type Theme } from '../theme';
 
 export class CockpitAppShell extends LitElement {
   static override styles = css`
-    @layer tokens, base, components, utilities;
+    ${linkStyles}
 
     @layer base {
       :focus-visible {
@@ -71,10 +72,6 @@ export class CockpitAppShell extends LitElement {
         flex: 1 1 auto;
         flex-wrap: wrap;
         gap: var(--space-3);
-      }
-
-      a {
-        color: inherit;
       }
 
       .sign-out, .theme-toggle {

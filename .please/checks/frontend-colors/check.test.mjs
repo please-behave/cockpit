@@ -56,26 +56,30 @@ function luminance(value) {
 }
 
 // Verifies REQ-0015 using the pairings in why:DEC-0009.
-test('declared token pairings meet the shared contrast minimums in both themes', () => {
+test('declared token pairings meet the shared contrast minimums in both themes and use system colors when forced', () => {
   const path = new URL('../../../frontend/src/styles/tokens.css', import.meta.url);
   const stylesheet = parse(readFileSync(path, 'utf8'));
   const defaults = new Map();
   const darkOverrides = new Map();
   const chosenDark = new Map();
+  const forcedColors = new Map();
   stylesheet.walkDecls(/^--/, ({ prop, value, parent }) => {
     const scope = parent.parent;
     if (parent.selector === ':root' && scope.name === 'layer' && scope.params === 'tokens') defaults.set(prop, value);
-    if (parent.selector === ':root:not([data-theme="light"])' && scope.name === 'media'
+    if (parent.selector === ':root:where(:not([data-theme="light"]))' && scope.name === 'media'
       && scope.params === '(prefers-color-scheme: dark)') {
       darkOverrides.set(prop, value);
     }
-    if (parent.selector === ':root[data-theme="dark"]') chosenDark.set(prop, value);
+    if (parent.selector === ':root:where([data-theme="dark"])') chosenDark.set(prop, value);
+    if (parent.selector === ':root' && scope.name === 'media' && scope.params === '(forced-colors: active)') {
+      forcedColors.set(prop, value);
+    }
   });
   assert.ok(darkOverrides.size > 0, 'the system dark theme overrides tokens');
   assert.deepEqual(chosenDark, darkOverrides, 'a chosen dark theme matches the system dark theme');
 
   const textTokens = [
-    'text', 'text-muted', 'status-passed', 'status-failed', 'status-error',
+    'text', 'text-muted', 'link', 'status-passed', 'status-failed', 'status-error',
     'status-warning', 'status-not-run', 'status-allowed',
   ];
   for (const [theme, tokens] of [
@@ -97,9 +101,31 @@ test('declared token pairings meet the shared contrast minimums in both themes',
     for (const surface of ['surface', 'surface-raised']) {
       for (const text of textTokens) assertContrast(text, surface, 4.5);
       assertContrast('border', surface, 3);
+      assertContrast('nav-active-surface', surface, 3);
+      assertContrast('badge-border', surface, 3);
+      assertContrast('panel-border', surface, 3);
       if (theme === 'dark') assertContrast('brand-light', surface, 3);
     }
+    for (const surface of ['surface-hover', 'badge-surface', 'panel-surface']) {
+      for (const text of ['text', 'text-muted', 'link']) assertContrast(text, surface, 4.5);
+    }
+    assertContrast('badge-border', 'badge-surface', 3);
+    assertContrast('panel-border', 'panel-surface', 3);
+    assertContrast('nav-active-text', 'nav-active-surface', 4.5);
     assertContrast('brand-primary', 'brand-accent', 4.5);
     assertContrast('brand-light', 'brand-primary', 4.5);
+  }
+
+  for (const [name, systemColor] of [
+    ['link', 'LinkText'],
+    ['surface-hover', 'Canvas'],
+    ['nav-active-surface', 'Highlight'],
+    ['nav-active-text', 'HighlightText'],
+    ['badge-surface', 'Canvas'],
+    ['badge-border', 'CanvasText'],
+    ['panel-surface', 'Canvas'],
+    ['panel-border', 'CanvasText'],
+  ]) {
+    assert.equal(forcedColors.get(`--${name}`), systemColor, `forced colors for ${name}`);
   }
 });

@@ -1,5 +1,6 @@
 import { css, html, LitElement } from 'lit';
 import { commitUrl } from '../commit-link';
+import { linkStyles } from '../styles/links';
 
 export class CommitLink extends LitElement {
   static override properties = {
@@ -8,13 +9,11 @@ export class CommitLink extends LitElement {
   };
 
   static override styles = css`
+    ${linkStyles}
+
     @layer components {
       :host {
         white-space: nowrap;
-      }
-
-      a {
-        color: inherit;
       }
 
       a:focus-visible {

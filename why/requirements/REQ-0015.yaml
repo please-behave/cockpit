@@ -6,6 +6,19 @@ description: >-
   browser's preferred color scheme, retain visible keyboard focus, and remain
   usable at 320 CSS pixels and 200 percent zoom. The shell exposes banner,
   navigation, and main landmarks with a keyboard-accessible skip link.
+  Text links in the shared views are underlined. In both themes, link text
+  contrasts with the page, raised, hover, badge, and panel surfaces. Primary
+  and muted text contrast with hover, badge, and panel surfaces. Badge and
+  panel borders contrast with their own surface and the surrounding page and
+  raised surfaces. The active tab pairs brand-light text with brand-primary
+  in light mode and brand-primary text with a lighter indigo surface in dark
+  mode. The active surface contrasts with the page and raised surfaces in
+  both themes. The brand accent is reserved for small accents.
+  In forced colors, links use LinkText on Canvas, hover, badge, and panel
+  surfaces use Canvas with CanvasText for text and borders, and active tabs
+  pair HighlightText with Highlight. Normal text pairings meet 4.5:1 and
+  meaningful boundaries meet 3:1, using the browser's system palette in
+  forced-colors mode.
 rationale: >-
   A consistent, accessible identity helps viewers recognize and navigate the
   cockpit across devices and display preferences.

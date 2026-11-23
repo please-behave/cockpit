@@ -19,8 +19,10 @@
     line-height: var(--line-heading);
   }
 
-  a {
-    color: inherit;
+  a:any-link {
+    color: var(--link);
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
   }
 
   :focus-visible {

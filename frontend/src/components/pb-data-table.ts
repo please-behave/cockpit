@@ -1,5 +1,6 @@
 import { css, html, LitElement, nothing, type TemplateResult } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
+import { linkStyles } from '../styles/links';
 
 export interface DataTableRow {
   /** Unique within the table and stable across updates. */
@@ -25,6 +26,8 @@ export class DataTable extends LitElement {
   };
 
   static override styles = css`
+    ${linkStyles}
+
     @layer components {
       :host {
         display: block;
@@ -33,10 +36,6 @@ export class DataTable extends LitElement {
 
       .scroll {
         overflow-x: auto;
-      }
-
-      a {
-        color: inherit;
       }
 
       a:focus-visible {

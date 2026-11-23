@@ -12,6 +12,15 @@
     --text-muted: #605B69;
     --text: #201D27;
 
+    --link: #493080;
+    --surface-hover: #ECE8F5;
+    --nav-active-surface: var(--brand-primary);
+    --nav-active-text: var(--brand-light);
+    --badge-surface: #E5DDF6;
+    --badge-border: var(--border);
+    --panel-surface: var(--surface-raised);
+    --panel-border: var(--border);
+
     --status-passed: #176639;
     --status-failed: #A41C2C;
     --status-error: #753396;
@@ -48,13 +57,20 @@
   }
 
   /* The dark values apply to the system theme and to a stored choice, so they appear twice. */
+  /* Keep :root specificity so forced colors can override either dark theme. */
   @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
+    :root:where(:not([data-theme="light"])) {
       --surface: #15131C;
       --surface-raised: #23202C;
       --border: #888291;
       --text-muted: #B1AAB9;
       --text: #F7F5F9;
+
+      --link: #D2C2FF;
+      --surface-hover: #302A3D;
+      --nav-active-surface: #B9A8E8;
+      --nav-active-text: var(--brand-primary);
+      --badge-surface: #3B304F;
 
       --status-passed: #78D69A;
       --status-failed: #FF929C;
@@ -67,7 +83,7 @@
     }
   }
 
-  :root[data-theme="dark"] {
+  :root:where([data-theme="dark"]) {
     color-scheme: dark;
 
     --surface: #15131C;
@@ -75,6 +91,12 @@
     --border: #888291;
     --text-muted: #B1AAB9;
     --text: #F7F5F9;
+
+    --link: #D2C2FF;
+    --surface-hover: #302A3D;
+    --nav-active-surface: #B9A8E8;
+    --nav-active-text: var(--brand-primary);
+    --badge-surface: #3B304F;
 
     --status-passed: #78D69A;
     --status-failed: #FF929C;
@@ -92,6 +114,14 @@
 
   @media (forced-colors: active) {
     :root {
+      --link: LinkText;
+      --surface-hover: Canvas;
+      --nav-active-surface: Highlight;
+      --nav-active-text: HighlightText;
+      --badge-surface: Canvas;
+      --badge-border: CanvasText;
+      --panel-surface: Canvas;
+      --panel-border: CanvasText;
       --focus-ring: 0.125rem solid Highlight;
     }
   }

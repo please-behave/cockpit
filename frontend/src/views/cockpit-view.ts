@@ -1,12 +1,13 @@
 import { css, html, LitElement, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 import { ApiError } from '../api/client';
 import '../components/pb-error-state';
+import { linkStyles } from '../styles/links';
 
 export const reportedEvidence = html`<p>These outcomes are shown as reported to the ledger.</p>`;
 
 export abstract class CockpitView<T = never> extends LitElement {
   static override styles: CSSResultGroup = css`
-    @layer tokens, base, components, utilities;
+    ${linkStyles}
 
     @layer base {
       h1 {
@@ -14,10 +15,6 @@ export abstract class CockpitView<T = never> extends LitElement {
         overflow-wrap: anywhere;
         font-size: var(--type-heading);
         line-height: var(--line-heading);
-      }
-
-      a {
-        color: inherit;
       }
 
       :focus-visible {
