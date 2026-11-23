@@ -3,14 +3,14 @@ name: Reported Attestation Detail
 description: >-
   The detail view loads the selected attestation through CON-0002. It shows
   the attestation ID, the reported commit, overall status and ledger receipt
-  time under the full repository name. It shows rules in reported order with
-  their shortened identifiers, kinds and statuses and identifies the outcomes
-  as reported. A link at the top returns to the dashboard or the attestations
-  page, whichever the viewer opened the detail from. The router keeps that
-  origin in the navigation state of the history entry, so it survives a reload,
-  and the link goes back through the browser history like the browser's back
-  button. A directly opened detail links to the dashboard. An unknown
-  attestation or malformed identifier has its own error state.
+  time labeled "Reported" under the full repository name. It shows rules in
+  reported order with their shortened identifiers, kinds and statuses. A link
+  at the top returns to the dashboard or the attestations page, whichever the
+  viewer opened the detail from. The router keeps that origin in the navigation
+  state of the history entry, so it survives a reload, and the link goes back
+  through the browser history like the browser's back button. A directly
+  opened detail links to the dashboard. An unknown attestation or malformed
+  identifier has its own error state.
 rationale: >-
   Viewers can inspect the outcomes that make up an attestation and distinguish
   the kinds of evidence behind them.

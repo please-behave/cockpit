@@ -6,7 +6,7 @@ import '../components/pb-definition-list';
 import '../components/pb-short-name';
 import '../components/pb-status-pill';
 import '../components/pb-time';
-import { CockpitView, reportedEvidence } from './cockpit-view';
+import { CockpitView } from './cockpit-view';
 import { rulePath, type Origin } from './router';
 
 const columns: DataTableColumn[] = [
@@ -32,7 +32,6 @@ export class DetailView extends CockpitView<Attestation> {
   protected override content(attestation?: Attestation) {
     return html`
       ${this.backLink()}
-      ${reportedEvidence}
       ${attestation ? this.results(attestation) : nothing}
     `;
   }
@@ -82,7 +81,6 @@ export class DetailView extends CockpitView<Attestation> {
 
     return html`
       <pb-definition-list .items=${items}></pb-definition-list>
-      <p>Verification shows whether the ledger matched a result to a registered rule version.</p>
       <pb-data-table label="Rules" .columns=${columns} row-header-column="0" .rows=${rows}></pb-data-table>
     `;
   }

@@ -7,11 +7,11 @@ description: >-
   for each repository and execution-point combination that
   ledger:CON-0002 returns, with the status, the repository owner above the
   shortened repository name, the first seven characters of the commit, the
-  time of the attestation relative to now with the exact time as tooltip, and
-  the counts of rules, warnings and rules not run. The shortened name links to
-  the attestation, and the whole tile follows that link. Execution points are
-  shown only for a repository with more than one tile. An empty ledger has an
-  explicit empty state. The dashboard identifies the data as reported.
+  ledger receipt time labeled "Reported" and shown relative to now with the
+  exact time as tooltip, and the counts of rules, warnings and rules not run.
+  The shortened name links to the attestation, and the whole tile follows that
+  link. Execution points are shown only for a repository with more than one
+  tile. An empty ledger has an explicit empty state.
 rationale: >-
   Viewers see at a glance whether every repository passes and can reach the
   evidence of each head attestation.

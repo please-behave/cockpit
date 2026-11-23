@@ -8,7 +8,7 @@ import '../components/pb-error-state';
 import '../components/pb-short-name';
 import '../components/pb-status-pill';
 import '../components/pb-time';
-import { CockpitView, reportedEvidence } from './cockpit-view';
+import { CockpitView } from './cockpit-view';
 
 const pageSize = 100;
 
@@ -116,7 +116,6 @@ export class HistoryView extends CockpitView<Summary[]> {
 
   protected override content(page?: Summary[]) {
     return html`
-      ${reportedEvidence}
       ${page === undefined ? nothing : this.history()}
     `;
   }

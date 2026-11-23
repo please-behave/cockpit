@@ -7,7 +7,7 @@ import '../components/pb-relative-time';
 import { ownerName } from '../components/pb-short-name';
 import '../components/pb-short-name';
 import '../components/pb-status-pill';
-import { CockpitView, reportedEvidence } from './cockpit-view';
+import { CockpitView } from './cockpit-view';
 
 type Sort = 'time' | 'name';
 
@@ -240,7 +240,6 @@ export class DashboardView extends CockpitView<Summary[]> {
 
   protected override content(summaries?: Summary[]) {
     return html`
-      ${reportedEvidence}
       ${summaries === undefined ? nothing : this.results(summaries)}
     `;
   }
@@ -311,7 +310,7 @@ export class DashboardView extends CockpitView<Summary[]> {
           ? html`<a class="commit" href=${url} target="_blank" rel="noopener noreferrer"><code>${commit}</code>
             <span aria-hidden="true">↗</span><span class="assistive">(opens in a new tab)</span></a>`
           : html`<code>${commit}</code>`}</span>
-        <pb-relative-time class="meta" .value=${summary.received_at}></pb-relative-time>
+        <span class="meta">Reported <pb-relative-time .value=${summary.received_at}></pb-relative-time></span>
         <span class="meta">${plural(summary.result_count, 'rule')} · ${plural(summary.warn_count, 'warning')} · ${summary.not_run_count} not run</span>
       </li>
     `;

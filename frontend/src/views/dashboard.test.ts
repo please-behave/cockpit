@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { ApiError, latestAttestations, type Summary } from '../api/client';
 import type { ErrorState } from '../components/pb-error-state';
+import type { RelativeTime } from '../components/pb-relative-time';
+import { formatTime } from '../components/pb-time';
 import type { ShortName } from '../components/pb-short-name';
 import type { StatusPill } from '../components/pb-status-pill';
 import { DashboardView } from './dashboard';
@@ -62,7 +64,6 @@ test('has a loading state, then an explicit empty state without header and tiles
   expect(root.querySelector('pb-empty-state')!.getAttribute('message'))
     .toBe('No attestations have been reported yet.');
   expect(root.querySelector('[role=status], .tiles, .header, fieldset')).toBeNull();
-  expect(root.textContent).toContain('shown as reported');
 });
 
 test('states the overall state with text and icon for passing and failing tiles', async () => {
@@ -84,6 +85,7 @@ test('states the overall state with text and icon for passing and failing tiles'
 });
 
 test('shows one tile per combination with its content', async () => {
+  vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-11-22T12:05:00Z') });
   const report = { ...summary('first?query', 'FAIL', 'github.com/acme/widget', ['deploy'], '2026-11-22T12:00:00Z'),
     warn_count: 1, result_count: 1, not_run_count: 0 };
   latest.mockResolvedValue([report, summary('other', 'PASS', 'github.com/acme/widget', ['check']),
@@ -97,7 +99,17 @@ test('shows one tile per combination with its content', async () => {
   expect(repository.hasAttribute('data-route')).toBe(true);
   expect(repository.querySelector<ShortName>('pb-short-name')!.value).toBe('github.com/acme/widget');
   expect(first.textContent).toContain('1 rule · 1 warning · 0 not run');
-  expect(first.querySelector('pb-relative-time')).not.toBeNull();
+  expect(view.shadowRoot!.textContent).not.toContain('shown as reported');
+  for (const tile of tiles(view)) {
+    const relative = tile.querySelector<RelativeTime>('pb-relative-time')!;
+    expect(relative.parentElement!.textContent!.trim()).toBe('Reported');
+  }
+  const relative = first.querySelector<RelativeTime>('pb-relative-time')!;
+  await relative.updateComplete;
+  const time = relative.shadowRoot!.querySelector('time')!;
+  expect(time.textContent).toBe('5 minutes ago');
+  expect(time.dateTime).toBe(report.received_at);
+  expect(time.title).toBe(formatTime(new Date(report.received_at)));
   expect(first.textContent).toContain('deploy');
   expect(solo.textContent).not.toContain('check');
   expect(solo.textContent).toContain('7 rules · 2 warnings · 3 not run');

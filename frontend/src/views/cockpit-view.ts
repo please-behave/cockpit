@@ -3,8 +3,6 @@ import { ApiError } from '../api/client';
 import '../components/pb-error-state';
 import { linkStyles } from '../styles/links';
 
-export const reportedEvidence = html`<p>These outcomes are shown as reported to the ledger.</p>`;
-
 export abstract class CockpitView<T = never> extends LitElement {
   static override styles: CSSResultGroup = css`
     ${linkStyles}

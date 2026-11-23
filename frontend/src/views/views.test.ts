@@ -81,7 +81,8 @@ test.each(['light', 'dark'])('detail presents reported results and verification 
   expect(detail).toHaveBeenCalledWith(value.id, expect.any(AbortSignal));
   expect(document.title).toBe(`${repository} | Please Behave`);
   expect(root.querySelector('a')?.getAttribute('href')).toBe('/');
-  expect(root.textContent).toContain('shown as reported');
+  expect(root.textContent).not.toContain('shown as reported');
+  expect(root.textContent).not.toContain('Verification shows whether');
   expect(root.querySelector('img, script')).toBeNull();
 
   const definitions = root.querySelector<DefinitionList>('pb-definition-list')!;

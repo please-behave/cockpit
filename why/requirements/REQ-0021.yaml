@@ -3,14 +3,14 @@ name: Attestation History
 description: >-
   The attestations page lists every attestation the ledger holds, one row per
   attestation, loaded through CON-0003 and shown newest first as the ledger
-  returns them. A row shows the time of the attestation with the exact time as
-  tooltip, the shortened repository name with the full value as tooltip and a
-  link to the attestation, the first seven characters of the commit and the
-  overall status. The commit links to github.com by the rule of DEC-0011. The
-  columns never wrap and long values are truncated. A ledger without
-  attestations has an explicit empty state, and a failed first page shows the
-  ledger-unavailable error with a retry action. The page identifies the data as
-  reported and has an entry in the navigation.
+  returns them. A row shows the ledger receipt time in the "Reported" column
+  with the exact time as tooltip, the shortened repository name with the full
+  value as tooltip and a link to the attestation, the first seven characters of
+  the commit and the overall status. The commit links to github.com by the rule
+  of DEC-0011. The columns never wrap and long values are truncated. A ledger
+  without attestations has an explicit empty state, and a failed first page
+  shows the ledger-unavailable error with a retry action. The page has an entry
+  in the navigation.
 rationale: >-
   Viewers can find any attestation that was ever reported, not only the latest
   one of each repository.

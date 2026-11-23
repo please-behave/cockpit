@@ -104,7 +104,7 @@ test('loads the first page of 100, shows the loading state and the heading', asy
   complete(range(1, 100));
   await vi.waitFor(() => expect(root.querySelector('pb-data-table')).not.toBeNull());
   expect(root.querySelector('[role=status]:not(.assistive)')).toBeNull();
-  expect(root.textContent).toContain('shown as reported');
+  expect(root.textContent).not.toContain('shown as reported');
 });
 
 // Verifies REQ-0021.
