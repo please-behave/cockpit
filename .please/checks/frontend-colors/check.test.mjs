@@ -109,6 +109,14 @@ test('declared token pairings meet the shared contrast minimums in both themes a
       for (const text of ['text', 'text-muted', 'link']) assertContrast(text, surface, 4.5);
     }
     assertContrast('badge-border', 'badge-surface', 3);
+    for (const tone of ['check', 'review', 'blocking', 'neutral']) {
+      assertContrast(`chip-${tone}-text`, `chip-${tone}-surface`, 4.5);
+      assertContrast(`chip-${tone}-border`, `chip-${tone}-surface`, 3);
+      for (const surface of ['surface', 'surface-raised']) {
+        assertContrast(`chip-${tone}-border`, surface, 3);
+        assertContrast(`chip-${tone}-text`, surface, 4.5);
+      }
+    }
     assertContrast('panel-border', 'panel-surface', 3);
     assertContrast('nav-current-text', 'surface', 4.5);
     for (const [foreground, surface, hover] of [
@@ -132,6 +140,11 @@ test('declared token pairings meet the shared contrast minimums in both themes a
     ['badge-border', 'CanvasText'],
     ['panel-surface', 'Canvas'],
     ['panel-border', 'CanvasText'],
+    ...['check', 'review', 'blocking', 'neutral'].flatMap(tone => [
+      [`chip-${tone}-surface`, 'Canvas'],
+      [`chip-${tone}-text`, 'CanvasText'],
+      [`chip-${tone}-border`, 'CanvasText'],
+    ]),
   ]) {
     assert.equal(forcedColors.get(`--${name}`), systemColor, `forced colors for ${name}`);
   }

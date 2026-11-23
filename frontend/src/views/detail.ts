@@ -1,6 +1,7 @@
 import { css, html, nothing, type CSSResult } from 'lit';
+import { ifDefined } from 'lit/directives/if-defined.js';
 import { getAttestation, type Attestation } from '../api/client';
-import '../components/pb-badge';
+import { kindTone } from '../components/pb-badge';
 import '../components/pb-commit-link';
 import type { DataTableColumn } from '../components/pb-data-table';
 import '../components/pb-data-table';
@@ -101,7 +102,7 @@ export class DetailView extends CockpitView<Attestation> {
       key: String(index),
       cells: [
         ruleCell(result),
-        html`<pb-badge>${result.kind}</pb-badge>`,
+        html`<pb-badge tone=${ifDefined(kindTone(result.kind))}>${result.kind}</pb-badge>`,
         html`<pb-status-pill .status=${result.status}></pb-status-pill>`,
         verificationCell(result.verification),
       ],

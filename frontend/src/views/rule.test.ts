@@ -48,7 +48,7 @@ afterEach(() => {
 });
 
 // Verifies REQ-0026.
-test('shows the kind as a one-line badge and lets descriptions wrap', async () => {
+test('lists name and description without a kind column and lets descriptions wrap', async () => {
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json([summary])));
   const app = open('/rules');
   await app.updateComplete;
@@ -57,12 +57,10 @@ test('shows the kind as a one-line badge and lets descriptions wrap', async () =
 
   const headers = [...table.querySelectorAll('thead th')];
   const cells = [...table.querySelectorAll('tbody tr > *')];
-  expect(headers.map(cell => cell.textContent)).toEqual(['Rule', 'Kind', 'Description']);
-  expect(headers.map(cell => cell.className)).toEqual(['', 'content', '']);
-  expect(cells.map(cell => cell.className)).toEqual(['', 'content', '']);
-  expect(headers.map(cell => cell.getAttribute('part'))).toEqual(['rule-name', null, 'rule-description']);
-  expect(cells.map(cell => cell.getAttribute('part'))).toEqual(['rule-name', null, 'rule-description']);
-  expect(cells[1].querySelector('pb-badge')?.textContent).toBe('review');
+  expect(headers.map(cell => cell.textContent)).toEqual(['Rule', 'Description']);
+  expect(headers.map(cell => cell.getAttribute('part'))).toEqual(['rule-name', 'rule-description']);
+  expect(cells.map(cell => cell.getAttribute('part'))).toEqual(['rule-name', 'rule-description']);
+  expect(table.querySelector('pb-badge')).toBeNull();
 });
 
 // Verifies REQ-0004, REQ-0025 and REQ-0026.
@@ -96,7 +94,8 @@ test('opens a registered rule and shows the newest version and switches to an ol
   expect(root.querySelector('.introduction')?.textContent).toBe(markup);
   const facts = root.querySelector('pb-fact-strip')!.shadowRoot!;
   expect([...facts.querySelectorAll('dt')].map(term => term.textContent)).toEqual(['Kind', 'Blocking', 'Registered']);
-  expect([...facts.querySelectorAll('pb-badge')].map(badge => badge.textContent)).toEqual(['review', 'Non-blocking']);
+  expect([...facts.querySelectorAll('pb-badge')].map(badge => [badge.textContent, badge.getAttribute('tone')]))
+    .toEqual([['review', 'review'], ['Non-blocking', 'neutral']]);
   expect(facts.querySelector('pb-time')?.shadowRoot?.querySelector('time')?.dateTime)
     .toBe('2026-11-22T09:00:00Z');
   expect([...root.querySelectorAll('.identity dt')].map(term =>
@@ -114,8 +113,8 @@ test('opens a registered rule and shows the newest version and switches to an ol
   ]);
   expect(root.querySelector('h2')?.textContent).toBe('Version 1.10');
   expect(root.querySelector('pb-panel')?.hasAttribute('accent')).toBe(true);
-  expect([...root.querySelectorAll('article pb-badge')].map(badge => badge.textContent))
-    .toEqual(['Latest', 'review', 'Non-blocking']);
+  expect([...root.querySelectorAll('article pb-badge')].map(badge => [badge.textContent, badge.getAttribute('tone')]))
+    .toEqual([['Latest', null], ['review', 'review'], ['Non-blocking', 'neutral']]);
   const fields = () => Object.fromEntries([...root.querySelectorAll('article dt')].map(term =>
     [term.textContent, term.nextElementSibling?.textContent?.trim()]));
   const latest = fields();

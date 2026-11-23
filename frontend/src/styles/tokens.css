@@ -23,6 +23,19 @@
     --panel-surface: var(--surface-raised);
     --panel-border: var(--border);
 
+    --chip-check-surface: #DCF3F0;
+    --chip-check-text: #0A4A45;
+    --chip-check-border: #2A7F78;
+    --chip-review-surface: #E3E6FA;
+    --chip-review-text: #262B75;
+    --chip-review-border: #5560B8;
+    --chip-blocking-surface: #C5CDD8;
+    --chip-blocking-text: #0F1623;
+    --chip-blocking-border: #3A485C;
+    --chip-neutral-surface: #EEEEF0;
+    --chip-neutral-text: #3A3A42;
+    --chip-neutral-border: #7A7A85;
+
     --status-passed: #176639;
     --status-failed: #A41C2C;
     --status-error: #753396;
@@ -75,6 +88,19 @@
       --nav-current-hover-surface: #131119;
       --badge-surface: #3B304F;
 
+      --chip-check-surface: #12312F;
+      --chip-check-text: #A4E6DD;
+      --chip-check-border: #4DA89E;
+      --chip-review-surface: #23274F;
+      --chip-review-text: #BEC5FF;
+      --chip-review-border: #7A85E0;
+      --chip-blocking-surface: #475268;
+      --chip-blocking-text: #F4F7FB;
+      --chip-blocking-border: #B4C0D4;
+      --chip-neutral-surface: #2C2B32;
+      --chip-neutral-text: #D0CED8;
+      --chip-neutral-border: #8F8C99;
+
       --status-passed: #78D69A;
       --status-failed: #FF929C;
       --status-error: #DAB0F3;
@@ -102,6 +128,19 @@
     --nav-current-hover-surface: #131119;
     --badge-surface: #3B304F;
 
+    --chip-check-surface: #12312F;
+    --chip-check-text: #A4E6DD;
+    --chip-check-border: #4DA89E;
+    --chip-review-surface: #23274F;
+    --chip-review-text: #BEC5FF;
+    --chip-review-border: #7A85E0;
+    --chip-blocking-surface: #475268;
+    --chip-blocking-text: #F4F7FB;
+    --chip-blocking-border: #B4C0D4;
+    --chip-neutral-surface: #2C2B32;
+    --chip-neutral-text: #D0CED8;
+    --chip-neutral-border: #8F8C99;
+
     --status-passed: #78D69A;
     --status-failed: #FF929C;
     --status-error: #DAB0F3;
@@ -122,6 +161,18 @@
       --surface-hover: Canvas;
       --badge-surface: Canvas;
       --badge-border: CanvasText;
+      --chip-check-surface: Canvas;
+      --chip-check-text: CanvasText;
+      --chip-check-border: CanvasText;
+      --chip-review-surface: Canvas;
+      --chip-review-text: CanvasText;
+      --chip-review-border: CanvasText;
+      --chip-blocking-surface: Canvas;
+      --chip-blocking-text: CanvasText;
+      --chip-blocking-border: CanvasText;
+      --chip-neutral-surface: Canvas;
+      --chip-neutral-text: CanvasText;
+      --chip-neutral-border: CanvasText;
       --panel-surface: Canvas;
       --panel-border: CanvasText;
       --focus-ring: 0.125rem solid Highlight;

@@ -214,7 +214,7 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
 
   private summary(version: RegisteredVersion) {
     const facts = [
-      { term: 'Kind', description: html`<pb-badge>${version.kind}</pb-badge>` },
+      { term: 'Kind', description: html`<pb-badge tone=${version.kind}>${version.kind}</pb-badge>` },
     ];
     if (version.kind === 'review') {
       facts.push({ term: 'Blocking', description: this.blockingBadge(version.blocking) });
@@ -235,7 +235,7 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
   }
 
   private blockingBadge(blocking: boolean | undefined) {
-    return html`<pb-badge>${blocking ? 'Blocking' : 'Non-blocking'}</pb-badge>`;
+    return html`<pb-badge tone=${blocking ? 'blocking' : 'neutral'}>${blocking ? 'Blocking' : 'Non-blocking'}</pb-badge>`;
   }
 
   private version(version: RegisteredVersion, requested: string | null, latest: boolean) {
@@ -248,7 +248,7 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
           </header>
           <dl>
             ${version.name ? html`<div><dt>Name</dt><dd class="plain-text">${version.name}</dd></div>` : nothing}
-            <div><dt>Kind</dt><dd><pb-badge>${version.kind}</pb-badge></dd></div>
+            <div><dt>Kind</dt><dd><pb-badge tone=${version.kind}>${version.kind}</pb-badge></dd></div>
             <div><dt>Registered</dt><dd><pb-time .value=${version.registered_at}></pb-time></dd></div>
             ${version.description ? html`<div><dt>Description</dt><dd class="plain-text">${version.description}</dd></div>` : nothing}
             ${version.kind === 'review' ? html`

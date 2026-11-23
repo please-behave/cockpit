@@ -4,10 +4,9 @@ description: >-
   The Rules navigation opens a paged list of registered rules from CON-0004.
   The list preserves the ledger's display-name order across pages and builds
   the next-page cursor from the last summary of each full page as CON-0004
-  defines it. Each identity appears once with its name or local ID, kind as a
-  text badge, and any description. The kind column stays on one line at its
-  natural width. The description takes the remaining width and wraps without
-  truncation. The table scrolls horizontally when necessary. Its detail page
+  defines it. Each identity appears once with its name or local ID and any
+  description, without a kind column. The description takes the remaining width
+  and wraps without truncation. The table scrolls horizontally when necessary. Its detail page
   uses CON-0005. It uses the selected version's registered name or local ID as
   the headline, its description as an introduction when present, and a
   fact strip with Kind, Blocking for reviews, and Registered, in that
@@ -21,9 +20,9 @@ description: >-
   replaces the current history entry and preserves its origin. If the requested
   version is unavailable, the view shows a notice and displays the newest.
   The newest version's panel has a Latest badge and an accent stripe. The
-  selected version shows its kind as a text badge, its description and
-  registration time, and, for a review, its effective blocking value as a text
-  badge. A review prompt has
+  selected version shows its kind as a toned text badge, its description and
+  registration time, and, for a review, its effective blocking value as a toned
+  text badge. A review prompt has
   its own block and preserves line breaks. The detail displays
   known knowledge fields including purpose, problem, value, conditions and
   their reasons, success criteria, out of scope, limitations, placement and
