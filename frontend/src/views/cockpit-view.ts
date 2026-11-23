@@ -3,6 +3,10 @@ import { ApiError } from '../api/client';
 import '../components/pb-error-state';
 import { linkStyles } from '../styles/links';
 
+const refreshInterval = 300_000;
+
+export type RefreshState = { view: Element & { refresh(): void }; updatedAt: Date; busy: boolean };
+
 export abstract class CockpitView<T = never> extends LitElement {
   static override styles: CSSResultGroup = css`
     ${linkStyles}
@@ -44,16 +48,28 @@ export abstract class CockpitView<T = never> extends LitElement {
   private error?: ApiError;
   private refreshing = false;
   private stale = false;
+  private updatedAt?: Date;
+  private timer?: number;
+  private hiddenSince?: number;
+  private announced?: { updatedAt?: Date; refreshing: boolean };
 
   /** Top-level views hide the headline visually; it stays exposed and focusable. */
   protected readonly headingVisible: boolean = true;
+  /** A refreshable view reads again periodically and on demand, and reports its state to the header. */
+  protected readonly refreshable: boolean = false;
   protected abstract heading(data?: T): string;
   protected abstract content(data?: T): TemplateResult;
-  protected read?(signal: AbortSignal): Promise<T>;
+  protected read?(signal: AbortSignal, refresh: boolean): Promise<T>;
 
   override connectedCallback() {
     super.connectedCallback();
     if (this.data === undefined) void this.load();
+    if (this.refreshable) {
+      this.announced = undefined;
+      this.requestUpdate();
+      this.startTimer();
+      document.addEventListener('visibilitychange', this.visibility);
+    }
     void this.updateComplete.then(() => {
       if (!this.isConnected) return;
       this.setTitle();
@@ -63,7 +79,35 @@ export abstract class CockpitView<T = never> extends LitElement {
 
   override disconnectedCallback() {
     this.dispose();
+    window.clearInterval(this.timer);
+    document.removeEventListener('visibilitychange', this.visibility);
     super.disconnectedCallback();
+  }
+
+  private startTimer() {
+    window.clearInterval(this.timer);
+    this.timer = window.setInterval(() => this.refreshIfVisible(), refreshInterval);
+  }
+
+  private refreshIfVisible() {
+    if (document.visibilityState === 'visible') void this.load(true);
+  }
+
+  private readonly visibility = () => {
+    if (document.visibilityState === 'hidden') {
+      this.hiddenSince = Date.now();
+      return;
+    }
+    const since = this.hiddenSince;
+    this.hiddenSince = undefined;
+    if (since !== undefined && Date.now() - since > refreshInterval) this.refreshIfVisible();
+  };
+
+  /** Reads immediately and restarts the interval. */
+  refresh() {
+    if (this.refreshing) return;
+    this.startTimer();
+    void this.load(true);
   }
 
   /** A refresh keeps the data on screen and reports a failure as a notice. */
@@ -76,10 +120,11 @@ export abstract class CockpitView<T = never> extends LitElement {
     if (!this.refreshing) this.error = undefined;
     this.requestUpdate();
     try {
-      const data = await this.read(request.signal);
+      const data = await this.read(request.signal, this.refreshing);
       if (!request.signal.aborted) {
         this.data = data;
         this.stale = false;
+        this.updatedAt = new Date();
       }
     } catch (error) {
       if (request.signal.aborted) return;
@@ -105,6 +150,19 @@ export abstract class CockpitView<T = never> extends LitElement {
 
   protected override updated() {
     if (this.isConnected) this.setTitle();
+    this.announceRefresh();
+  }
+
+  private announceRefresh() {
+    const { updatedAt, refreshing, announced } = this;
+    if (!this.refreshable || !updatedAt) return;
+    if (announced?.updatedAt === updatedAt && announced.refreshing === refreshing) return;
+    this.announced = { updatedAt, refreshing };
+    this.dispatchEvent(new CustomEvent<RefreshState>('refresh-state', {
+      bubbles: true,
+      composed: true,
+      detail: { view: this, updatedAt, busy: refreshing },
+    }));
   }
 
   private setTitle() {

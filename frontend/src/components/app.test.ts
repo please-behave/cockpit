@@ -40,7 +40,6 @@ test('pb-app renders its content in the application shell', async () => {
   expect(root.querySelector('header .logo-light')?.getAttribute('src')).toContain('logo.svg');
   expect(root.querySelector('header .logo-dark')?.getAttribute('src')).toContain('logo-dark.svg');
   const nav = root.querySelector('header nav[aria-label="Main"]')!;
-  expect(root.querySelector('header slot[name="last-updated"]')).not.toBeNull();
   const tabs = [...nav.querySelectorAll<NavTab>('pb-nav-tab')];
   expect(tabs.map(tab => [tab.textContent?.trim(), tab.getAttribute('href')]))
     .toEqual([['Please Behave Dashboard', '/'], ['Attestations', '/attestations'], ['Rules', '/rules']]);
@@ -237,4 +236,78 @@ describe('history kept across detail navigation', () => {
     const fresh = app.shadowRoot!.querySelector('pb-history')!;
     expect(fresh).not.toBe(history);
   });
+});
+
+async function mountAt(path: string) {
+  vi.stubGlobal('IntersectionObserver', class { observe() {} unobserve() {} disconnect() {} });
+  window.history.replaceState(null, '', path);
+  const app = new CockpitApp();
+  document.body.append(app);
+  await app.updateComplete;
+  const shell = app.shadowRoot!.querySelector<CockpitAppShell>('pb-app-shell')!;
+  return { app, shell };
+}
+
+const status = (shell: CockpitAppShell) => shell.shadowRoot!.querySelector('pb-refresh-status');
+
+// Verifies REQ-0020.
+test.each(['/', '/attestations'])('shows the refresh status on %s', async path => {
+  const { shell } = await mountAt(path);
+  await vi.waitFor(() => expect(status(shell)).not.toBeNull());
+  expect(status(shell)!.shadowRoot!.querySelector('button')?.getAttribute('aria-label')).toBe('Refresh');
+});
+
+// Verifies REQ-0020.
+test.each(['/rules', '/attestations/example', '/missing'])('shows no refresh status on %s', async path => {
+  vi.mocked(getAttestation).mockReturnValue(new Promise(() => {}));
+  const { shell } = await mountAt(path);
+  await shell.updateComplete;
+  expect(status(shell)).toBeNull();
+});
+
+// Verifies REQ-0020.
+test('ages the text without a request and reads once per 5 minutes while visible', async () => {
+  vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] });
+  const { shell } = await mountAt('/');
+  await vi.waitFor(() => expect(status(shell)).not.toBeNull());
+  const text = () => status(shell)!.shadowRoot!.querySelector('time')!.textContent;
+  expect(text()).toBe('Updated a few seconds ago');
+  expect(latestAttestations).toHaveBeenCalledTimes(1);
+
+  await vi.advanceTimersByTimeAsync(60_000);
+  await vi.waitFor(() => expect(text()).toBe('Updated 1 minute ago'));
+  expect(latestAttestations).toHaveBeenCalledTimes(1);
+
+  await vi.advanceTimersByTimeAsync(240_000);
+  expect(latestAttestations).toHaveBeenCalledTimes(2);
+  await vi.advanceTimersByTimeAsync(300_000);
+  expect(latestAttestations).toHaveBeenCalledTimes(3);
+});
+
+// Verifies REQ-0020.
+test('the button reads at once, is busy meanwhile and restarts the interval', async () => {
+  vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] });
+  const { shell } = await mountAt('/');
+  await vi.waitFor(() => expect(status(shell)).not.toBeNull());
+  await vi.advanceTimersByTimeAsync(200_000);
+
+  let complete!: (value: []) => void;
+  vi.mocked(latestAttestations).mockReturnValueOnce(new Promise(resolve => { complete = resolve; }));
+  const button = status(shell)!.shadowRoot!.querySelector('button')!;
+  button.focus();
+  button.click();
+  expect(latestAttestations).toHaveBeenCalledTimes(2);
+  await vi.waitFor(() => expect(button.getAttribute('aria-disabled')).toBe('true'));
+  button.click();
+  expect(latestAttestations).toHaveBeenCalledTimes(2);
+
+  complete([]);
+  await vi.waitFor(() => expect(button.getAttribute('aria-disabled')).toBe('false'));
+  expect(status(shell)!.shadowRoot!.activeElement).toBe(button);
+  expect(status(shell)!.shadowRoot!.querySelector('time')!.textContent).toBe('Updated a few seconds ago');
+
+  await vi.advanceTimersByTimeAsync(299_000);
+  expect(latestAttestations).toHaveBeenCalledTimes(2);
+  await vi.advanceTimersByTimeAsync(1_000);
+  expect(latestAttestations).toHaveBeenCalledTimes(3);
 });

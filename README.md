@@ -89,8 +89,9 @@ and **Sign out** clears the session from the current browser. The dashboard
 shows one tile for the latest reported attestation of each repository and
 execution-point combination, with a header counting the tiles that pass and
 those that do not. Sort the tiles by last attestation or by name, ignoring case. The sort
-choice is the `sort` query parameter. The dashboard refreshes every minute
-while the tab is visible. Select a repository to see the rules and outcomes
+choice is the `sort` query parameter. The dashboard and the **Attestations** page
+read again every 5 minutes while the tab is visible, and the refresh button in
+the header does so on demand next to the age of the data. Select a repository to see the rules and outcomes
 for that attestation; its back link returns to the dashboard or the
 **Attestations** page, wherever you came from. The **Attestations** page lists
 every attestation, newest first, and loads older ones in pages of 100 while you

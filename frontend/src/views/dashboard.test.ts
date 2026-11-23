@@ -177,7 +177,7 @@ function setVisibility(state: 'visible' | 'hidden') {
 }
 
 // Verifies REQ-0020.
-test('refreshes every 60 seconds while visible, keeps focus, sort and tiles, and keys tiles', async () => {
+test('refreshes every 5 minutes while visible, keeps focus, sort and tiles, and keys tiles', async () => {
   vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] });
   window.history.replaceState(null, '', '/?sort=name');
   const reports = [summary('a', 'PASS', 'a/one'), summary('b', 'PASS', 'a/two')];
@@ -189,7 +189,7 @@ test('refreshes every 60 seconds while visible, keeps focus, sort and tiles, and
   expect(latest).toHaveBeenCalledTimes(1);
 
   latest.mockResolvedValue(reports.map(report => ({ ...report, id: `${report.id}2`, result_count: 9 })));
-  await vi.advanceTimersByTimeAsync(60_000);
+  await vi.advanceTimersByTimeAsync(300_000);
   await vi.waitFor(() => expect(tiles(view)[0].shadowRoot!.textContent).toContain('9 rules'));
   expect(latest).toHaveBeenCalledTimes(2);
   expect(tiles(view)[0]).toBe(firstTile);
@@ -199,7 +199,7 @@ test('refreshes every 60 seconds while visible, keeps focus, sort and tiles, and
   expect(view.shadowRoot!.querySelector('[role=status]')).toBeNull();
 
   latest.mockRejectedValue(new ApiError('ledger_unavailable'));
-  await vi.advanceTimersByTimeAsync(60_000);
+  await vi.advanceTimersByTimeAsync(300_000);
   await vi.waitFor(() => expect(view.shadowRoot!.querySelector('[role=status]')?.textContent).toContain('could not be refreshed'));
   expect(tiles(view)).toHaveLength(2);
   expect(view.shadowRoot!.querySelector('pb-error-state')).toBeNull();
@@ -207,29 +207,29 @@ test('refreshes every 60 seconds while visible, keeps focus, sort and tiles, and
   expect(firstTile.shadowRoot!.activeElement).toBe(link);
 
   latest.mockResolvedValue(reports);
-  await vi.advanceTimersByTimeAsync(60_000);
+  await vi.advanceTimersByTimeAsync(300_000);
   await vi.waitFor(() => expect(view.shadowRoot!.querySelector('[role=status]')).toBeNull());
 
   view.remove();
   const calls = latest.mock.calls.length;
-  await vi.advanceTimersByTimeAsync(120_000);
+  await vi.advanceTimersByTimeAsync(600_000);
   expect(latest).toHaveBeenCalledTimes(calls);
 });
 
-test('does nothing while hidden and refreshes when shown after more than a minute', async () => {
+test('does nothing while hidden and refreshes when shown after more than 5 minutes', async () => {
   vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] });
   latest.mockResolvedValue([summary('a', 'PASS', 'a/one')]);
   await mount();
 
   setVisibility('hidden');
-  await vi.advanceTimersByTimeAsync(180_000);
+  await vi.advanceTimersByTimeAsync(600_000);
   expect(latest).toHaveBeenCalledTimes(1);
 
   setVisibility('visible');
   await vi.waitFor(() => expect(latest).toHaveBeenCalledTimes(2));
 
   setVisibility('hidden');
-  await vi.advanceTimersByTimeAsync(30_000);
+  await vi.advanceTimersByTimeAsync(60_000);
   setVisibility('visible');
   expect(latest).toHaveBeenCalledTimes(2);
 });

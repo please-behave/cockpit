@@ -1,9 +1,11 @@
-import { css, html, LitElement } from 'lit';
+import { css, html, LitElement, nothing } from 'lit';
 import logo from '../../brand/logo.svg';
 import logoDark from '../../brand/logo-dark.svg';
 import { linkStyles } from '../styles/links';
+import type { RefreshState } from '../views/cockpit-view';
 import type { Route } from '../views/router';
 import './pb-nav-tab';
+import './pb-refresh-status';
 import './pb-theme-toggle';
 
 export class CockpitAppShell extends LitElement {
@@ -111,12 +113,36 @@ export class CockpitAppShell extends LitElement {
 
   static override properties = {
     currentView: { attribute: false },
+    refreshState: { state: true },
   };
   declare currentView: Route['view'];
+  declare private refreshState?: RefreshState;
 
   private skipToMain(event: MouseEvent) {
     event.preventDefault();
     this.renderRoot.querySelector('main')?.focus();
+  }
+
+  private readonly refreshStateChanged = (event: Event) => {
+    this.refreshState = (event as CustomEvent<RefreshState>).detail;
+  };
+
+  override connectedCallback() {
+    super.connectedCallback();
+    this.addEventListener('refresh-state', this.refreshStateChanged);
+  }
+
+  override disconnectedCallback() {
+    this.removeEventListener('refresh-state', this.refreshStateChanged);
+    super.disconnectedCallback();
+  }
+
+  private refreshStatus() {
+    const state = this.refreshState;
+    const refreshable = this.currentView === 'dashboard' || this.currentView === 'history';
+    if (!state || !refreshable || !state.view.isConnected) return nothing;
+    return html`<pb-refresh-status .updatedAt=${state.updatedAt} .busy=${state.busy}
+      @refresh=${() => state.view.refresh()}></pb-refresh-status>`;
   }
 
   override render() {
@@ -138,7 +164,7 @@ export class CockpitAppShell extends LitElement {
             </pb-nav-tab>
           </nav>
           <div class="actions">
-            <slot name="last-updated"></slot>
+            ${this.refreshStatus()}
             <pb-theme-toggle></pb-theme-toggle>
             <a class="sign-out" href="/sign-out">Sign out</a>
           </div>

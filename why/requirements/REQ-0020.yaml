@@ -1,13 +1,23 @@
 id: REQ-0020
-name: Dashboard Refresh
+name: Dashboard and History Refresh
 description: >-
-  While the browser tab is visible, the dashboard reads the latest attestations
-  again every 60 seconds and when the tab becomes visible after it was hidden
-  for longer than that. It does nothing while the tab is hidden. A failed
-  refresh keeps the tiles, the keyboard focus and the sort choice and shows a
-  notice. Tiles are identified by repository and execution points.
+  While the browser tab is visible, the dashboard and the attestation history
+  read their latest data again every 5 minutes and when the tab becomes visible
+  after it was hidden for longer than that. They do nothing while the tab is
+  hidden. The registered rules, the rule detail and the attestation detail do
+  not refresh. The header of a refreshable view shows a refresh button named
+  "Refresh" and the text "Updated a few seconds ago", "Updated 1 minute ago",
+  "Updated 2 minutes ago" and so on. The text updates at least every 10 seconds
+  without reading data, is no live region, and the exact time of the last read
+  is available in a tooltip and as an accessible description. The button reads
+  immediately, shows that it is working, accepts no further request meanwhile
+  and restarts the 5-minute interval. A refresh replaces content in place and
+  keeps the keyboard focus, the scroll position and the dashboard's sort choice.
+  A failed refresh keeps the data and shows a notice. Tiles are identified by
+  repository and execution points.
 rationale: >-
-  The dashboard stays current without a reload and without interrupting the
-  viewer.
+  The views stay current without a reload and without interrupting the viewer,
+  who can see how old the data is and read again on demand.
 decisions:
   - DEC-0001
+  - DEC-0007

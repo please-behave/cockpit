@@ -11,7 +11,8 @@ description: >-
   by the rule of DEC-0011. The columns never wrap and long values are
   truncated. A ledger without attestations has an explicit empty state, and
   a failed first page shows the ledger-unavailable error with a retry action.
-  The page has an entry in the navigation.
+  The page has an entry in the navigation and refreshes by the rule of
+  REQ-0020.
 rationale: >-
   Viewers can find any attestation that was ever reported, not only the latest
   one of each repository.

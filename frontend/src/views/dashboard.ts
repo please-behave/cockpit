@@ -12,8 +12,6 @@ const sortOptions: readonly { value: Sort; label: string }[] = [
   { value: 'name', label: 'Name' },
 ];
 
-const refreshInterval = 60_000;
-
 function compareCodePoints(left: string, right: string): number {
   const leftPoints = Array.from(left, character => character.codePointAt(0)!);
   const rightPoints = Array.from(right, character => character.codePointAt(0)!);
@@ -155,39 +153,11 @@ export class DashboardView extends CockpitView<Summary[]> {
   `];
 
   declare sort: Sort;
-  private hiddenSince?: number;
-  private timer?: number;
 
   constructor() {
     super();
     this.sort = sortFromLocation();
   }
-
-  override connectedCallback() {
-    super.connectedCallback();
-    this.timer = window.setInterval(() => this.refresh(), refreshInterval);
-    document.addEventListener('visibilitychange', this.visibility);
-  }
-
-  override disconnectedCallback() {
-    window.clearInterval(this.timer);
-    document.removeEventListener('visibilitychange', this.visibility);
-    super.disconnectedCallback();
-  }
-
-  private refresh() {
-    if (document.visibilityState === 'visible') void this.load(true);
-  }
-
-  private readonly visibility = () => {
-    if (document.visibilityState === 'hidden') {
-      this.hiddenSince = Date.now();
-      return;
-    }
-    const since = this.hiddenSince;
-    this.hiddenSince = undefined;
-    if (since !== undefined && Date.now() - since > refreshInterval) this.refresh();
-  };
 
   protected override read(signal: AbortSignal) {
     return latestAttestations(signal);
@@ -198,6 +168,7 @@ export class DashboardView extends CockpitView<Summary[]> {
   }
 
   protected override readonly headingVisible = false;
+  protected override readonly refreshable = true;
 
   protected override content(summaries?: Summary[]) {
     return html`

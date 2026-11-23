@@ -300,3 +300,45 @@ test('abandons a pending page when the view is removed', async () => {
   expect(page.mock.calls[1][1].aborted).toBe(true);
   expect(observers[0].observed.size).toBe(0);
 });
+
+// Verifies REQ-0022.
+test('a refresh inserts new entries at the top and keeps the loaded pages', async () => {
+  page.mockResolvedValueOnce(range(2, 100)).mockResolvedValueOnce(range(102, 20));
+  const view = await mount();
+  await reach(view);
+  expect(await rowCount(view)).toBe(120);
+
+  page.mockResolvedValueOnce([summary(1), ...range(2, 99)]);
+  await view.refresh();
+  await vi.waitFor(() => expect(hrefs(view)[0]).toBe('/attestations/id-0001'));
+  expect(hrefs(view)).toHaveLength(121);
+  expect(hrefs(view)[1]).toBe('/attestations/id-0002');
+  expect(page).toHaveBeenLastCalledWith({ limit: 100 }, expect.any(AbortSignal));
+  expect(view.shadowRoot!.querySelector('[role=status]:not(.assistive)')).toBeNull();
+});
+
+// Verifies REQ-0022.
+test('a refresh page without a loaded entry replaces the list', async () => {
+  page.mockResolvedValueOnce(range(500, 100)).mockResolvedValueOnce(range(600, 20));
+  const view = await mount();
+  await reach(view);
+  expect(await rowCount(view)).toBe(120);
+
+  page.mockResolvedValueOnce(range(1, 100));
+  view.refresh();
+  await vi.waitFor(() => expect(hrefs(view)[0]).toBe('/attestations/id-0001'));
+  expect(hrefs(view)).toHaveLength(100);
+  expect(announcement(view)).toBe('100 attestations loaded.');
+});
+
+// Verifies REQ-0022.
+test('a failed refresh keeps the loaded entries and shows the notice', async () => {
+  page.mockResolvedValueOnce(range(1, 100));
+  const view = await mount();
+  page.mockRejectedValueOnce(new ApiError('ledger_unavailable'));
+  view.refresh();
+  await vi.waitFor(() => expect(view.shadowRoot!.querySelector('[role=status]:not(.assistive)')?.textContent)
+    .toContain('could not be refreshed'));
+  expect(await rowCount(view)).toBe(100);
+  expect(view.shadowRoot!.querySelector('pb-error-state')).toBeNull();
+});

@@ -89,12 +89,18 @@ export class HistoryView extends CockpitView<Summary[]> {
     super.disconnectedCallback();
   }
 
-  protected override async read(signal: AbortSignal) {
+  protected override async read(signal: AbortSignal, refresh: boolean) {
+    const page = await attestationPage({ limit: pageSize }, signal);
+    const known = new Set(this.loaded.map(summary => summary.id));
+    if (refresh && page.some(summary => known.has(summary.id))) {
+      // Pages already loaded below stay; only entries not yet loaded move to the top.
+      this.loaded = [...withoutDuplicates(page, known), ...this.loaded];
+      return page;
+    }
     this.more?.abort();
     this.more = undefined;
     this.loadingMore = false;
     this.moreFailed = false;
-    const page = await attestationPage({ limit: pageSize }, signal);
     this.loaded = withoutDuplicates(page);
     this.ended = page.length < pageSize;
     return page;
@@ -105,6 +111,7 @@ export class HistoryView extends CockpitView<Summary[]> {
   }
 
   protected override readonly headingVisible = false;
+  protected override readonly refreshable = true;
 
   protected override content(page?: Summary[]) {
     return html`
