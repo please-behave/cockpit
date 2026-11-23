@@ -101,7 +101,6 @@ test('declared token pairings meet the shared contrast minimums in both themes a
     for (const surface of ['surface', 'surface-raised']) {
       for (const text of textTokens) assertContrast(text, surface, 4.5);
       assertContrast('border', surface, 3);
-      assertContrast('nav-active-surface', surface, 3);
       assertContrast('badge-border', surface, 3);
       assertContrast('panel-border', surface, 3);
       if (theme === 'dark') assertContrast('brand-light', surface, 3);
@@ -111,7 +110,17 @@ test('declared token pairings meet the shared contrast minimums in both themes a
     }
     assertContrast('badge-border', 'badge-surface', 3);
     assertContrast('panel-border', 'panel-surface', 3);
-    assertContrast('nav-active-text', 'nav-active-surface', 4.5);
+    assertContrast('nav-current-text', 'surface', 4.5);
+    for (const [foreground, surface, hover] of [
+      ['link', 'surface-raised', 'nav-hover-surface'],
+      ['nav-current-text', 'surface', 'nav-current-hover-surface'],
+    ]) {
+      assert.ok(luminance(token(hover)) < luminance(token(surface)), `${theme} ${hover} darkens ${surface}`);
+      assertContrast(foreground, hover, 4.5);
+      assertContrast('border', hover, 3);
+      assertContrast('text', surface, 3);
+      assertContrast('text', hover, 3);
+    }
     assertContrast('brand-primary', 'brand-accent', 4.5);
     assertContrast('brand-light', 'brand-primary', 4.5);
   }
@@ -119,8 +128,6 @@ test('declared token pairings meet the shared contrast minimums in both themes a
   for (const [name, systemColor] of [
     ['link', 'LinkText'],
     ['surface-hover', 'Canvas'],
-    ['nav-active-surface', 'Highlight'],
-    ['nav-active-text', 'HighlightText'],
     ['badge-surface', 'Canvas'],
     ['badge-border', 'CanvasText'],
     ['panel-surface', 'Canvas'],

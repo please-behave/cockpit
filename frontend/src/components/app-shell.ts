@@ -44,7 +44,6 @@ export class CockpitAppShell extends LitElement {
 
       .brand {
         font-size: var(--type-brand);
-        font-weight: var(--weight-semibold);
         line-height: var(--line-heading);
       }
 
@@ -59,14 +58,6 @@ export class CockpitAppShell extends LitElement {
 
       .logo-dark {
         display: var(--logo-dark-display);
-      }
-
-      .brand[active] .logo-light {
-        display: var(--logo-dark-display);
-      }
-
-      .brand[active] .logo-dark {
-        display: var(--logo-light-display);
       }
 
       .actions {

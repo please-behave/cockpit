@@ -1,5 +1,4 @@
 import { css, html, LitElement, nothing } from 'lit';
-import { linkStyles } from '../styles/links';
 
 export class NavTab extends LitElement {
   static override properties = {
@@ -8,7 +7,7 @@ export class NavTab extends LitElement {
   };
 
   static override styles = css`
-    ${linkStyles}
+    @layer tokens, base, components, utilities;
 
     @layer components {
       :host {
@@ -16,37 +15,36 @@ export class NavTab extends LitElement {
       }
 
       a {
+        --segment-hover: var(--nav-hover-surface);
+
         display: flex;
         flex: 1;
         align-items: center;
         justify-content: center;
         gap: var(--space-2);
         padding: var(--space-3) var(--space-4);
-      }
-
-      a:hover {
-        background: var(--surface-hover);
-        text-decoration-thickness: 0.125em;
+        background: var(--surface-raised);
+        color: var(--link);
+        text-decoration: none;
       }
 
       a[aria-current="page"] {
-        background: var(--nav-active-surface);
-        color: var(--nav-active-text);
+        --segment-hover: var(--nav-current-hover-surface);
+
+        background: var(--surface);
+        color: var(--nav-current-text);
+        font-weight: var(--weight-semibold);
+      }
+
+      a:hover {
+        background: var(--segment-hover);
+        outline: 1px solid var(--border);
+        outline-offset: -1px;
       }
 
       a:focus-visible {
         outline: var(--focus-ring);
         outline-offset: calc(-2 * var(--focus-offset));
-      }
-
-      a[aria-current="page"]:focus-visible {
-        outline-color: var(--nav-active-text);
-      }
-
-      @media (forced-colors: active) {
-        a[aria-current="page"] {
-          forced-color-adjust: none;
-        }
       }
     }
   `;

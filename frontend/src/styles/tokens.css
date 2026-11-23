@@ -14,8 +14,9 @@
 
     --link: #493080;
     --surface-hover: #ECE8F5;
-    --nav-active-surface: var(--brand-primary);
-    --nav-active-text: var(--brand-light);
+    --nav-current-text: var(--brand-primary);
+    --nav-hover-surface: #DDDCDE;
+    --nav-current-hover-surface: #E6E6E6;
     --badge-surface: #E5DDF6;
     --badge-border: var(--border);
     --panel-surface: var(--surface-raised);
@@ -68,8 +69,9 @@
 
       --link: #D2C2FF;
       --surface-hover: #302A3D;
-      --nav-active-surface: #B9A8E8;
-      --nav-active-text: var(--brand-primary);
+      --nav-current-text: #B9A8E8;
+      --nav-hover-surface: #201D28;
+      --nav-current-hover-surface: #131119;
       --badge-surface: #3B304F;
 
       --status-passed: #78D69A;
@@ -94,8 +96,9 @@
 
     --link: #D2C2FF;
     --surface-hover: #302A3D;
-    --nav-active-surface: #B9A8E8;
-    --nav-active-text: var(--brand-primary);
+    --nav-current-text: #B9A8E8;
+    --nav-hover-surface: #201D28;
+    --nav-current-hover-surface: #131119;
     --badge-surface: #3B304F;
 
     --status-passed: #78D69A;
@@ -116,8 +119,6 @@
     :root {
       --link: LinkText;
       --surface-hover: Canvas;
-      --nav-active-surface: Highlight;
-      --nav-active-text: HighlightText;
       --badge-surface: Canvas;
       --badge-border: CanvasText;
       --panel-surface: Canvas;
