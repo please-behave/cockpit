@@ -77,6 +77,7 @@ test('serves every attestation in the client shape with matching counts', () => 
   )!;
   const { results } = body<Attestation>(`/v0/attestations/${scrollable.id}`);
   expect(new Set(results.map(item => item.id)).size).toBe(36);
+  expect(results.at(-2)?.verification).toEqual({ status: 'unverified', reason: 'mismatch' });
   expect(results.at(-1)?.rule).toMatchObject({ id: 'design-review', version: '2.0' });
   expect(respond('/v0/attestations/missing')!.status).toBe(404);
 });

@@ -7,8 +7,7 @@ const statuses = new Map([
   ['WARN', { style: 'warning', symbol: '▲' }],
   ['NOT_RUN', { style: 'not-run', symbol: '–' }],
   ['Verified', { style: 'passed', symbol: '✓' }],
-  ['Unverified (unregistered)', { style: 'warning', symbol: '▲' }],
-  ['Unverified (mismatch)', { style: 'warning', symbol: '▲' }],
+  ['Unverified', { style: 'warning', symbol: '▲' }],
 ]);
 
 export class StatusPill extends LitElement {

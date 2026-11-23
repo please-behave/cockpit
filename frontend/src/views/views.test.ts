@@ -6,6 +6,7 @@ import type { DefinitionList } from '../components/pb-definition-list';
 import type { ErrorState } from '../components/pb-error-state';
 import type { CockpitTime } from '../components/pb-time';
 import type { StatusPill } from '../components/pb-status-pill';
+import type { Tooltip } from '../components/pb-tooltip';
 import { DetailView } from './detail';
 import { DashboardView } from './dashboard';
 
@@ -129,9 +130,26 @@ test.each(['light', 'dark'])('detail presents reported results and verification 
   const verification = rows.map(row => row.cells[3].querySelector<StatusPill>('pb-status-pill')!);
   await Promise.all(verification.map(pill => pill.updateComplete));
   expect(verification.map(pill => pill.shadowRoot!.querySelector('.pill span:last-child')?.textContent))
-    .toEqual(['Verified', 'Unverified (unregistered)', 'Unverified (mismatch)', 'Unverified (unregistered)', 'Verified']);
+    .toEqual(['Verified', 'Unverified', 'Unverified', 'Unverified', 'Verified']);
   expect(verification.map(pill => pill.shadowRoot!.querySelector('.pill')?.className))
     .toEqual(['pill passed', 'pill warning', 'pill warning', 'pill warning', 'pill passed']);
+  const tooltips = rows.map(row => row.cells[3].querySelector<Tooltip>('pb-tooltip'));
+  await Promise.all(tooltips.map(tooltip => tooltip?.updateComplete));
+  expect(tooltips.map(tooltip => tooltip?.description)).toEqual([
+    undefined,
+    'No rule is registered for this identity and version, so the ledger could not check the result.',
+    'The reported rule differs from its registered version: the digest does not match.',
+    'No rule is registered for this identity and version, so the ledger could not check the result.',
+    undefined,
+  ]);
+  for (const tooltip of tooltips) {
+    if (!tooltip) continue;
+    const trigger = tooltip.shadowRoot!.querySelector('button')!;
+    expect(trigger.tabIndex).toBe(0);
+    expect(trigger.classList.contains('hint')).toBe(true);
+    expect(tooltip.shadowRoot!.getElementById(trigger.getAttribute('aria-describedby')!)?.textContent?.trim())
+      .toBe(tooltip.description);
+  }
 });
 
 test('detail links the full commit using the shared GitHub target', async () => {

@@ -88,12 +88,15 @@ const verifiedResults = [
   result('run-3', 'review', 'PASS', identity('reviews/design', 'design-review', '2.0')),
 ];
 
+const mismatchedResult = result('run-5', 'check', 'PASS', identity('checks/license', 'license-file', '1.0'),
+  { status: 'unverified', reason: 'mismatch' });
+
 const mixedResults = [
   result('run-1', 'check', 'FAIL', identity('checks/license', 'license-file', '2.0')),
   result('run-2', 'check', 'WARN', identity('checks/security', 'no-secrets', '1.0')),
   result('run-3', 'review', 'NOT_RUN', identity('reviews/design', 'design-review', '2.0')),
   result('run-4', 'review', 'PASS', identity('reviews/docs', 'docs-review', '1.0')),
-  result('run-5', 'check', 'PASS', identity('checks/license', 'license-file', '1.0'), { status: 'unverified', reason: 'mismatch' }),
+  mismatchedResult,
   result('run-6', 'check', 'PASS', { source: ruleSource, path: 'checks/unknown', id: 'unregistered-rule' }, { status: 'unverified', reason: 'unregistered' }),
   result('run-7', 'integrity', 'PASS', undefined, { status: 'unverified', reason: 'unregistered' }),
   result('run-8', 'check', 'PASS', identity('checks/long', 'rule-with-a-very-long-identifier-that-needs-to-wrap-on-narrow-screens', '1.0')),
@@ -106,7 +109,7 @@ const errorResults = [
 ];
 
 const scrollableResults = Array.from({ length: 36 }, (_, index) => ({
-  ...verifiedResults[index % verifiedResults.length],
+  ...(index === 34 ? mismatchedResult : verifiedResults[index % verifiedResults.length]),
   id: `scroll-result-${index + 1}`,
 }));
 

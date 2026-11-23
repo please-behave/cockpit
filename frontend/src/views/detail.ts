@@ -6,6 +6,7 @@ import '../components/pb-data-table';
 import '../components/pb-definition-list';
 import '../components/pb-status-pill';
 import '../components/pb-time';
+import '../components/pb-tooltip';
 import { CockpitView } from './cockpit-view';
 import { followHistoryBack, rulePath } from './router';
 
@@ -15,6 +16,20 @@ const columns: DataTableColumn[] = [
   { label: 'Status', mode: 'content' },
   { label: 'Verification', mode: 'content' },
 ];
+
+const verificationReasons = {
+  unregistered: 'No rule is registered for this identity and version, so the ledger could not check the result.',
+  mismatch: 'The reported rule differs from its registered version: the digest does not match.',
+};
+
+function verificationCell(verification: Attestation['results'][number]['verification']) {
+  if (verification.status === 'verified') return html`<pb-status-pill status="Verified"></pb-status-pill>`;
+  return html`
+    <pb-tooltip hint .description=${verificationReasons[verification.reason]}>
+      <pb-status-pill status="Unverified"></pb-status-pill>
+    </pb-tooltip>
+  `;
+}
 
 function ruleCell({ id, name, rule, verification }: Attestation['results'][number]) {
   if (!rule?.version || (verification.status === 'unverified' && verification.reason === 'unregistered')) {
@@ -81,9 +96,7 @@ export class DetailView extends CockpitView<Attestation> {
         ruleCell(result),
         result.kind,
         html`<pb-status-pill .status=${result.status}></pb-status-pill>`,
-        html`<pb-status-pill .status=${result.verification.status === 'verified'
-          ? 'Verified'
-          : `Unverified (${result.verification.reason})`}></pb-status-pill>`,
+        verificationCell(result.verification),
       ],
     }));
 
