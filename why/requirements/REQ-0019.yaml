@@ -5,8 +5,8 @@ description: >-
   through CON-0001. A summary banner above the tiles states how many tiles pass and how many do
   not (FAIL or ERROR), as text with an icon, in the page heading size and with
   a stripe in the status color, and does not rely on color alone. The sort
-  control shares its row, aligned to the end and wrapped below on narrow
-  widths. It shows one tile
+  control is inside the banner, aligned to the end and wrapped below the status
+  counts on narrow widths. The dashboard shows one tile
   for each repository and execution-point combination that
   ledger:CON-0002 returns, with the status, the repository owner above the
   shortened repository name, the first seven characters of the commit, the

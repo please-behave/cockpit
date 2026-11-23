@@ -43,7 +43,7 @@ test('pb-app renders its content in the application shell', async () => {
   expect(root.querySelector('header slot[name="last-updated"]')).not.toBeNull();
   const tabs = [...nav.querySelectorAll<NavTab>('pb-nav-tab')];
   expect(tabs.map(tab => [tab.textContent?.trim(), tab.getAttribute('href')]))
-    .toEqual([['Please Behave Cockpit', '/'], ['Attestations', '/attestations'], ['Rules', '/rules']]);
+    .toEqual([['Please Behave Dashboard', '/'], ['Attestations', '/attestations'], ['Rules', '/rules']]);
   expect(root.querySelector('header .actions pb-theme-toggle + a.sign-out')?.getAttribute('href')).toBe('/sign-out');
   expect(root.querySelector('main slot')).not.toBeNull();
 

@@ -73,6 +73,7 @@ test('states the overall state in a banner with text and icon for passing and fa
   const view = await mount();
   const root = view.shadowRoot!;
   const banner = root.querySelector('.banner')!;
+  expect(banner.querySelector('fieldset legend')?.textContent).toBe('Sort by');
   expect(banner.querySelector('h2')!.textContent).toBe('2 not passing, 2 passing');
   expect(banner.classList.contains('failed')).toBe(true);
   expect(banner.querySelector('.icon')!.textContent).toBe('×');

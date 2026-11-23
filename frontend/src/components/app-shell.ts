@@ -128,7 +128,7 @@ export class CockpitAppShell extends LitElement {
             <pb-nav-tab class="brand" href="/" .active=${this.currentView === 'dashboard'}>
               <img class="logo-light" src=${logo} alt="">
               <img class="logo-dark" src=${logoDark} alt="">
-              <span>Please Behave Cockpit</span>
+              <span>Please Behave Dashboard</span>
             </pb-nav-tab>
             <pb-nav-tab href="/attestations" .active=${this.currentView === 'history' || this.currentView === 'detail'}>
               Attestations

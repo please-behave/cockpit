@@ -67,19 +67,12 @@ export class DashboardView extends CockpitView<Summary[]> {
 
   static override styles = [CockpitView.styles as CSSResult, css`
     @layer components {
-      .summary {
+      .banner {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
         gap: var(--space-4);
         margin-block-end: var(--space-6);
-      }
-
-      .banner {
-        display: flex;
-        flex: 1 1 20rem;
-        align-items: center;
-        gap: var(--space-4);
         padding: var(--space-4) var(--space-6);
         border: 1px solid var(--panel-border);
         border-inline-start: 0.5rem solid var(--panel-border);
@@ -87,8 +80,18 @@ export class DashboardView extends CockpitView<Summary[]> {
         background: var(--panel-surface);
       }
 
-      .banner.passed { border-inline-start-color: var(--status-passed); color: var(--status-passed); }
-      .banner.failed { border-inline-start-color: var(--status-failed); color: var(--status-failed); }
+      .banner.passed { border-inline-start-color: var(--status-passed); }
+      .banner.failed { border-inline-start-color: var(--status-failed); }
+
+      .status {
+        display: flex;
+        align-items: center;
+        gap: var(--space-4);
+        min-inline-size: 0;
+      }
+
+      .passed .status { color: var(--status-passed); }
+      .failed .status { color: var(--status-failed); }
 
       .banner .icon {
         font-size: var(--type-heading);
@@ -109,9 +112,12 @@ export class DashboardView extends CockpitView<Summary[]> {
       }
 
       .sort {
-        margin: 0 0 0 auto;
+        margin: 0;
+        margin-inline-start: auto;
+        min-inline-size: 0;
         padding: 0;
         border: 0;
+        text-align: end;
       }
 
       .sort legend {
@@ -121,7 +127,19 @@ export class DashboardView extends CockpitView<Summary[]> {
       }
 
       .sort label {
-        margin-inline-end: var(--space-3);
+        display: inline-block;
+      }
+
+      .sort label + label {
+        margin-inline-start: var(--space-3);
+      }
+
+      @media (max-width: 24rem) {
+        .sort legend {
+          float: none;
+          margin-inline: auto 0;
+          margin-block-end: var(--space-1);
+        }
       }
 
       .tiles {
@@ -212,8 +230,8 @@ export class DashboardView extends CockpitView<Summary[]> {
     const sorted = [...summaries].sort(this.sort === 'name' ? compareByName : compareByTime);
 
     return html`
-      <div class="summary">
-        <div class="banner ${passed ? 'passed' : 'failed'}">
+      <div class="banner ${passed ? 'passed' : 'failed'}">
+        <div class="status">
           <span class="icon" aria-hidden="true">${passed ? '✓' : '×'}</span>
           <h2>${headline}</h2>
         </div>
