@@ -57,6 +57,7 @@ pub enum Overall {
 #[derive(Debug, Deserialize, Eq, PartialEq)]
 pub struct ReportedResult {
     pub id: String,
+    pub name: Option<String>,
     pub kind: ResultKind,
     pub status: ReportedStatus,
     pub verification: Verification,

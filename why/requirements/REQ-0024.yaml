@@ -6,9 +6,8 @@ description: >-
   labels verified results and distinguishes unverified results by their
   reported reason, unregistered or mismatch. Verification describes the
   evidence separately from the reported rule outcome. The display uses
-  shared status tokens and visible text in both themes. It shows a rule's
-  source, path and version when the ledger includes them and omits absent
-  fields.
+  shared status tokens and visible text in both themes. Viewers can inspect
+  the source and path for registered rules on the linked rule detail.
 rationale: >-
   Viewers can tell how far a reported result can be attributed to a known
   rule version.

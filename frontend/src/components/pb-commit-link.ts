@@ -6,13 +6,14 @@ export class CommitLink extends LitElement {
   static override properties = {
     repository: { type: String },
     commit: { type: String },
+    full: { type: Boolean, reflect: true },
   };
 
   static override styles = css`
     ${linkStyles}
 
     @layer components {
-      :host {
+      :host(:not([full])) {
         white-space: nowrap;
       }
 
@@ -34,19 +35,21 @@ export class CommitLink extends LitElement {
 
   declare repository: string;
   declare commit: string;
+  declare full: boolean;
 
   constructor() {
     super();
     this.repository = '';
     this.commit = '';
+    this.full = false;
   }
 
   override render() {
-    const short = Array.from(this.commit).slice(0, 7).join('');
+    const label = this.full ? this.commit : Array.from(this.commit).slice(0, 7).join('');
     const url = commitUrl(this.repository, this.commit);
-    if (!url) return html`<code>${short}</code>`;
+    if (!url) return html`<code>${label}</code>`;
 
-    return html`<a href=${url} target="_blank" rel="noopener noreferrer"><code>${short}</code>
+    return html`<a href=${url} target="_blank" rel="noopener noreferrer"><code>${label}</code>
       <span aria-hidden="true">↗</span><span class="assistive">(opens in a new tab)</span></a>`;
   }
 }

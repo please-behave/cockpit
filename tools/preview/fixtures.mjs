@@ -67,7 +67,15 @@ function rule(kind, path, id, versions, details) {
 const identity = (path, id, version) => ({ source: ruleSource, path, id, ...(version ? { version } : {}) });
 
 function result(id, kind, status, ruleIdentity, verification = { status: 'verified' }) {
-  return { id, kind, status, verification, ...(ruleIdentity ? { rule: ruleIdentity } : {}) };
+  const registration = ruleIdentity && rules.flat().find(rule =>
+    rule.source === ruleIdentity.source && rule.path === ruleIdentity.path
+    && rule.id === ruleIdentity.id && rule.version === ruleIdentity.version,
+  );
+  return {
+    id, kind, status, verification,
+    ...(ruleIdentity ? { rule: ruleIdentity } : {}),
+    ...(registration?.name ? { name: registration.name } : {}),
+  };
 }
 
 const verifiedResults = [
@@ -83,7 +91,7 @@ const mixedResults = [
   result('run-4', 'review', 'PASS', identity('reviews/docs', 'docs-review', '1.0')),
   result('run-5', 'check', 'PASS', identity('checks/license', 'license-file', '1.0'), { status: 'unverified', reason: 'mismatch' }),
   result('run-6', 'check', 'PASS', { source: ruleSource, path: 'checks/unknown', id: 'unregistered-rule' }, { status: 'unverified', reason: 'unregistered' }),
-  result('run-7', 'integrity', 'PASS'),
+  result('run-7', 'integrity', 'PASS', undefined, { status: 'unverified', reason: 'unregistered' }),
   result('run-8', 'check', 'PASS', identity('checks/long', 'rule-with-a-very-long-identifier-that-needs-to-wrap-on-narrow-screens', '1.0')),
   result('run-9', 'check', 'PASS', identity('checks/markup', 'markup', '1.0')),
 ];

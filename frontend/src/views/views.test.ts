@@ -1,9 +1,9 @@
 import { afterEach, expect, test, vi } from 'vitest';
 import { ApiError, getAttestation, type Summary } from '../api/client';
+import type { CommitLink } from '../components/pb-commit-link';
 import type { DataTable } from '../components/pb-data-table';
 import type { DefinitionList } from '../components/pb-definition-list';
 import type { ErrorState } from '../components/pb-error-state';
-import type { ShortName } from '../components/pb-short-name';
 import type { CockpitTime } from '../components/pb-time';
 import type { StatusPill } from '../components/pb-status-pill';
 import { DetailView } from './detail';
@@ -62,17 +62,20 @@ test.each(['light', 'dark'])('detail presents reported results and verification 
     path: '.please/reviews/<script>bad</script>',
     id: 'review',
   };
+  const registeredName = '<img src=x onerror=alert(1)> <script>bad</script>';
   detail.mockResolvedValue({
     ...value,
     results: [
-      { id: 'z/<script>bad</script>', kind: 'review', status: 'FAIL',
+      { id: 'z/review', name: registeredName, kind: 'review', status: 'FAIL',
         rule: { ...rule, version: '1.2' }, verification: { status: 'verified' } },
       { id: 'a/rule', kind: 'integrity', status: 'NOT_RUN',
         verification: { status: 'unverified', reason: 'unregistered' } },
-      { id: 'a/rule', kind: 'check', status: 'PASS',
+      { id: 'a/rule', name: 'Earlier review', kind: 'check', status: 'PASS',
         rule: { ...rule, version: '2.0' }, verification: { status: 'unverified', reason: 'mismatch' } },
-      { id: 'versionless', kind: 'review', status: 'WARN',
-        rule, verification: { status: 'unverified', reason: 'unregistered' } },
+      { id: 'unknown-version', kind: 'review', status: 'WARN',
+        rule: { ...rule, version: '3.0' }, verification: { status: 'unverified', reason: 'unregistered' } },
+      { id: 'old/review', kind: 'review', status: 'PASS',
+        rule: { ...rule, version: '1.0' }, verification: { status: 'verified' } },
     ],
   });
   const view = mountDetail(value.id);
@@ -90,41 +93,61 @@ test.each(['light', 'dark'])('detail presents reported results and verification 
   const metadata = definitions.shadowRoot!;
   expect([...metadata.querySelectorAll('dt')].map(term => term.textContent))
     .toEqual(['Attestation ID', 'Commit', 'Overall', 'Reported']);
-  expect([...metadata.querySelectorAll('dd')].slice(0, 2).map(item => item.textContent))
-    .toEqual([value.id, value.commit]);
+  expect(metadata.querySelector('dd')?.textContent).toBe(value.id);
+  const commit = metadata.querySelector<CommitLink>('pb-commit-link')!;
+  await commit.updateComplete;
+  expect(commit.shadowRoot!.querySelector('code')?.textContent).toBe(value.commit);
+  expect(commit.shadowRoot!.querySelector('a')).toBeNull();
   expect(metadata.querySelector<StatusPill>('pb-status-pill')?.status).toBe('FAIL');
   expect(metadata.querySelector<CockpitTime>('pb-time')?.value).toBe(receipt);
   expect(metadata.querySelector('img, script')).toBeNull();
 
   const table = await tableRoot(view);
   const rows = [...table.querySelectorAll<HTMLTableRowElement>('tbody tr')];
-  expect(rows.map(row => row.querySelector<ShortName>('pb-short-name')?.value)).toEqual([
-    'z/<script>bad</script>', 'a/rule', 'a/rule', 'versionless',
-  ]);
   expect([...table.querySelectorAll('thead th.content')].map(cell => cell.textContent))
-    .toEqual(['Kind', 'Status']);
-  expect(table.querySelector('thead th:last-child')?.textContent).toBe('Verification');
-  expect(rows.map(row => row.cells[1].textContent)).toEqual(['review', 'integrity', 'check', 'review']);
+    .toEqual(['Kind', 'Status', 'Verification']);
+  expect(rows.map(row => [...row.querySelectorAll('td.content')])).toEqual(
+    rows.map(row => [...row.cells].slice(1)),
+  );
+  expect(rows.map(row => row.cells[1].textContent)).toEqual(['review', 'integrity', 'check', 'review', 'review']);
   expect(rows.map(row => row.cells[2].querySelector<StatusPill>('pb-status-pill')?.status)).toEqual([
-    'FAIL', 'NOT_RUN', 'PASS', 'WARN',
+    'FAIL', 'NOT_RUN', 'PASS', 'WARN', 'PASS',
   ]);
-  expect(rows.map(row => [...row.cells[0].querySelectorAll('code')].map(field => field.textContent)))
-    .toEqual([[rule.source, rule.path, '1.2'], [], [rule.source, rule.path, '2.0'], [rule.source, rule.path]]);
-  expect(rows[1].cells[0].querySelector('div')).toBeNull();
+  expect(rows.map(row => row.cells[0].textContent!.trim().replace(/\s*\n\s*/g, ' ')))
+    .toEqual([`${registeredName} 1.2`, 'a/rule', 'Earlier review 2.0', 'review', 'review 1.0']);
+  expect(rows.map(row => row.cells[0].querySelector('a')?.textContent))
+    .toEqual([registeredName, undefined, 'Earlier review', undefined, 'review']);
+  expect(rows.map(row => row.cells[0].querySelector('a + [part="rule-version"]')?.textContent))
+    .toEqual(['1.2', undefined, '2.0', undefined, '1.0']);
   expect(rows.map(row => {
     const link = row.cells[0].querySelector('a');
     return link ? Object.fromEntries(new URL(link.href).searchParams) : null;
   })).toEqual([
-    { ...rule, version: '1.2' }, null, { ...rule, version: '2.0' }, null,
+    { ...rule, version: '1.2' }, null, { ...rule, version: '2.0' }, null, { ...rule, version: '1.0' },
   ]);
   expect(table.querySelector('img, script, [onerror]')).toBeNull();
 
   const verification = rows.map(row => row.cells[3].querySelector<StatusPill>('pb-status-pill')!);
   await Promise.all(verification.map(pill => pill.updateComplete));
   expect(verification.map(pill => pill.shadowRoot!.querySelector('.pill span:last-child')?.textContent))
-    .toEqual(['Verified', 'Unverified (unregistered)', 'Unverified (mismatch)', 'Unverified (unregistered)']);
+    .toEqual(['Verified', 'Unverified (unregistered)', 'Unverified (mismatch)', 'Unverified (unregistered)', 'Verified']);
   expect(verification.map(pill => pill.shadowRoot!.querySelector('.pill')?.className))
-    .toEqual(['pill passed', 'pill warning', 'pill warning', 'pill warning']);
+    .toEqual(['pill passed', 'pill warning', 'pill warning', 'pill warning', 'pill passed']);
+});
+
+test('detail links the full commit using the shared GitHub target', async () => {
+  const value = summary('id', 'PASS', 'github.com/acme/widget');
+  detail.mockResolvedValue({ ...value, results: [] });
+  const view = mountDetail(value.id);
+  await vi.waitFor(() => expect(view.shadowRoot!.querySelector('pb-definition-list')).not.toBeNull());
+  const definitions = view.shadowRoot!.querySelector<DefinitionList>('pb-definition-list')!;
+  await definitions.updateComplete;
+  const commit = definitions.shadowRoot!.querySelector<CommitLink>('pb-commit-link')!;
+  await commit.updateComplete;
+  const link = commit.shadowRoot!.querySelector('a')!;
+  expect(link.querySelector('code')?.textContent).toBe(value.commit);
+  expect(link.href).toBe(`https://github.com/acme/widget/commit/${value.commit}`);
+  expect(link.target).toBe('_blank');
 });
 
 test.each([

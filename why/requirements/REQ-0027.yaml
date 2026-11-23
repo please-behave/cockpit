@@ -2,10 +2,11 @@ id: REQ-0027
 name: Link Results to Registered Versions
 description: >-
   When an attestation result carries a rule identity and version and the
-  ledger's verification establishes that the version is registered, the
-  Cockpit links the displayed version to that identity's rule detail and
-  brings that version into view. The link uses the complete identity and
-  preserves the reported verification and outcome.
+  ledger reports verified or mismatch, the Cockpit links the registered name
+  to that identity's rule detail and brings the version into view. It renders
+  the name as text, falls back to the local ID when the name is absent or empty,
+  and displays the version in muted text beneath the link. The link uses the
+  complete identity and preserves the reported verification and outcome.
 rationale: >-
   Viewers can inspect the registered definition associated with the result.
 decisions:

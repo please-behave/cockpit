@@ -3,8 +3,8 @@ name: Bounded Table Columns
 description: >-
   A table column can declare that it stays on one line at its natural width or
   that it takes the remaining width and truncates with an ellipsis. In the
-  rules table of the detail view the kind and status columns never wrap,
-  whatever the length of a rule identifier.
+  rules table of the detail view, the kind, status and verification columns
+  never wrap. The rule column takes the remaining width and wraps its content.
 rationale: >-
   Short values stay readable on narrow screens while long values give way.
 decisions:

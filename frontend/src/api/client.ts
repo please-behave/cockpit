@@ -17,6 +17,7 @@ export interface Summary {
 export interface Attestation extends Summary {
   results: {
     id: string;
+    name?: string;
     kind: 'check' | 'review' | 'integrity';
     status: Overall | 'NOT_RUN' | 'WARN';
     verification: Verification;

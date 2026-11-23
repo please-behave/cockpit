@@ -699,6 +699,7 @@ async fn browser_api_preserves_ledger_json_and_distinguishes_identifier_errors()
     attestation["results"] = json!([
         {
             "id": "z/review", "kind": "review", "status": "WARN",
+            "name": "<b>Registered review</b>",
             "verification": {"status": "verified"},
             "rule": {"source": "github.com/org/rules", "path": ".please/reviews/example", "id": "example", "version": "1.2"}
         },

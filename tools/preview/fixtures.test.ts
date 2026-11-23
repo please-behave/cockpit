@@ -60,6 +60,7 @@ test('serves every attestation in the client shape with matching counts', () => 
     for (const item of attestation.results) {
       expect(['check', 'review', 'integrity']).toContain(item.kind);
       expect(['PASS', 'FAIL', 'ERROR', 'NOT_RUN', 'WARN']).toContain(item.status);
+      if (item.name !== undefined) expect(item.name).toSatisfy(isString);
       statuses.add(item.status);
       verifications.add(item.verification.status);
       if (item.verification.status === 'unverified') expect(['unregistered', 'mismatch']).toContain(item.verification.reason);
@@ -67,6 +68,10 @@ test('serves every attestation in the client shape with matching counts', () => 
   }
   expect(statuses.size).toBe(5);
   expect(verifications).toEqual(new Set(['verified', 'unverified']));
+  const mixed = body<Attestation>(fixtureTargets.details[0]).results;
+  expect(mixed.find(item => item.id === 'run-5')?.name).toBe('License file present (older)');
+  expect(mixed.find(item => item.id === 'run-6')).not.toHaveProperty('name');
+  expect(mixed.find(item => item.id === 'run-9')?.name).toContain('<img');
   expect(respond('/v0/attestations/missing')!.status).toBe(404);
 });
 

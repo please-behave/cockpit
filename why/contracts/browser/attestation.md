@@ -12,7 +12,8 @@ Each result carries the ledger's `verification` object. The status is
 rule version and is separate from the reported outcome in the result's `status`.
 When the ledger includes a `rule` object, it carries the source, path, and local
 rule ID, plus the version if reported. The result's top-level `id` is the
-run-scoped identifier.
+run-scoped identifier. The optional top-level `name` is untrusted text from
+the matching registered rule version, when that registration has a name.
 
 The [session, headers and errors](latest.md#session-headers-and-errors) apply
 to this endpoint. An authorized request can also receive these responses.

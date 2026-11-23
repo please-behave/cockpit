@@ -1,23 +1,46 @@
-import { html, nothing } from 'lit';
+import { css, html, nothing, type CSSResult } from 'lit';
 import { getAttestation, type Attestation } from '../api/client';
+import '../components/pb-commit-link';
 import type { DataTableColumn } from '../components/pb-data-table';
 import '../components/pb-data-table';
 import '../components/pb-definition-list';
-import '../components/pb-short-name';
 import '../components/pb-status-pill';
 import '../components/pb-time';
 import { CockpitView } from './cockpit-view';
 import { rulePath, type Origin } from './router';
 
 const columns: DataTableColumn[] = [
-  { label: 'Rule' },
+  { label: 'Rule', part: 'rule-name' },
   { label: 'Kind', mode: 'content' },
   { label: 'Status', mode: 'content' },
-  { label: 'Verification' },
+  { label: 'Verification', mode: 'content' },
 ];
+
+function ruleCell({ id, name, rule, verification }: Attestation['results'][number]) {
+  if (!rule?.version || (verification.status === 'unverified' && verification.reason === 'unregistered')) {
+    return rule?.id ?? id;
+  }
+  return html`
+    <a data-route href=${rulePath(rule, rule.version)}>${name || rule.id}</a>
+    <div part="rule-version"><code>${rule.version}</code></div>
+  `;
+}
 
 export class DetailView extends CockpitView<Attestation> {
   static override properties = { attestationId: { attribute: false }, origin: { attribute: false } };
+  static override styles = [CockpitView.styles as CSSResult, css`
+    @layer components {
+      pb-data-table::part(rule-name) {
+        min-inline-size: 12ch;
+      }
+
+      pb-data-table::part(rule-version) {
+        color: var(--text-muted);
+        font-weight: normal;
+      }
+    }
+  `];
+
   declare attestationId: string;
   declare origin?: Origin;
 
@@ -53,24 +76,15 @@ export class DetailView extends CockpitView<Attestation> {
   private results(attestation: Attestation) {
     const items = [
       { term: 'Attestation ID', description: html`<code>${attestation.id}</code>` },
-      { term: 'Commit', description: html`<code>${attestation.commit}</code>` },
+      { term: 'Commit', description: html`<pb-commit-link full .repository=${attestation.repository}
+        .commit=${attestation.commit}></pb-commit-link>` },
       { term: 'Overall', description: html`<pb-status-pill .status=${attestation.overall}></pb-status-pill>` },
       { term: 'Reported', description: html`<pb-time .value=${attestation.received_at}></pb-time>` },
     ];
     const rows = attestation.results.map((result, index) => ({
       key: String(index),
       cells: [
-        html`
-          <pb-short-name .value=${result.id}></pb-short-name>
-          ${result.rule ? html`
-            <div>Source <code>${result.rule.source}</code></div>
-            <div>Path <code>${result.rule.path}</code></div>
-            ${result.rule.version ? html`<div>Version ${result.verification.status === 'verified'
-              || result.verification.reason === 'mismatch'
-              ? html`<a data-route href=${rulePath(result.rule, result.rule.version)}><code>${result.rule.version}</code></a>`
-              : html`<code>${result.rule.version}</code>`}</div>` : nothing}
-          ` : nothing}
-        `,
+        ruleCell(result),
         result.kind,
         html`<pb-status-pill .status=${result.status}></pb-status-pill>`,
         html`<pb-status-pill .status=${result.verification.status === 'verified'
