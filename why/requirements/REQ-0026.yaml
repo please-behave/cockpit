@@ -14,6 +14,12 @@ description: >-
   their reasons, success criteria, out of scope, limitations, placement and
   references. It tolerates absent and unfamiliar fields and renders
   registered text as escaped plain text in both themes.
+  The rule detail links back to the attestation when opened from an
+  attestation result. The router keeps the source address in the history
+  entry and follows browser history on ordinary activation, restoring the
+  attestation's scroll position when returning to the loaded view. Modified
+  clicks follow the link normally. Without an attestation origin, the
+  detail links to the registered rules list.
 rationale: >-
   Viewers can understand a rule's purpose and inspect what its owner
   registered for each version.

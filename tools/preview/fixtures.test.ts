@@ -72,6 +72,12 @@ test('serves every attestation in the client shape with matching counts', () => 
   expect(mixed.find(item => item.id === 'run-5')?.name).toBe('License file present (older)');
   expect(mixed.find(item => item.id === 'run-6')).not.toHaveProperty('name');
   expect(mixed.find(item => item.id === 'run-9')?.name).toContain('<img');
+  const scrollable = body<Summary[]>(fixtureTargets.latest).find(summary =>
+    summary.repository === 'github.com/acme/return-navigation',
+  )!;
+  const { results } = body<Attestation>(`/v0/attestations/${scrollable.id}`);
+  expect(new Set(results.map(item => item.id)).size).toBe(36);
+  expect(results.at(-1)?.rule).toMatchObject({ id: 'design-review', version: '2.0' });
   expect(respond('/v0/attestations/missing')!.status).toBe(404);
 });
 

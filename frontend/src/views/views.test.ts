@@ -8,7 +8,6 @@ import type { CockpitTime } from '../components/pb-time';
 import type { StatusPill } from '../components/pb-status-pill';
 import { DetailView } from './detail';
 import { DashboardView } from './dashboard';
-import type { Origin } from './router';
 
 vi.mock(import('../api/client'), async original => ({
   ...await original(),
@@ -44,7 +43,7 @@ async function tableRoot(view: DetailView) {
   return table.shadowRoot!;
 }
 
-function mountDetail(id: string, origin?: Origin) {
+function mountDetail(id: string, origin?: DetailView['origin']) {
   const view = new DetailView();
   view.attestationId = id;
   view.origin = origin;

@@ -7,7 +7,7 @@ import '../components/pb-definition-list';
 import '../components/pb-status-pill';
 import '../components/pb-time';
 import { CockpitView } from './cockpit-view';
-import { rulePath, type Origin } from './router';
+import { followHistoryBack, rulePath } from './router';
 
 const columns: DataTableColumn[] = [
   { label: 'Rule', part: 'rule-name' },
@@ -42,7 +42,7 @@ export class DetailView extends CockpitView<Attestation> {
   `];
 
   declare attestationId: string;
-  declare origin?: Origin;
+  declare origin?: 'dashboard' | 'history';
 
   protected override read(signal: AbortSignal) {
     return getAttestation(this.attestationId, signal);
@@ -62,16 +62,10 @@ export class DetailView extends CockpitView<Attestation> {
   private backLink() {
     if (!this.origin) return html`<p><a data-route href="/">Back to dashboard</a></p>`;
     const history = this.origin === 'history';
-    return html`<p><a href=${history ? '/attestations' : '/'} @click=${this.back}>
+    return html`<p><a href=${history ? '/attestations' : '/'} @click=${followHistoryBack}>
       ${history ? 'Back to attestations' : 'Back to dashboard'}
     </a></p>`;
   }
-
-  private readonly back = (event: MouseEvent) => {
-    if (event.button !== 0 || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
-    event.preventDefault();
-    window.history.back();
-  };
 
   private results(attestation: Attestation) {
     const items = [

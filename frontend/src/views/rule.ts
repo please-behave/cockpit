@@ -2,6 +2,7 @@ import { css, html, nothing, type CSSResult } from 'lit';
 import { registeredVersions, type RegisteredVersion } from '../api/client';
 import '../components/pb-time';
 import { CockpitView } from './cockpit-view';
+import { followHistoryBack, type AttestationOrigin } from './router';
 
 const knowledgeFields = {
   purpose: 'Purpose',
@@ -48,7 +49,7 @@ function knowledgeDocument(knowledge: Record<string, unknown> | undefined) {
 }
 
 export class RuleView extends CockpitView<RegisteredVersion[]> {
-  static override properties = { search: { attribute: false } };
+  static override properties = { search: { attribute: false }, origin: { attribute: false } };
   static override styles = [CockpitView.styles as CSSResult, css`
     @layer components {
       article {
@@ -68,6 +69,7 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
   `];
 
   declare search: string;
+  declare origin?: AttestationOrigin;
   private positioned = false;
 
   private get requestedVersion() {
@@ -99,7 +101,9 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
     const latest = versions?.at(-1);
     const requested = this.requestedVersion;
     return html`
-      <p><a data-route href="/rules">Back to registered rules</a></p>
+      <p>${this.origin
+        ? html`<a href=${this.origin.attestationPath} @click=${followHistoryBack}>Back to attestation</a>`
+        : html`<a data-route href="/rules">Back to registered rules</a>`}</p>
       ${latest ? html`
         <p class="identity"><code>${latest.source}</code> · <code>${latest.path}</code> · <code>${latest.id}</code></p>
         ${requested !== null && !versions?.some(version => version.version === requested)

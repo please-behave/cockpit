@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from 'vitest';
-import { originOf, routeFor, Router } from './router';
+import { followHistoryBack, originOf, routeFor, Router } from './router';
 
 afterEach(() => {
   document.body.replaceChildren();
@@ -88,17 +88,20 @@ test('preserves native behavior for modified clicks, new tabs and regular links'
   }
 });
 
-// Verifies REQ-0010.
+const rule = '/rules/detail?source=example&path=checks%2Fexample&id=example&version=1.0';
+
+// Verifies REQ-0010 and REQ-0026.
 test.each([
-  ['/', 'dashboard'],
-  ['/attestations', 'history'],
-] as const)('records %s as the origin of a detail page and keeps it across a reload', (start, origin) => {
+  ['/', '/attestations/id', 'dashboard'],
+  ['/attestations', '/attestations/id', 'history'],
+  ['/attestations/%7Bid%7D?ref=example', rule, { attestationPath: '/attestations/%7Bid%7D?ref=example' }],
+] as const)('records the origin when going from %s to %s and keeps it across a reload', (start, target, origin) => {
   vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
   window.history.replaceState(null, '', start);
   const host = document.createElement('div');
   document.body.append(host);
   const link = document.createElement('a');
-  link.href = '/attestations/id';
+  link.href = target;
   link.setAttribute('data-route', '');
   host.append(link);
   const navigate = vi.fn();
@@ -107,24 +110,28 @@ test.each([
 
   try {
     link.click();
-    expect(navigate).toHaveBeenLastCalledWith('/attestations/id', origin, false);
+    expect(navigate).toHaveBeenLastCalledWith(target, origin, false);
     expect(window.history.state).toEqual({ origin });
     router.disconnect();
     navigate.mockClear();
     router.connect();
-    expect(navigate).toHaveBeenLastCalledWith('/attestations/id', origin, false);
+    expect(navigate).toHaveBeenLastCalledWith(target, origin, false);
   } finally {
     router.disconnect();
   }
 });
 
-test('records no origin for a direct open or a non-detail navigation', () => {
+test.each([
+  ['/attestations/first', '/attestations/second'],
+  [rule, '/rules'],
+  ['/rules', rule],
+])('records no origin for a direct open of %s or navigation to %s', (start, target) => {
   vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
-  window.history.replaceState(null, '', '/attestations/first');
+  window.history.replaceState(null, '', start);
   const host = document.createElement('div');
   document.body.append(host);
   const link = document.createElement('a');
-  link.href = '/attestations/second';
+  link.href = target;
   link.setAttribute('data-route', '');
   host.append(link);
   const navigate = vi.fn();
@@ -132,9 +139,9 @@ test('records no origin for a direct open or a non-detail navigation', () => {
   router.connect();
 
   try {
-    expect(navigate).toHaveBeenLastCalledWith('/attestations/first', undefined, false);
+    expect(navigate).toHaveBeenLastCalledWith(start, undefined, false);
     link.click();
-    expect(navigate).toHaveBeenLastCalledWith('/attestations/second', undefined, false);
+    expect(navigate).toHaveBeenLastCalledWith(target, undefined, false);
     expect(window.history.state).toBeNull();
   } finally {
     router.disconnect();
@@ -144,6 +151,25 @@ test('records no origin for a direct open or a non-detail navigation', () => {
 test('accepts only known origins from the navigation state', () => {
   expect(originOf({ origin: 'history' })).toBe('history');
   expect(originOf({ origin: 'dashboard' })).toBe('dashboard');
+  expect(originOf({ origin: { attestationPath: '/attestations/id' } })).toEqual({ attestationPath: '/attestations/id' });
+  expect(originOf({ origin: { attestationPath: '/rules' } })).toBeUndefined();
+  expect(originOf({ origin: { attestationPath: '//example.com/attestations/id' } })).toBeUndefined();
   expect(originOf({ origin: 'elsewhere' })).toBeUndefined();
   expect(originOf(null)).toBeUndefined();
+});
+
+// Verifies REQ-0026.
+test('the back link follows history for an ordinary activation and preserves modified clicks', () => {
+  const back = vi.spyOn(window.history, 'back').mockImplementation(() => {});
+  for (const modifier of [{ ctrlKey: true }, { metaKey: true }, { altKey: true }, { shiftKey: true }, { button: 1 }]) {
+    const event = new MouseEvent('click', { cancelable: true, ...modifier });
+    followHistoryBack(event);
+    expect(event.defaultPrevented).toBe(false);
+  }
+  expect(back).not.toHaveBeenCalled();
+
+  const event = new MouseEvent('click', { cancelable: true });
+  followHistoryBack(event);
+  expect(event.defaultPrevented).toBe(true);
+  expect(back).toHaveBeenCalledOnce();
 });

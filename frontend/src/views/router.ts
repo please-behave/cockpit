@@ -8,11 +8,25 @@ export type Route =
   | { view: 'rule'; search: string }
   | { view: 'not-found' };
 
-export type Origin = 'dashboard' | 'history';
+export type AttestationOrigin = { attestationPath: string };
+export type Origin = 'dashboard' | 'history' | AttestationOrigin;
 
 export function originOf(state: unknown): Origin | undefined {
   const origin = (state as { origin?: unknown } | null)?.origin;
-  return origin === 'dashboard' || origin === 'history' ? origin : undefined;
+  if (origin === 'dashboard' || origin === 'history') return origin;
+  const path = (origin as Partial<AttestationOrigin> | null)?.attestationPath;
+  if (typeof path === 'string' && routeFor(path).view === 'detail') return { attestationPath: path };
+}
+
+function isPlainClick(event: MouseEvent): boolean {
+  return !event.defaultPrevented && event.button === 0 &&
+    !event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey;
+}
+
+export function followHistoryBack(event: MouseEvent) {
+  if (!isPlainClick(event)) return;
+  event.preventDefault();
+  window.history.back();
 }
 
 export function routeFor(location: string): Route {
@@ -65,8 +79,7 @@ export class Router {
   }
 
   private readonly click = (event: MouseEvent) => {
-    if (event.defaultPrevented || event.button !== 0 ||
-        event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    if (!isPlainClick(event)) return;
 
     const link = event.composedPath().find(node => node instanceof HTMLAnchorElement);
     if (!link?.hasAttribute('data-route') || link.hasAttribute('download') ||
@@ -83,8 +96,11 @@ export class Router {
   };
 
   private stateFor(target: string) {
-    const from = routeFor(window.location.pathname).view;
-    const origin = routeFor(target).view === 'detail' && (from === 'dashboard' || from === 'history') ? from : undefined;
-    return origin ? { origin } : null;
+    const from = window.location.pathname + window.location.search;
+    const current = routeFor(from).view;
+    const next = routeFor(target).view;
+    if (next === 'detail' && (current === 'dashboard' || current === 'history')) return { origin: current };
+    if (next === 'rule' && current === 'detail') return { origin: { attestationPath: from } };
+    return null;
   }
 }

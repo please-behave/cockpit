@@ -13,7 +13,7 @@ export class CockpitApp extends LitElement {
   static override properties = { path: { state: true }, origin: { state: true } };
   declare private path: string;
   declare private origin?: Origin;
-  private kept?: { view: Element; scroll: number };
+  private kept?: { path: string; view: Element; scroll: number };
   private restored?: Element;
   private restoredScroll?: number;
 
@@ -23,21 +23,25 @@ export class CockpitApp extends LitElement {
     this.origin = origin;
   });
 
-  /** Holds the history view in memory while its detail page is shown and attaches it again on the way back. */
+  /** Keep the view for the immediate return from its detail page. */
   private keep(path: string, origin?: Origin, traversal = false) {
     const target = routeFor(path).view;
-    const leavingHistory = this.path !== undefined && routeFor(this.path).view === 'history';
+    const current = this.path === undefined ? undefined : routeFor(this.path).view;
     this.restored = undefined;
-    if (target === 'detail' && origin === 'history' && leavingHistory) {
-      const view = this.renderRoot.querySelector('pb-history');
-      this.kept = view ? { view, scroll: window.scrollY } : undefined;
-    } else if (target === 'history' && traversal && this.kept) {
+    if (traversal && this.kept?.path === path) {
       this.restored = this.kept.view;
       this.restoredScroll = this.kept.scroll;
       this.kept = undefined;
-    } else {
-      this.kept = undefined;
+      return;
     }
+
+    let view: Element | null = null;
+    if (target === 'detail' && origin === 'history' && current === 'history') {
+      view = this.renderRoot.querySelector('pb-history');
+    } else if (target === 'rule' && typeof origin === 'object' && origin.attestationPath === this.path) {
+      view = this.renderRoot.querySelector('pb-attestation');
+    }
+    this.kept = view ? { path: this.path, view, scroll: window.scrollY } : undefined;
   }
 
   protected override updated() {
@@ -60,9 +64,11 @@ export class CockpitApp extends LitElement {
     switch (route.view) {
       case 'dashboard': return html`<pb-dashboard></pb-dashboard>`;
       case 'history': return this.restored ?? html`<pb-history></pb-history>`;
-      case 'detail': return html`<pb-attestation .attestationId=${route.id} .origin=${this.origin}></pb-attestation>`;
+      case 'detail': return this.restored ?? html`<pb-attestation .attestationId=${route.id}
+        .origin=${typeof this.origin === 'string' ? this.origin : undefined}></pb-attestation>`;
       case 'rules': return html`<pb-rules .search=${route.search}></pb-rules>`;
-      case 'rule': return html`<pb-rule .search=${route.search}></pb-rule>`;
+      case 'rule': return html`<pb-rule .search=${route.search}
+        .origin=${typeof this.origin === 'object' ? this.origin : undefined}></pb-rule>`;
       case 'not-found': return html`<pb-not-found></pb-not-found>`;
     }
   }

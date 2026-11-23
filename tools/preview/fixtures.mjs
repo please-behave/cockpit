@@ -101,6 +101,11 @@ const errorResults = [
   result('run-2', 'review', 'NOT_RUN', identity('reviews/design', 'design-review', '2.0')),
 ];
 
+const scrollableResults = Array.from({ length: 36 }, (_, index) => ({
+  ...verifiedResults[index % verifiedResults.length],
+  id: `scroll-result-${index + 1}`,
+}));
+
 const newest = [
   ['acme/widget', ['deploy'], 'FAIL', mixedResults, '9'],
   ['acme/widget', ['build'], 'PASS', verifiedResults, '8'],
@@ -111,13 +116,14 @@ const newest = [
   [`${longOwner}/${longName}`, ['a-very-long-execution-point-name-that-needs-to-wrap'], 'FAIL', mixedResults, '3'],
   [`<b>${markup}</b>/${markup}`, [markup], 'PASS', verifiedResults, '2'],
   ['gitlab.com/acme/elsewhere', ['deploy'], 'PASS', verifiedResults, '1'],
+  ['acme/return-navigation', ['check'], 'PASS', scrollableResults, 'b'],
 ].map(([repository, points, overall, results, digit], index) => ({
   repository: repository.includes('/') && repository.split('/').length === 2 ? `github.com/${repository}` : repository,
   points,
   overall,
   results,
   commit: sha(digit).replace(/^./, 'a'),
-  minutesAgo: [5, 1, 90, 2000, 30, 0, 3, 45, 10][index],
+  minutesAgo: [5, 1, 90, 2000, 30, 0, 3, 45, 10, 25][index],
 }));
 
 const now = Date.parse('2026-11-23T12:00:00Z');
