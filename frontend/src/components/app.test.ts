@@ -5,6 +5,7 @@ import type { DetailView } from '../views/detail';
 import type { DashboardView } from '../views/dashboard';
 import type { HistoryView } from '../views/history';
 import { CockpitAppShell } from './app-shell';
+import type { NavTab } from './pb-nav-tab';
 
 vi.mock(import('../api/client'), async original => ({
   ...await original(),
@@ -37,15 +38,57 @@ test('pb-app renders its content in the application shell', async () => {
   const root = shell.shadowRoot!;
   expect(root.querySelector('header .logo-light')?.getAttribute('src')).toContain('logo.svg');
   expect(root.querySelector('header .logo-dark')?.getAttribute('src')).toContain('logo-dark.svg');
-  expect(root.querySelector('header nav slot')?.getAttribute('name')).toBe('navigation');
+  const nav = root.querySelector('header nav[aria-label="Main"]')!;
   expect(root.querySelector('header slot[name="last-updated"]')).not.toBeNull();
-  expect([...app.shadowRoot!.querySelectorAll('a[slot=navigation]')].map(link => [link.textContent, link.getAttribute('href')]))
-    .toEqual([['Dashboard', '/'], ['Attestations', '/attestations'], ['Rules', '/rules']]);
+  const tabs = [...nav.querySelectorAll<NavTab>('pb-nav-tab')];
+  expect(tabs.map(tab => [tab.textContent?.trim(), tab.getAttribute('href')]))
+    .toEqual([['Please Behave Cockpit', '/'], ['Attestations', '/attestations'], ['Rules', '/rules']]);
   expect(root.querySelector('header a.sign-out')?.getAttribute('href')).toBe('/sign-out');
   expect(root.querySelector('main slot')).not.toBeNull();
 
   root.querySelector<HTMLAnchorElement>('.skip-link')!.click();
   expect(root.activeElement).toBe(root.querySelector('main'));
+});
+
+// Verifies REQ-0015.
+test('updates the header links for direct routes, link clicks, and history traversal', async () => {
+  vi.stubGlobal('IntersectionObserver', class { observe() {} unobserve() {} disconnect() {} });
+  vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+  vi.mocked(getAttestation).mockReturnValue(new Promise(() => {}));
+  window.history.replaceState(null, '', '/attestations/example');
+  const app = new CockpitApp();
+  document.body.append(app);
+  await app.updateComplete;
+  const shell = app.shadowRoot!.querySelector<CockpitAppShell>('pb-app-shell')!;
+  await shell.updateComplete;
+  const tabs = [...shell.shadowRoot!.querySelectorAll<NavTab>('pb-nav-tab')];
+  const links = tabs.map(tab => tab.shadowRoot!.querySelector('a')!);
+  const current = () => links.filter(link => link.getAttribute('aria-current') === 'page');
+  expect(current()).toEqual([links[1]]);
+
+  links[2].click();
+  await app.updateComplete;
+  await shell.updateComplete;
+  await tabs[2].updateComplete;
+  expect(window.location.pathname).toBe('/rules');
+  expect(current()).toEqual([links[2]]);
+
+  for (const [path, expected] of [
+    ['/rules/detail', [links[2]]],
+    ['/attestations', [links[1]]],
+    ['/?sort=name', [links[0]]],
+    ['/future/view', []],
+  ] as const) {
+    window.history.pushState(null, '', path);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+    await app.updateComplete;
+    await shell.updateComplete;
+    await Promise.all(tabs.map(tab => tab.updateComplete));
+    expect(current()).toEqual(expected);
+  }
+
+  links[0].click();
+  expect(window.location.pathname).toBe('/');
 });
 
 // Verifies REQ-0007.
@@ -166,12 +209,14 @@ describe('history kept across detail navigation', () => {
   });
 
   test.each([
-    ['the menu entry', (app: CockpitApp) => app.shadowRoot!.querySelector<HTMLAnchorElement>('a[href="/attestations"]')!.click()],
-    ['another view', (app: CockpitApp) => app.shadowRoot!.querySelector<HTMLAnchorElement>('a[href="/"]')!.click()],
-  ])('discards the kept history after %s', async (_, leave) => {
+    ['the menu entry', '/attestations'],
+    ['another view', '/'],
+  ])('discards the kept history after %s', async (_, path) => {
     const { app, history } = await openHistory();
     await open(app, '/attestations/id-3', 'history');
-    leave(app);
+    const shell = app.shadowRoot!.querySelector('pb-app-shell')!;
+    const tab = shell.shadowRoot!.querySelector(`pb-nav-tab[href="${path}"]`)!;
+    tab.shadowRoot!.querySelector('a')!.click();
     await app.updateComplete;
     if (app.shadowRoot!.querySelector('pb-history') === null) {
       await open(app, '/attestations');

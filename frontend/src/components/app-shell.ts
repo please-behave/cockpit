@@ -3,6 +3,8 @@ import logo from '../../brand/logo.svg';
 import logoDark from '../../brand/logo-dark.svg';
 import { linkStyles } from '../styles/links';
 import { chooseTheme, effectiveTheme, watchSystemTheme, type Theme } from '../theme';
+import type { Route } from '../views/router';
+import './pb-nav-tab';
 
 export class CockpitAppShell extends LitElement {
   static override styles = css`
@@ -25,33 +27,25 @@ export class CockpitAppShell extends LitElement {
         background: var(--surface-raised);
       }
 
-      .bar, main {
-        box-sizing: border-box;
-        max-inline-size: var(--content-width);
-        margin-inline: auto;
-        padding-inline: var(--space-4);
-      }
-
-      .bar {
+      .bar, nav, .actions {
         display: flex;
         flex-wrap: wrap;
-        align-items: center;
-        column-gap: var(--space-4);
-        row-gap: var(--space-2);
-        padding-block: var(--space-2);
+      }
+
+      nav {
+        flex: 1 1 auto;
+        min-inline-size: 0;
+      }
+
+      pb-nav-tab {
+        flex: 1 0 auto;
+        max-inline-size: 100%;
       }
 
       .brand {
-        display: flex;
-        align-items: center;
-        gap: var(--space-2);
         font-size: var(--type-brand);
         font-weight: var(--weight-semibold);
         line-height: var(--line-heading);
-      }
-
-      .logo {
-        padding: 0.375rem;
       }
 
       img {
@@ -67,11 +61,20 @@ export class CockpitAppShell extends LitElement {
         display: var(--logo-dark-display);
       }
 
-      nav {
-        display: flex;
-        flex: 1 1 auto;
-        flex-wrap: wrap;
-        gap: var(--space-3);
+      .brand[active] .logo-light {
+        display: var(--logo-dark-display);
+      }
+
+      .brand[active] .logo-dark {
+        display: var(--logo-light-display);
+      }
+
+      .actions {
+        align-items: center;
+        justify-content: flex-end;
+        gap: var(--space-2);
+        margin-inline-start: auto;
+        padding-inline: var(--space-2);
       }
 
       .sign-out, .theme-toggle {
@@ -79,15 +82,26 @@ export class CockpitAppShell extends LitElement {
       }
 
       .theme-toggle {
-        border: 1px solid var(--border);
-        border-radius: var(--radius-control);
-        background: var(--surface);
+        border: 0;
+        background: var(--surface-raised);
         color: inherit;
         font: inherit;
         cursor: pointer;
       }
 
+      .theme-toggle:hover, .sign-out:hover {
+        background: var(--surface-hover);
+      }
+
+      .actions :focus-visible {
+        outline-offset: calc(-1 * var(--focus-offset));
+      }
+
       main {
+        box-sizing: border-box;
+        max-inline-size: var(--content-width);
+        margin-inline: auto;
+        padding-inline: var(--space-4);
         padding-block: var(--space-8);
       }
 
@@ -112,8 +126,12 @@ export class CockpitAppShell extends LitElement {
     }
   `;
 
-  static override properties = { theme: { state: true } };
+  static override properties = {
+    theme: { state: true },
+    currentView: { attribute: false },
+  };
   declare private theme: Theme;
+  declare currentView: Route['view'];
   private unwatchSystemTheme?: () => void;
 
   constructor() {
@@ -147,19 +165,26 @@ export class CockpitAppShell extends LitElement {
       <a class="skip-link" href="#main-content" @click=${this.skipToMain}>Skip to content</a>
       <header>
         <div class="bar">
-          <div class="brand">
-            <span class="logo">
+          <nav aria-label="Main">
+            <pb-nav-tab class="brand" href="/" .active=${this.currentView === 'dashboard'}>
               <img class="logo-light" src=${logo} alt="">
               <img class="logo-dark" src=${logoDark} alt="">
-            </span>
-            <span>Please Behave Cockpit</span>
+              <span>Please Behave Cockpit</span>
+            </pb-nav-tab>
+            <pb-nav-tab href="/attestations" .active=${this.currentView === 'history' || this.currentView === 'detail'}>
+              Attestations
+            </pb-nav-tab>
+            <pb-nav-tab href="/rules" .active=${this.currentView === 'rules' || this.currentView === 'rule'}>
+              Rules
+            </pb-nav-tab>
+          </nav>
+          <div class="actions">
+            <slot name="last-updated"></slot>
+            <button class="theme-toggle" type="button" @click=${this.toggleTheme}>
+              ${this.theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+            </button>
+            <a class="sign-out" href="/sign-out">Sign out</a>
           </div>
-          <nav aria-label="Main"><slot name="navigation"></slot></nav>
-          <slot name="last-updated"></slot>
-          <button class="theme-toggle" type="button" @click=${this.toggleTheme}>
-            ${this.theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
-          </button>
-          <a class="sign-out" href="/sign-out">Sign out</a>
         </div>
       </header>
       <main id="main-content" tabindex="-1"><slot></slot></main>

@@ -1,6 +1,6 @@
 import { html, LitElement } from 'lit';
 import { keyed } from 'lit/directives/keyed.js';
-import { routeFor, Router, type Origin } from '../views/router';
+import { routeFor, Router, type Origin, type Route } from '../views/router';
 import '../views/dashboard';
 import '../views/detail';
 import '../views/history';
@@ -56,8 +56,7 @@ export class CockpitApp extends LitElement {
     super.disconnectedCallback();
   }
 
-  private view() {
-    const route = routeFor(this.path);
+  private view(route: Route) {
     switch (route.view) {
       case 'dashboard': return html`<pb-dashboard></pb-dashboard>`;
       case 'history': return this.restored ?? html`<pb-history></pb-history>`;
@@ -69,12 +68,10 @@ export class CockpitApp extends LitElement {
   }
 
   override render() {
+    const route = routeFor(this.path);
     return html`
-      <pb-app-shell>
-        <a slot="navigation" data-route href="/">Dashboard</a>
-        <a slot="navigation" data-route href="/attestations">Attestations</a>
-        <a slot="navigation" data-route href="/rules">Rules</a>
-        ${keyed(this.path, this.view())}
+      <pb-app-shell .currentView=${route.view}>
+        ${keyed(this.path, this.view(route))}
       </pb-app-shell>
     `;
   }
