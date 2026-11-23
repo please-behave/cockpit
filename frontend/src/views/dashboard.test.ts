@@ -1,10 +1,7 @@
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { ApiError, latestAttestations, type Summary } from '../api/client';
 import type { ErrorState } from '../components/pb-error-state';
-import type { RelativeTime } from '../components/pb-relative-time';
-import { formatTime } from '../components/pb-time';
-import type { ShortName } from '../components/pb-short-name';
-import type { StatusPill } from '../components/pb-status-pill';
+import type { RepositoryTile } from '../components/pb-repository-tile';
 import { DashboardView } from './dashboard';
 
 vi.mock(import('../api/client'), async original => ({
@@ -44,8 +41,10 @@ async function mount() {
   return view;
 }
 
-const tiles = (view: DashboardView) => [...view.shadowRoot!.querySelectorAll<HTMLElement>('.tile')];
-const hrefs = (view: DashboardView) => tiles(view).map(tile => tile.querySelector('a.repository')!.getAttribute('href'));
+const tiles = (view: DashboardView) =>
+  [...view.shadowRoot!.querySelectorAll<RepositoryTile>('ul.tiles > li > pb-repository-tile')];
+const hrefs = (view: DashboardView) =>
+  tiles(view).map(tile => tile.shadowRoot!.querySelector('a.repository')!.getAttribute('href'));
 
 // Verifies REQ-0019.
 test('has a loading state, then an explicit empty state without header and tiles', async () => {
@@ -84,55 +83,18 @@ test('states the overall state with text and icon for passing and failing tiles'
   await vi.waitFor(() => expect(root.querySelector('h2')!.textContent).toBe('All 2 passing'));
 });
 
-test('shows one tile per combination with its content', async () => {
-  vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-11-22T12:05:00Z') });
-  const report = { ...summary('first?query', 'FAIL', 'github.com/acme/widget', ['deploy'], '2026-11-22T12:00:00Z'),
-    warn_count: 1, result_count: 1, not_run_count: 0 };
-  latest.mockResolvedValue([report, summary('other', 'PASS', 'github.com/acme/widget', ['check']),
-    summary('solo', 'PASS', 'github.com/acme/solo')]);
+test('arranges one tile per combination and shows execution points only for repeated repositories', async () => {
+  const reports = [
+    summary('first', 'FAIL', 'github.com/acme/widget', ['deploy'], '2026-11-22T12:00:00Z'),
+    summary('other', 'PASS', 'github.com/acme/widget', ['check']),
+    summary('solo', 'PASS', 'github.com/acme/solo'),
+  ];
+  latest.mockResolvedValue(reports);
   const view = await mount();
-  const [first, solo] = tiles(view);
-  expect(first.querySelector<StatusPill>('pb-status-pill')!.status).toBe('FAIL');
-  expect(first.querySelector('.owner')!.textContent).toBe('acme');
-  const repository = first.querySelector<HTMLAnchorElement>('a.repository')!;
-  expect(repository.getAttribute('href')).toBe('/attestations/first%3Fquery');
-  expect(repository.hasAttribute('data-route')).toBe(true);
-  expect(repository.querySelector<ShortName>('pb-short-name')!.value).toBe('github.com/acme/widget');
-  expect(first.textContent).toContain('1 rule · 1 warning · 0 not run');
-  expect(view.shadowRoot!.textContent).not.toContain('shown as reported');
-  for (const tile of tiles(view)) {
-    const relative = tile.querySelector<RelativeTime>('pb-relative-time')!;
-    expect(relative.parentElement!.textContent!.trim()).toBe('Reported');
-  }
-  const relative = first.querySelector<RelativeTime>('pb-relative-time')!;
-  await relative.updateComplete;
-  const time = relative.shadowRoot!.querySelector('time')!;
-  expect(time.textContent).toBe('5 minutes ago');
-  expect(time.dateTime).toBe(report.received_at);
-  expect(time.title).toBe(formatTime(new Date(report.received_at)));
-  expect(first.textContent).toContain('deploy');
-  expect(solo.textContent).not.toContain('check');
-  expect(solo.textContent).toContain('7 rules · 2 warnings · 3 not run');
-});
-
-test('links the commit externally only for a github.com repository value', async () => {
-  latest.mockResolvedValue([
-    summary('a', 'PASS', 'github.com/acme/widget'),
-    summary('b', 'PASS', 'gitlab.com/acme/widget'),
-    summary('c', 'PASS', 'github.com/acme/widget/<script>'),
+  expect(tiles(view).map(tile => [tile.summary, tile.showExecutionPoints])).toEqual([
+    [reports[0], true], [reports[2], false], [reports[1], true],
   ]);
-  const view = await mount();
-  const external = (tile: HTMLElement) => tile.querySelector<HTMLAnchorElement>('a.commit');
-  const all = tiles(view).map(external);
-  expect(all.filter(Boolean)).toHaveLength(1);
-  const link = all.find(Boolean)!;
-  expect(link.getAttribute('href')).toBe('https://github.com/acme/widget/commit/0123456789abcdef');
-  expect(link.target).toBe('_blank');
-  expect(link.rel).toBe('noopener noreferrer');
-  expect(link.querySelector('code')!.textContent).toBe('0123456');
-  expect(link.textContent).toContain('(opens in a new tab)');
-  expect(tiles(view).filter(tile => !external(tile)).every(tile => tile.querySelector('code')!.textContent === '0123456'))
-    .toBe(true);
+  expect(view.shadowRoot!.textContent).not.toContain('shown as reported');
 });
 
 test('sorts by last attestation by default and by name through the URL', async () => {
@@ -218,16 +180,17 @@ test('refreshes every 60 seconds while visible, keeps focus, sort and tiles, and
   latest.mockResolvedValue(reports);
   const view = await mount();
   const [firstTile] = tiles(view);
-  const link = firstTile.querySelector<HTMLAnchorElement>('a.repository')!;
+  const link = firstTile.shadowRoot!.querySelector<HTMLAnchorElement>('a.repository')!;
   link.focus();
   expect(latest).toHaveBeenCalledTimes(1);
 
   latest.mockResolvedValue(reports.map(report => ({ ...report, id: `${report.id}2`, warn_count: 9 })));
   await vi.advanceTimersByTimeAsync(60_000);
-  await vi.waitFor(() => expect(tiles(view)[0].textContent).toContain('9 warnings'));
+  await vi.waitFor(() => expect(tiles(view)[0].shadowRoot!.textContent).toContain('9 warnings'));
   expect(latest).toHaveBeenCalledTimes(2);
   expect(tiles(view)[0]).toBe(firstTile);
-  expect(view.shadowRoot!.activeElement).toBe(link);
+  expect(view.shadowRoot!.activeElement).toBe(firstTile);
+  expect(firstTile.shadowRoot!.activeElement).toBe(link);
   expect(window.location.search).toBe('?sort=name');
   expect(view.shadowRoot!.querySelector('[role=status]')).toBeNull();
 
@@ -236,7 +199,8 @@ test('refreshes every 60 seconds while visible, keeps focus, sort and tiles, and
   await vi.waitFor(() => expect(view.shadowRoot!.querySelector('[role=status]')?.textContent).toContain('could not be refreshed'));
   expect(tiles(view)).toHaveLength(2);
   expect(view.shadowRoot!.querySelector('pb-error-state')).toBeNull();
-  expect(view.shadowRoot!.activeElement).toBe(link);
+  expect(view.shadowRoot!.activeElement).toBe(firstTile);
+  expect(firstTile.shadowRoot!.activeElement).toBe(link);
 
   latest.mockResolvedValue(reports);
   await vi.advanceTimersByTimeAsync(60_000);
