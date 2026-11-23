@@ -79,6 +79,11 @@ test('serves every attestation in the client shape with matching counts', () => 
   expect(new Set(results.map(item => item.id)).size).toBe(36);
   expect(results.at(-2)?.verification).toEqual({ status: 'unverified', reason: 'mismatch' });
   expect(results.at(-1)?.rule).toMatchObject({ id: 'design-review', version: '2.0' });
+  const factStrip = body<Summary[]>(fixtureTargets.latest).find(summary =>
+    summary.repository.endsWith('/fact-strip'),
+  )!;
+  expect(factStrip.repository.length).toBeGreaterThan(70);
+  expect(factStrip.commit).toMatch(/^[0-9a-f]{40}$/);
   expect(respond('/v0/attestations/missing')!.status).toBe(404);
 });
 

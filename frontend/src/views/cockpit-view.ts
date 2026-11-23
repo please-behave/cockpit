@@ -36,10 +36,6 @@ export abstract class CockpitView<T = never> extends LitElement {
       :host {
         display: block;
       }
-
-      pb-definition-list {
-        margin-block-end: var(--space-6);
-      }
     }
   `;
 

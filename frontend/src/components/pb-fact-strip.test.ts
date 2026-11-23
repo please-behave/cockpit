@@ -1,10 +1,10 @@
 import { afterEach, expect, test } from 'vitest';
-import { DefinitionList } from './pb-definition-list';
+import { FactStrip } from './pb-fact-strip';
 
 afterEach(() => document.body.replaceChildren());
 
 test('renders ordered term and description pairs and allows long values to wrap', async () => {
-  const list = new DefinitionList();
+  const list = new FactStrip();
   const longValue = 'a'.repeat(400);
   document.body.append(list);
   await list.updateComplete;
@@ -19,5 +19,5 @@ test('renders ordered term and description pairs and allows long values to wrap'
   const entries = [...list.shadowRoot!.querySelectorAll('dl > div')];
   expect(entries.map(entry => [...entry.children].map(element => [element.localName, element.textContent])))
     .toEqual([[['dt', 'Commit'], ['dd', longValue]], [['dt', 'Sender'], ['dd', 'CI']]]);
-  expect(DefinitionList.styles.cssText).toMatch(/overflow-wrap:\s*anywhere/);
+  expect(FactStrip.styles.cssText).toMatch(/overflow-wrap:\s*anywhere/);
 });

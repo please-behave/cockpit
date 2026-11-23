@@ -5,9 +5,9 @@ description: >-
   or the whole value if there is none. The full repository name is available
   in a tooltip on its link and as the link's accessible name. Hover or
   keyboard focus shows the tooltip. On touch, a tap on the shortened name
-  shows it and a second tap follows the link. The detail view shows the
-  shortened rule identifier in its rules table, while its heading keeps the
-  full repository name.
+  shows it and a second tap follows the link. The attestation detail shows
+  the shortened repository name in its heading and the full name in the
+  "Canonical name" field. Its rules table shows the shortened rule identifier.
 rationale: >-
   Viewers recognize long names quickly without losing the exact reported
   value.

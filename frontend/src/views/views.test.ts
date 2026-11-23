@@ -2,8 +2,8 @@ import { afterEach, expect, test, vi } from 'vitest';
 import { ApiError, getAttestation, type Summary } from '../api/client';
 import type { CommitLink } from '../components/pb-commit-link';
 import type { DataTable } from '../components/pb-data-table';
-import type { DefinitionList } from '../components/pb-definition-list';
 import type { ErrorState } from '../components/pb-error-state';
+import type { FactStrip } from '../components/pb-fact-strip';
 import type { CockpitTime } from '../components/pb-time';
 import type { StatusPill } from '../components/pb-status-pill';
 import type { Tooltip } from '../components/pb-tooltip';
@@ -26,7 +26,7 @@ const summary = (id: string, overall: Summary['overall'], repository: string,
   execution_points,
   received_at: receipt,
   sender: '<img src=x onerror=alert(1)>',
-  commit: '0123456789abcdef',
+  commit: '0123456789abcdef0123456789abcdef01234567',
   warn_count: 2,
   not_run_count: 3,
   result_count: 7,
@@ -52,11 +52,12 @@ function mountDetail(id: string, origin?: DetailView['origin']) {
   return view;
 }
 
-// Verifies REQ-0004, REQ-0010, REQ-0017, REQ-0018, REQ-0024 and REQ-0027.
+// Verifies REQ-0004, REQ-0010, REQ-0016, REQ-0017, REQ-0018, REQ-0024 and REQ-0027.
 test.each(['light', 'dark'])('detail presents reported results and verification in the %s theme', async theme => {
   document.documentElement.setAttribute('data-theme', theme);
-  const repository = 'org/<img src=x>';
-  const value = summary('id', 'FAIL', repository, ['check', 'release']);
+  const name = '<img src=x>';
+  const repository = `org/${name}`;
+  const value = summary('00000000-0000-4000-8000-000000000001', 'FAIL', repository, ['check', 'release']);
   const rule = {
     source: 'github.com/org/<img src=x onerror=alert(1)>',
     path: '.please/reviews/<script>bad</script>',
@@ -80,27 +81,32 @@ test.each(['light', 'dark'])('detail presents reported results and verification 
   });
   const view = mountDetail(value.id);
   const root = view.shadowRoot!;
-  await vi.waitFor(() => expect(root.activeElement?.textContent).toBe(repository));
+  await vi.waitFor(() => expect(root.activeElement?.textContent).toBe(name));
   expect(detail).toHaveBeenCalledWith(value.id, expect.any(AbortSignal));
-  expect(document.title).toBe(`${repository} | Please Behave`);
+  expect(document.title).toBe(`${name} | Please Behave`);
   expect(root.querySelector('a')?.getAttribute('href')).toBe('/');
   expect(root.textContent).not.toContain('shown as reported');
   expect(root.textContent).not.toContain('Verification shows whether');
   expect(root.querySelector('img, script')).toBeNull();
 
-  const definitions = root.querySelector<DefinitionList>('pb-definition-list')!;
-  await definitions.updateComplete;
-  const metadata = definitions.shadowRoot!;
-  expect([...metadata.querySelectorAll('dt')].map(term => term.textContent))
-    .toEqual(['Attestation ID', 'Commit', 'Overall', 'Reported']);
-  expect(metadata.querySelector('dd')?.textContent).toBe(value.id);
-  const commit = metadata.querySelector<CommitLink>('pb-commit-link')!;
+  const strip = root.querySelector<FactStrip>('pb-fact-strip')!;
+  await strip.updateComplete;
+  const facts = strip.shadowRoot!;
+  expect([...facts.querySelectorAll('dt')].map(term => term.textContent))
+    .toEqual(['Overall', 'Commit', 'Reported', 'Attestation ID', 'Canonical name']);
+  const [overall, commitValue, reported, id, canonicalName] = facts.querySelectorAll('dd');
+  expect(id.textContent).toBe(value.id);
+  expect(canonicalName.textContent).toBe(repository);
+  const commit = commitValue.querySelector<CommitLink>('pb-commit-link')!;
   await commit.updateComplete;
   expect(commit.shadowRoot!.querySelector('code')?.textContent).toBe(value.commit);
   expect(commit.shadowRoot!.querySelector('a')).toBeNull();
-  expect(metadata.querySelector<StatusPill>('pb-status-pill')?.status).toBe('FAIL');
-  expect(metadata.querySelector<CockpitTime>('pb-time')?.value).toBe(receipt);
-  expect(metadata.querySelector('img, script')).toBeNull();
+  const pill = overall.querySelector<StatusPill>('pb-status-pill')!;
+  await pill.updateComplete;
+  expect(pill.shadowRoot!.querySelector('.pill span:last-child')?.textContent).toBe('FAIL');
+  expect(pill.shadowRoot!.querySelector('.pill [aria-hidden="true"]')?.textContent).toBe('×');
+  expect(reported.querySelector<CockpitTime>('pb-time')?.value).toBe(receipt);
+  expect(facts.querySelector('img, script')).toBeNull();
 
   const table = await tableRoot(view);
   const rows = [...table.querySelectorAll<HTMLTableRowElement>('tbody tr')];
@@ -157,10 +163,10 @@ test('detail links the full commit using the shared GitHub target', async () => 
   const value = summary('id', 'PASS', 'github.com/acme/widget');
   detail.mockResolvedValue({ ...value, results: [] });
   const view = mountDetail(value.id);
-  await vi.waitFor(() => expect(view.shadowRoot!.querySelector('pb-definition-list')).not.toBeNull());
-  const definitions = view.shadowRoot!.querySelector<DefinitionList>('pb-definition-list')!;
-  await definitions.updateComplete;
-  const commit = definitions.shadowRoot!.querySelector<CommitLink>('pb-commit-link')!;
+  await vi.waitFor(() => expect(view.shadowRoot!.querySelector('pb-fact-strip')).not.toBeNull());
+  const strip = view.shadowRoot!.querySelector<FactStrip>('pb-fact-strip')!;
+  await strip.updateComplete;
+  const commit = strip.shadowRoot!.querySelector<CommitLink>('pb-commit-link')!;
   await commit.updateComplete;
   const link = commit.shadowRoot!.querySelector('a')!;
   expect(link.querySelector('code')?.textContent).toBe(value.commit);

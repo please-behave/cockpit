@@ -1,10 +1,15 @@
 id: REQ-0010
 name: Reported Attestation Detail
 description: >-
-  The detail view loads the selected attestation through CON-0002. It shows
-  the attestation ID, the full reported commit, overall status and ledger
-  receipt time labeled "Reported" under the full repository name. The commit
-  uses the same link target rules as the dashboard and attestation history.
+  The detail view loads the selected attestation through CON-0002 and shows
+  the shortened repository name as defined in REQ-0017 as its headline.
+  Below it, a fact strip shows the overall status, full reported commit,
+  ledger receipt time, attestation ID and full repository name, in that order.
+  Their labels are "Overall", "Commit", "Reported", "Attestation ID" and
+  "Canonical name". Each label sits above its value. The facts sit side by
+  side and wrap on narrow screens, and long values wrap within the available
+  width. The commit uses the same link target rules as the dashboard and
+  attestation history.
   It shows rules in reported order with their kinds, statuses and verification.
   The Kind column shows each kind as a text badge.
   Results with a registered version show the link described by REQ-0027.

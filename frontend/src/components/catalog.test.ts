@@ -1,9 +1,9 @@
 import { html, render, type LitElement } from 'lit';
 import { afterEach, expect, test } from 'vitest';
 import './pb-data-table';
-import './pb-definition-list';
 import './pb-empty-state';
 import './pb-error-state';
+import './pb-fact-strip';
 import './pb-status-pill';
 import './pb-time';
 
@@ -30,8 +30,8 @@ test('renders the component catalog and keeps long, markup-like values inert', a
     <pb-data-table .label=${longValue} .columns=${[longValue, 'Link', 'Time']}
       .rows=${rows}></pb-data-table>
     <pb-data-table .label=${longValue} .columns=${[longValue]}></pb-data-table>
-    <pb-definition-list .items=${[{ term: longValue, description: longValue }]}></pb-definition-list>
-    <pb-definition-list></pb-definition-list>
+    <pb-fact-strip .items=${[{ term: longValue, description: longValue }]}></pb-fact-strip>
+    <pb-fact-strip></pb-fact-strip>
     <pb-empty-state .heading=${longValue} .message=${longValue}></pb-empty-state>
     <pb-error-state .heading=${longValue} .message=${longValue}></pb-error-state>
     <pb-error-state .heading=${longValue} .message=${longValue} retryable></pb-error-state>
@@ -40,7 +40,7 @@ test('renders the component catalog and keeps long, markup-like values inert', a
   `, document.body);
 
   const components = document.body.querySelectorAll<LitElement>('pb-status-pill, pb-data-table, '
-    + 'pb-definition-list, pb-empty-state, pb-error-state, pb-time');
+    + 'pb-fact-strip, pb-empty-state, pb-error-state, pb-time');
   await Promise.all([...components].map(component => component.updateComplete));
 
   const roots = (tag: string) => [...document.body.querySelectorAll(tag)].map(element => element.shadowRoot!);
@@ -57,7 +57,7 @@ test('renders the component catalog and keeps long, markup-like values inert', a
   const nestedTime = plainTable.querySelector<LitElement>('td pb-time')!;
   await nestedTime.updateComplete;
   expect(nestedTime.shadowRoot!.querySelector('time')?.dateTime).toBe(time);
-  const [definitions, noDefinitions] = roots('pb-definition-list');
+  const [definitions, noDefinitions] = roots('pb-fact-strip');
   expect(definitions.querySelector('dt')?.textContent).toBe(longValue);
   expect(definitions.querySelector('dd')?.textContent).toBe(longValue);
   expect(noDefinitions.querySelector('dl')?.children).toHaveLength(0);

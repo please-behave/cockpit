@@ -1,11 +1,11 @@
 import { css, html, LitElement, type TemplateResult } from 'lit';
 
-export interface Definition {
+export interface Fact {
   term: string;
   description: string | TemplateResult;
 }
 
-export class DefinitionList extends LitElement {
+export class FactStrip extends LitElement {
   static override properties = { items: { attribute: false } };
 
   static override styles = css`
@@ -15,15 +15,21 @@ export class DefinitionList extends LitElement {
       }
 
       dl {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-3) var(--space-6);
         margin: 0;
         overflow-wrap: anywhere;
       }
 
-      div + div {
-        margin-block-start: var(--space-3);
+      dl > div {
+        flex: 1 1 8rem;
+        min-inline-size: 0;
       }
 
       dt {
+        color: var(--text-muted);
+        font-size: 0.875rem;
         font-weight: var(--weight-semibold);
       }
 
@@ -33,7 +39,7 @@ export class DefinitionList extends LitElement {
     }
   `;
 
-  declare items: readonly Definition[];
+  declare items: readonly Fact[];
 
   constructor() {
     super();
@@ -49,4 +55,4 @@ export class DefinitionList extends LitElement {
   }
 }
 
-customElements.define('pb-definition-list', DefinitionList);
+customElements.define('pb-fact-strip', FactStrip);

@@ -4,7 +4,8 @@ import '../components/pb-badge';
 import '../components/pb-commit-link';
 import type { DataTableColumn } from '../components/pb-data-table';
 import '../components/pb-data-table';
-import '../components/pb-definition-list';
+import '../components/pb-fact-strip';
+import { shortName } from '../components/pb-short-name';
 import '../components/pb-status-pill';
 import '../components/pb-time';
 import '../components/pb-tooltip';
@@ -46,6 +47,10 @@ export class DetailView extends CockpitView<Attestation> {
   static override properties = { attestationId: { attribute: false }, origin: { attribute: false } };
   static override styles = [CockpitView.styles as CSSResult, css`
     @layer components {
+      pb-fact-strip {
+        margin-block-end: var(--space-6);
+      }
+
       pb-data-table::part(rule-name) {
         min-inline-size: 12ch;
       }
@@ -65,7 +70,7 @@ export class DetailView extends CockpitView<Attestation> {
   }
 
   protected override heading(attestation?: Attestation) {
-    return attestation?.repository ?? 'Attestation';
+    return attestation ? shortName(attestation.repository) : 'Attestation';
   }
 
   protected override content(attestation?: Attestation) {
@@ -85,11 +90,12 @@ export class DetailView extends CockpitView<Attestation> {
 
   private results(attestation: Attestation) {
     const items = [
-      { term: 'Attestation ID', description: html`<code>${attestation.id}</code>` },
+      { term: 'Overall', description: html`<pb-status-pill .status=${attestation.overall}></pb-status-pill>` },
       { term: 'Commit', description: html`<pb-commit-link full .repository=${attestation.repository}
         .commit=${attestation.commit}></pb-commit-link>` },
-      { term: 'Overall', description: html`<pb-status-pill .status=${attestation.overall}></pb-status-pill>` },
       { term: 'Reported', description: html`<pb-time .value=${attestation.received_at}></pb-time>` },
+      { term: 'Attestation ID', description: html`<code>${attestation.id}</code>` },
+      { term: 'Canonical name', description: attestation.repository },
     ];
     const rows = attestation.results.map((result, index) => ({
       key: String(index),
@@ -102,7 +108,7 @@ export class DetailView extends CockpitView<Attestation> {
     }));
 
     return html`
-      <pb-definition-list .items=${items}></pb-definition-list>
+      <pb-fact-strip .items=${items}></pb-fact-strip>
       <pb-data-table label="Rules" .columns=${columns} row-header-column="0" .rows=${rows}></pb-data-table>
     `;
   }

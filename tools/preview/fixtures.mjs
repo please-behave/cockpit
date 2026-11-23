@@ -131,13 +131,14 @@ const newest = [
   [`<b>${markup}</b>/${markup}`, [markup], 'PASS', verifiedResults, '2'],
   ['gitlab.com/acme/elsewhere', ['deploy'], 'PASS', verifiedResults, '1'],
   ['acme/return-navigation', ['check'], 'PASS', scrollableResults, 'b'],
+  [`${longOwner}/fact-strip`, ['check'], 'PASS', verifiedResults, 'c'],
 ].map(([repository, points, overall, results, digit], index) => ({
   repository: repository.includes('/') && repository.split('/').length === 2 ? `github.com/${repository}` : repository,
   points,
   overall,
   results,
   commit: sha(digit).replace(/^./, 'a'),
-  minutesAgo: [5, 1, 90, 2000, 30, 0, 3, 45, 10, 25][index],
+  minutesAgo: [5, 1, 90, 2000, 30, 0, 3, 45, 10, 25, 15][index],
 }));
 
 const now = Date.parse('2026-11-23T12:00:00Z');
