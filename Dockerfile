@@ -5,7 +5,7 @@ RUN npm ci --no-audit
 COPY frontend/ ./
 RUN npm run build
 
-FROM rust:1.100.0-slim-trixie@sha256:6f14b2b4b278ec0d50aa1d69541c304ce0f95e0f6268487aa9924af1c2e9aebe AS build
+FROM rust:1.100.0-slim-trixie@sha256:86993c97389ebb5487eb09e88168e2a00b0de29aa08dff9ae896049b9be96ed9 AS build
 WORKDIR /src
 COPY Cargo.toml Cargo.lock build.rs ./
 COPY --from=frontend /src/frontend/dist/assets ./frontend/dist/assets
