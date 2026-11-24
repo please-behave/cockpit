@@ -46,7 +46,8 @@
         },
         "kind": { "enum": ["check", "review"] },
         "name": { "type": "string" },
-        "description": { "type": "string" }
+        "description": { "type": "string" },
+        "owner": { "type": "string" }
       }
     }
   }

@@ -4,6 +4,9 @@
 under `ledger:CON-0007`. [rules.schema.json](rules.schema.json) defines the
 response. The array has one summary per identity and describes each rule's
 latest registered version. An empty page returns an empty array.
+The optional `owner` is the registering owner of the greatest version as
+reported by the ledger. Older ledgers can omit the field. Treat the value
+as untrusted text.
 
 Cockpit forwards the ledger's `limit` and `before` query unchanged. The limit
 is an integer from 1 to 200 and defaults to 100. To continue a full page,

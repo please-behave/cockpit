@@ -39,6 +39,7 @@ interface Registration extends RuleIdentity {
   version: string;
   name?: string;
   description?: string;
+  owner?: string;
 }
 
 export interface RegisteredRule extends Registration {

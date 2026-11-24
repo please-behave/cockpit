@@ -24,7 +24,9 @@ function expectRule(rule: RegisteredRule | RegisteredVersion) {
   expect([rule.source, rule.path, rule.id]).toSatisfy((values: string[]) => values.every(value => isString(value) && value));
   expect(rule.version).toMatch(/^(0|[1-9]\d*)\.(0|[1-9]\d*)$/);
   expect(['check', 'review']).toContain(rule.kind);
-  for (const optional of [rule.name, rule.description]) expect(optional === undefined || isString(optional)).toBe(true);
+  for (const optional of [rule.name, rule.description, rule.owner]) {
+    expect(optional === undefined || isString(optional)).toBe(true);
+  }
 }
 
 test('serves latest summaries in the client shape', () => {
@@ -98,10 +100,17 @@ test('serves registered rules and their versions in the client shape', () => {
   const longIdentity = rules.find(rule => rule.name === 'Review with long texts')!;
   expect([longIdentity.source.split('/').at(-1), longIdentity.path, longIdentity.id])
     .toSatisfy((fields: string[]) => fields.every(field => field.length > 70));
+  expect(longIdentity.owner).toHaveLength(longIdentity.source.length);
+  expect(rules.find(rule => rule.id === 'markup')?.owner).toContain('<img');
+  expect(rules.find(rule => rule.id === 'no-secrets')).not.toHaveProperty('owner');
 
   let longest = 0;
   for (const target of fixtureTargets.ruleDetails) {
     const versions = body<RegisteredVersion[]>(target);
+    const latest = versions.at(-1)!;
+    const summary = rules.find(rule => rule.source === latest.source && rule.path === latest.path && rule.id === latest.id);
+    expect(summary).toBeDefined();
+    expect(summary?.owner).toBe(latest.owner);
     longest = Math.max(longest, versions.length);
     for (const version of versions) {
       expectRule(version);

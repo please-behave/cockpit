@@ -9,6 +9,8 @@ HTTP 200 returns the JSON array reported by the ledger under
 ascending numeric version order. [rule.schema.json](rule.schema.json) defines
 the response. Cockpit forwards the ledger's fields, values and order intact.
 Texts and knowledge are untrusted data and are escaped when rendered.
+The optional `owner` is the owner recorded by the ledger for the first
+registration of that version. Older ledgers can omit the field.
 
 The [session, headers and errors](latest.md#session-headers-and-errors) apply.
 

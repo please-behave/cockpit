@@ -8,6 +8,7 @@ import { rulePath } from './router';
 
 const columns: readonly DataTableColumn[] = [
   { label: 'Rule', part: 'rule-name' },
+  { label: 'Owner', part: 'rule-owner' },
   { label: 'Description', part: 'rule-description' },
 ];
 
@@ -18,6 +19,11 @@ export class RulesView extends CockpitView<RegisteredRule[]> {
     @layer components {
       pb-data-table::part(rule-name) {
         min-inline-size: 12ch;
+      }
+
+      pb-data-table::part(rule-owner) {
+        min-inline-size: 12ch;
+        max-inline-size: 28ch;
       }
 
       pb-data-table::part(rule-description) {
@@ -53,6 +59,7 @@ export class RulesView extends CockpitView<RegisteredRule[]> {
       key: rulePath(rule),
       cells: [
         html`<a data-route href=${rulePath(rule)}>${rule.name || rule.id}</a>`,
+        rule.owner ?? '—',
         rule.description ?? '',
       ],
     }));

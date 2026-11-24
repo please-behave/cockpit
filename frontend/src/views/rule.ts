@@ -250,6 +250,7 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
             ${version.name ? html`<div><dt>Name</dt><dd class="plain-text">${version.name}</dd></div>` : nothing}
             <div><dt>Kind</dt><dd><pb-badge tone=${version.kind}>${version.kind}</pb-badge></dd></div>
             <div><dt>Registered</dt><dd><pb-time .value=${version.registered_at}></pb-time></dd></div>
+            ${version.owner !== undefined ? html`<div><dt>Owner</dt><dd class="plain-text">${version.owner}</dd></div>` : nothing}
             ${version.description ? html`<div><dt>Description</dt><dd class="plain-text">${version.description}</dd></div>` : nothing}
             ${version.kind === 'review' ? html`
               <div><dt>Blocking</dt><dd>${this.blockingBadge(version.blocking)}</dd></div>

@@ -146,6 +146,7 @@ mod registry {
         version: String,
         name: Option<String>,
         description: Option<String>,
+        owner: Option<String>,
     }
 
     #[derive(Deserialize)]

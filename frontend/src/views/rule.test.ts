@@ -8,10 +8,12 @@ import type { RulesView } from './rules';
 const identity = { source: 'github.com/team/catalog+more', path: '.please/checks/shell&tools', id: 'example' };
 const markup = '<img src=x onerror=alert(1)>';
 const prompt = `Review the build.\n${markup}`;
-const registration = { ...identity, version: '1.10', kind: 'review' as const, name: markup, description: markup };
+const ownerMarkup = '<b>release key</b>';
+const registration = { ...identity, version: '1.10', kind: 'review' as const, name: markup, description: markup, owner: ownerMarkup };
 const summary: RegisteredRule = { ...registration, scan: { through: 1795334400123456, registrations: 254 } };
 const history: RegisteredVersion[] = [
   { ...identity, version: '1.2', kind: 'check', name: 'Original check', description: 'First version',
+    owner: 'github.com/team/registrations',
     digest: 'first', commit: 'a'.repeat(40), registered_at: '2026-11-20T09:00:00Z',
     knowledge: { purpose: 'Check the build', unknown: markup, conditions: [{ statement: 'Use locked tools' }] } },
   { ...registration, digest: 'second', commit: 'b'.repeat(40), registered_at: '2026-11-22T09:00:00Z',
@@ -48,7 +50,7 @@ afterEach(() => {
 });
 
 // Verifies REQ-0026.
-test('lists name and description without a kind column and lets descriptions wrap', async () => {
+test('lists the rule name, owner and wrapping description', async () => {
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json([summary])));
   const app = open('/rules');
   await app.updateComplete;
@@ -57,16 +59,16 @@ test('lists name and description without a kind column and lets descriptions wra
 
   const headers = [...table.querySelectorAll('thead th')];
   const cells = [...table.querySelectorAll('tbody tr > *')];
-  expect(headers.map(cell => cell.textContent)).toEqual(['Rule', 'Description']);
-  expect(headers.map(cell => cell.getAttribute('part'))).toEqual(['rule-name', 'rule-description']);
-  expect(cells.map(cell => cell.getAttribute('part'))).toEqual(['rule-name', 'rule-description']);
+  expect(headers.map(cell => cell.textContent)).toEqual(['Rule', 'Owner', 'Description']);
+  expect(headers.map(cell => cell.getAttribute('part'))).toEqual(['rule-name', 'rule-owner', 'rule-description']);
+  expect(cells.map(cell => cell.getAttribute('part'))).toEqual(['rule-name', 'rule-owner', 'rule-description']);
   expect(table.querySelector('pb-badge')).toBeNull();
 });
 
 // Verifies REQ-0004, REQ-0025 and REQ-0026.
 test('opens a registered rule and shows the newest version and switches to an older version with escaped text', async () => {
   const fetch = vi.fn()
-    .mockResolvedValueOnce(Response.json([summary, { ...summary, id: 'unnamed', name: undefined }]))
+    .mockResolvedValueOnce(Response.json([summary, { ...summary, id: 'unnamed', name: undefined, owner: undefined }]))
     .mockResolvedValueOnce(Response.json(history));
   vi.stubGlobal('fetch', fetch);
 
@@ -78,9 +80,10 @@ test('opens a registered rule and shows the newest version and switches to an ol
   const rows = [...table.querySelectorAll('tbody tr')];
   expect(rows).toHaveLength(2);
   expect(rows[0].querySelector('td:last-child')?.textContent).toBe(markup);
+  expect(rows.map(row => row.querySelector('[part="rule-owner"]')?.textContent)).toEqual([ownerMarkup, '—']);
   expect(rows[1].querySelector('a')?.textContent).toBe('unnamed');
   expect(rows[0].querySelector('a')?.textContent).toBe(markup);
-  expect(table.querySelector('img, [onerror]')).toBeNull();
+  expect(table.querySelector('b, img, [onerror]')).toBeNull();
   rows[0].querySelector('a')!.click();
   await app.updateComplete;
 
@@ -119,7 +122,7 @@ test('opens a registered rule and shows the newest version and switches to an ol
     [term.textContent, term.nextElementSibling?.textContent?.trim()]));
   const latest = fields();
   expect(latest).toMatchObject({
-    Description: markup, Prompt: prompt, Blocking: 'Non-blocking', Purpose: 'Review the build',
+    Description: markup, Owner: ownerMarkup, Prompt: prompt, Blocking: 'Non-blocking', Purpose: 'Review the build',
     Problem: 'Unstable builds', Value: 'Predictable runs', Conditions: expect.stringContaining(markup),
     'Success criteria': 'Detect broken builds', 'Out of scope': expect.stringContaining('Rule deploy'),
     Limitations: 'Static inspection', Placement: 'Shared catalog', References: markup,
@@ -127,7 +130,7 @@ test('opens a registered rule and shows the newest version and switches to an ol
   expect(latest).not.toHaveProperty('future');
   expect(root.querySelector('article pb-time')?.shadowRoot?.querySelector('time')?.dateTime)
     .toBe('2026-11-22T09:00:00Z');
-  expect(root.querySelector('img, [onerror]')).toBeNull();
+  expect(root.querySelector('b, img, [onerror]')).toBeNull();
   select.focus();
   select.value = '1.2';
   select.dispatchEvent(new Event('change', { bubbles: true }));
@@ -144,7 +147,9 @@ test('opens a registered rule and shows the newest version and switches to an ol
   expect([...root.querySelectorAll('article pb-badge')].map(badge => badge.textContent)).toEqual(['check']);
   expect([...facts.querySelectorAll('dt')].map(term => term.textContent)).toEqual(['Kind', 'Registered']);
   const first = fields();
-  expect(first).toMatchObject({ Description: 'First version', Purpose: 'Check the build', Conditions: 'Use locked tools' });
+  expect(first).toMatchObject({
+    Description: 'First version', Owner: 'github.com/team/registrations', Purpose: 'Check the build', Conditions: 'Use locked tools',
+  });
   expect(first).not.toHaveProperty('References');
   expect(first).not.toHaveProperty('Prompt');
   expect(first).not.toHaveProperty('Blocking');
@@ -155,14 +160,16 @@ test('opens a registered rule and shows the newest version and switches to an ol
 });
 
 // Verifies REQ-0026.
-test('uses the local ID and omits the introduction and blocking fact for an unnamed check without a description', async () => {
-  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json([{ ...history[0], name: undefined, description: undefined }])));
+test('uses the local ID and omits absent optional fields for an unnamed check', async () => {
+  const version = { ...history[0], name: undefined, description: undefined, owner: undefined };
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json([version])));
   const app = open(`/rules/detail?${new URLSearchParams(identity)}`);
   await app.updateComplete;
   const root = app.shadowRoot!.querySelector<RuleView>('pb-rule')!.shadowRoot!;
   await vi.waitFor(() => expect(root.querySelector('h1')?.textContent).toBe(identity.id));
   expect(root.querySelector('.introduction')).toBeNull();
   expect(root.querySelector('select')).toBeNull();
+  expect([...root.querySelectorAll('article dt')].map(term => term.textContent)).not.toContain('Owner');
   const facts = root.querySelector('pb-fact-strip')!.shadowRoot!;
   expect([...facts.querySelectorAll('dt')].map(term => term.textContent)).toEqual(['Kind', 'Registered']);
 });

@@ -583,7 +583,7 @@ async fn browser_registry_reads_preserve_ledger_texts_order_and_encoded_queries(
     const MARKUP: &str = "<img src=x onerror=alert(1)>";
     let summary = json!({
         "source": "github.com/team/rules+more", "path": "checks/shell&tools", "id": "shell",
-        "kind": "review", "version": "1.10", "name": MARKUP, "description": MARKUP
+        "kind": "review", "version": "1.10", "name": MARKUP, "description": MARKUP, "owner": MARKUP
     });
     let mut latest = summary.clone();
     latest["registered_at"] = json!("2026-11-22T09:00:00Z");
@@ -595,14 +595,19 @@ async fn browser_registry_reads_preserve_ledger_texts_order_and_encoded_queries(
     let mut first = latest.clone();
     first["version"] = json!("1.2");
     first.as_object_mut().unwrap().remove("knowledge");
+    first.as_object_mut().unwrap().remove("owner");
     let mut listed = summary;
     listed["scan"] = json!({"through": 1795334400123456_i64, "registrations": 254});
     let mut second = listed.clone();
     second["id"] = json!("second");
     second["name"] = json!("Zebra");
+    second.as_object_mut().unwrap().remove("owner");
     let list = serde_json::to_string_pretty(&json!([listed, second])).unwrap();
     listed.as_object_mut().unwrap().remove("scan");
     let missing_scan = json!([listed]).to_string();
+    listed["scan"] = second["scan"].clone();
+    listed["owner"] = json!({"label": MARKUP});
+    let invalid_owner = json!([listed]).to_string();
     let versions = serde_json::to_string_pretty(&json!([first, latest])).unwrap();
     first.as_object_mut().unwrap().remove("prompt");
     let malformed = json!([first]).to_string();
@@ -619,6 +624,7 @@ async fn browser_registry_reads_preserve_ledger_texts_order_and_encoded_queries(
                             (StatusCode::BAD_REQUEST, "upstream query error".into())
                         }
                         Some("limit=1") => (StatusCode::OK, missing_scan),
+                        Some("limit=2") => (StatusCode::OK, invalid_owner),
                         _ => panic!("unexpected registry query"),
                     }
                 }),
@@ -665,6 +671,11 @@ async fn browser_registry_reads_preserve_ledger_texts_order_and_encoded_queries(
         ),
         (
             "/v0/rules?limit=1",
+            StatusCode::SERVICE_UNAVAILABLE,
+            "ledger_unavailable",
+        ),
+        (
+            "/v0/rules?limit=2",
             StatusCode::SERVICE_UNAVAILABLE,
             "ledger_unavailable",
         ),

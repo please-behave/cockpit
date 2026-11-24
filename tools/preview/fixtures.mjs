@@ -18,14 +18,14 @@ const rules = [
       references: ['https://choosealicense.com'],
     },
   }),
-  rule('check', 'checks/security', 'no-secrets', ['1.0'], { name: 'No secrets in the repository' }),
+  rule('check', 'checks/security', 'no-secrets', ['1.0'], { name: 'No secrets in the repository' }, [undefined]),
   rule('review', 'reviews/design', 'design-review', ['1.0', '1.1', '1.2', '2.0'], {
     name: 'Design review',
     description: 'A reviewer judges whether the change fits the architecture.',
     prompt: 'Review the change for architectural fit.\nName every module that it touches and judge the dependency direction.',
     blocking: true,
     knowledge: { purpose: 'Keep the architecture coherent.', limitations: ['Only as good as the reviewer.'] },
-  }),
+  }, ['design-review-key', ruleSource, ruleSource, ruleSource]),
   rule('review', 'reviews/docs', 'docs-review', ['1.0'], { prompt: 'Is every public change documented?', blocking: false }),
   rule('check', 'checks/long', 'rule-with-a-very-long-identifier-that-needs-to-wrap-on-narrow-screens', ['1.0'], {
     name: `Rule with a very long name: ${longText}`,
@@ -42,7 +42,7 @@ const rules = [
       conditions: [{ statement: longText, rationale: longText }, { statement: 'Allow conditions without a reason.' }],
       future_field: { text: markup },
     },
-  }),
+  }, [ruleSource, `github.com/${longOwner}/${longName}`]),
   rule('check', 'checks/markup', 'markup', ['1.0'], {
     name: `<b>${markup}</b>`,
     description: `<script>alert(1)</script> ${markup}`,
@@ -51,7 +51,7 @@ const rules = [
       conditions: [{ statement: '<b>bold</b>', rationale: markup }],
       references: [`<a href="javascript:alert(1)">${markup}</a>`],
     },
-  }),
+  }, [markup]),
   rule('review', 'reviews/versioned', 'versioned-review', ['1.0', '1.2', '2.0'], {
     name: 'Versioned review',
     description: 'Review the scope of the change.',
@@ -68,7 +68,7 @@ const rules = [
   }),
 ];
 
-function rule(kind, path, id, versions, details) {
+function rule(kind, path, id, versions, details, owners = versions.map(() => details.source ?? ruleSource)) {
   return versions.map((version, index) => ({
     source: ruleSource,
     path,
@@ -76,6 +76,7 @@ function rule(kind, path, id, versions, details) {
     version,
     kind,
     ...details,
+    ...(owners[index] === undefined ? {} : { owner: owners[index] }),
     ...(index === versions.length - 1 || !details.name ? {} : { name: `${details.name} (older)` }),
     digest: `v1:sha256:${String(index + 1).repeat(64)}`,
     commit: sha(String(index + 1)),
@@ -193,10 +194,11 @@ const compare = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
 const displayName = rule => (rule.name ?? rule.id).toLowerCase();
 const ruleSummaries = rules
   .map(versions => versions.at(-1))
-  .map(({ source, path, id, version, kind, name, description }) => ({
+  .map(({ source, path, id, version, kind, name, description, owner }) => ({
     source, path, id, version, kind, scan,
     ...(name ? { name } : {}),
     ...(description ? { description } : {}),
+    ...(owner === undefined ? {} : { owner }),
   }))
   .sort((a, b) => compare(displayName(a), displayName(b))
     || compare(a.source, b.source) || compare(a.path, b.path) || compare(a.id, b.id));
