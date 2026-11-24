@@ -484,8 +484,10 @@ fn reported_summary(id: &str, repository: &str, point: &str, overall: &str) -> V
 
 #[tokio::test]
 async fn authenticated_page_requests_return_the_embedded_shell() {
-    let site = TestSite::start_with_ledger(Router::new().fallback(|| async {
-        panic!("a shell request reached the ledger");
+    let (record_ledger_contact, ledger_contacted) = tokio::sync::watch::channel(false);
+    let site = TestSite::start_with_ledger(Router::new().fallback(move || {
+        record_ledger_contact.send_replace(true);
+        async { StatusCode::INTERNAL_SERVER_ERROR }
     }))
     .await;
     let session = cookie_header(&cookie(&site.sign_in("allowed").await, SESSION).unwrap());
@@ -525,6 +527,10 @@ async fn authenticated_page_requests_return_the_embedded_shell() {
         .unwrap();
     assert_eq!(response.status(), StatusCode::OK);
     assert!(response.bytes().await.unwrap().is_empty());
+    assert!(
+        !*ledger_contacted.borrow(),
+        "a shell request reached the ledger"
+    );
 }
 
 #[tokio::test]
