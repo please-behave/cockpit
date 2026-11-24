@@ -255,8 +255,11 @@ function ruleDetail(params) {
 export function respond(target) {
   const url = new URL(target, 'http://preview.invalid');
   const { pathname, searchParams } = url;
-  if (pathname === '/v0/attestations/latest') return json(200, latest);
-  if (pathname === '/v0/attestations') return attestations(searchParams);
+  if (pathname === '/v0/attestations/latest' || pathname === '/v0/attestations') {
+    const response = pathname.endsWith('/latest') ? json(200, latest) : attestations(searchParams);
+    // Keep the initial loading and busy refresh states visible for browser review.
+    return searchParams.get('preview') === 'slow-refresh' ? { ...response, delay: 750 } : response;
+  }
   if (pathname === '/v0/rules') return ruleList(searchParams);
   if (pathname === '/v0/rules/detail') return ruleDetail(searchParams);
   const detail = /^\/v0\/attestations\/([^/]+)$/.exec(pathname);

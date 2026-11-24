@@ -15,7 +15,7 @@ const refreshIcon = svg`
   <path d="M20 4v5h-5"/>
 `;
 
-/** The button and the age of the data of a refreshable view, shown in the header. */
+/** The button and the age of the data of a refreshable view. */
 export class RefreshStatus extends LitElement {
   static override properties = {
     updatedAt: { attribute: false },
@@ -34,11 +34,11 @@ export class RefreshStatus extends LitElement {
       button {
         display: grid;
         place-items: center;
-        inline-size: calc(var(--space-8) + var(--space-3));
+        inline-size: var(--space-8);
         aspect-ratio: 1;
         padding: 0;
         border: 0;
-        background: var(--surface-raised);
+        background: var(--surface);
         color: inherit;
         cursor: pointer;
       }
@@ -78,6 +78,7 @@ export class RefreshStatus extends LitElement {
 
       time {
         color: var(--text-muted);
+        white-space: nowrap;
       }
     }
   `;

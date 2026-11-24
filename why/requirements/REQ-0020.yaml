@@ -5,14 +5,18 @@ description: >-
   read their latest data again every 5 minutes and when the tab becomes visible
   after it was hidden for longer than that. They do nothing while the tab is
   hidden. The registered rules, the rule detail and the attestation detail do
-  not refresh. The header of a refreshable view shows a refresh button named
-  "Refresh" and the text "Updated a few seconds ago", "Updated 1 minute ago",
-  "Updated 2 minutes ago" and so on. The text updates at least every 10 seconds
-  without reading data, is no live region, and the exact time of the last read
-  is available in a tooltip and as an accessible description. The button reads
-  immediately, shows that it is working, accepts no further request meanwhile
-  and restarts the 5-minute interval. A refresh replaces content in place and
-  keeps the keyboard focus, the scroll position and the dashboard's sort choice.
+  not refresh. Only refreshable views reserve a status line directly below the
+  header from the first render. At the end of the line are a refresh button
+  named "Refresh" and the text "Updated a few seconds ago", "Updated 1 minute
+  ago", "Updated 2 minutes ago" and so on. The text stays on one line. The
+  header and the start of the content stay in the same position across views,
+  during loading, and as the age changes. The text updates at least every 10
+  seconds without reading data, is no live region, and the exact time of the
+  last read is available in a tooltip and as an accessible description. The
+  button reads immediately, shows that it is working, accepts no further
+  request meanwhile and restarts the 5-minute interval. A refresh replaces
+  content in place and keeps the keyboard focus, the scroll position and the
+  dashboard's sort choice.
   A failed refresh keeps the data and shows a notice. Tiles are identified by
   repository and execution points.
 rationale: >-

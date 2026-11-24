@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { extname, join, normalize } from 'node:path';
+import { setTimeout } from 'node:timers/promises';
 import { respond } from './fixtures.mjs';
 
 const dist = join(import.meta.dirname, '../../frontend/dist');
@@ -16,7 +17,10 @@ async function send(response, status, type, body) {
 async function serve(request, response) {
   const { pathname } = new URL(request.url, `http://${host}`);
   const fixture = respond(request.url);
-  if (fixture) return send(response, fixture.status, 'application/json', JSON.stringify(fixture.body));
+  if (fixture) {
+    if (fixture.delay) await setTimeout(fixture.delay);
+    return send(response, fixture.status, 'application/json', JSON.stringify(fixture.body));
+  }
 
   if (pathname.startsWith('/assets/')) {
     const file = normalize(join(dist, pathname));

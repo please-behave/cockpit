@@ -55,7 +55,7 @@ export abstract class CockpitView<T = never> extends LitElement {
 
   /** Top-level views hide the headline visually; it stays exposed and focusable. */
   protected readonly headingVisible: boolean = true;
-  /** A refreshable view reads again periodically and on demand, and reports its state to the header. */
+  /** A refreshable view reads again periodically and on demand, and reports its state to the shell. */
   protected readonly refreshable: boolean = false;
   protected abstract heading(data?: T): string;
   protected abstract content(data?: T): TemplateResult;

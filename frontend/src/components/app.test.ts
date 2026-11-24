@@ -251,9 +251,22 @@ async function mountAt(path: string) {
 const status = (shell: CockpitAppShell) => shell.shadowRoot!.querySelector('pb-refresh-status');
 
 // Verifies REQ-0020.
-test.each(['/', '/attestations'])('shows the refresh status on %s', async path => {
+test.each([
+  ['/', latestAttestations],
+  ['/attestations', attestationPage],
+] as const)('reserves a line below the header on %s before data arrives', async (path, read) => {
+  let complete!: (value: []) => void;
+  vi.mocked(read).mockReturnValueOnce(new Promise(resolve => { complete = resolve; }));
   const { shell } = await mountAt(path);
-  await vi.waitFor(() => expect(status(shell)).not.toBeNull());
+  await shell.updateComplete;
+
+  const root = shell.shadowRoot!;
+  const line = root.querySelector('header + .refresh-line')!;
+  expect(line.nextElementSibling).toBe(root.querySelector('main'));
+  expect(status(shell)).toBeNull();
+
+  complete([]);
+  await vi.waitFor(() => expect(status(shell)?.parentElement).toBe(line));
   expect(status(shell)!.shadowRoot!.querySelector('button')?.getAttribute('aria-label')).toBe('Refresh');
 });
 
@@ -262,6 +275,7 @@ test.each(['/rules', '/attestations/example', '/missing'])('shows no refresh sta
   vi.mocked(getAttestation).mockReturnValue(new Promise(() => {}));
   const { shell } = await mountAt(path);
   await shell.updateComplete;
+  expect(shell.shadowRoot!.querySelector('.refresh-line')).toBeNull();
   expect(status(shell)).toBeNull();
 });
 

@@ -44,6 +44,22 @@ export class CockpitAppShell extends LitElement {
         max-inline-size: 100%;
       }
 
+      .tab-label {
+        display: grid;
+        grid-template-areas: "label";
+      }
+
+      .tab-label > span, .tab-label::after {
+        grid-area: label;
+      }
+
+      /* Reserve the active label width on every route while keeping its weight distinct. */
+      .tab-label::after {
+        content: attr(data-label);
+        visibility: hidden;
+        font-weight: var(--weight-semibold);
+      }
+
       .brand {
         font-size: var(--type-brand);
         line-height: var(--line-heading);
@@ -82,12 +98,32 @@ export class CockpitAppShell extends LitElement {
         outline-offset: calc(-1 * var(--focus-offset));
       }
 
-      main {
+      .refresh-line, main {
         box-sizing: border-box;
         max-inline-size: var(--content-width);
         margin-inline: auto;
         padding-inline: var(--space-4);
+      }
+
+      .refresh-line {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        block-size: var(--space-8);
+      }
+
+      main {
         padding-block: var(--space-8);
+      }
+
+      /* The status line occupies the same space as the regular top padding. */
+      .refresh-line + main {
+        padding-block-start: 0;
+      }
+
+      /* Keep loading and error margins inside the view. */
+      .refresh-line + main ::slotted(*) {
+        display: flow-root;
       }
 
       main:focus-visible {
@@ -137,12 +173,21 @@ export class CockpitAppShell extends LitElement {
     super.disconnectedCallback();
   }
 
+  private navLabel(label: string) {
+    return html`<span class="tab-label" data-label=${label}><span>${label}</span></span>`;
+  }
+
   private refreshStatus() {
     const state = this.refreshState;
-    const refreshable = this.currentView === 'dashboard' || this.currentView === 'history';
-    if (!state || !refreshable || !state.view.isConnected) return nothing;
-    return html`<pb-refresh-status .updatedAt=${state.updatedAt} .busy=${state.busy}
-      @refresh=${() => state.view.refresh()}></pb-refresh-status>`;
+    if (this.currentView !== 'dashboard' && this.currentView !== 'history') return nothing;
+    return html`
+      <div class="refresh-line">
+        ${state?.view.isConnected ? html`
+          <pb-refresh-status .updatedAt=${state.updatedAt} .busy=${state.busy}
+            @refresh=${() => state.view.refresh()}></pb-refresh-status>
+        ` : nothing}
+      </div>
+    `;
   }
 
   override render() {
@@ -154,22 +199,22 @@ export class CockpitAppShell extends LitElement {
             <pb-nav-tab class="brand" href="/" .active=${this.currentView === 'dashboard'}>
               <img class="logo-light" src=${logo} alt="">
               <img class="logo-dark" src=${logoDark} alt="">
-              <span>Please Behave Dashboard</span>
+              ${this.navLabel('Please Behave Dashboard')}
             </pb-nav-tab>
             <pb-nav-tab href="/attestations" .active=${this.currentView === 'history' || this.currentView === 'detail'}>
-              Attestations
+              ${this.navLabel('Attestations')}
             </pb-nav-tab>
             <pb-nav-tab href="/rules" .active=${this.currentView === 'rules' || this.currentView === 'rule'}>
-              Rules
+              ${this.navLabel('Rules')}
             </pb-nav-tab>
           </nav>
           <div class="actions">
-            ${this.refreshStatus()}
             <pb-theme-toggle></pb-theme-toggle>
             <a class="sign-out" href="/sign-out">Sign out</a>
           </div>
         </div>
       </header>
+      ${this.refreshStatus()}
       <main id="main-content" tabindex="-1"><slot></slot></main>
     `;
   }

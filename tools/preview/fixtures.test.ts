@@ -38,6 +38,10 @@ test('serves latest summaries in the client shape', () => {
   expect([...points.values()].some(tiles => tiles.length > 1)).toBe(true);
 });
 
+test.each([fixtureTargets.latest, fixtureTargets.history])('delays %s for refresh review', target => {
+  expect(respond(`${target}?preview=slow-refresh`)).toEqual({ ...respond(target), delay: 750 });
+});
+
 test('pages the history newest first with limit and before', () => {
   const first = body<Summary[]>(fixtureTargets.history);
   first.forEach(expectSummary);
