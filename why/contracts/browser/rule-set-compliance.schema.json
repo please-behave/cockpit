@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Rule Set compliance by repository",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["repository", "version", "registered", "complete", "non_passing_members"],
+    "properties": {
+      "repository": { "$ref": "attestation.schema.json#/$defs/summary/properties/repository" },
+      "version": { "$ref": "rules.schema.json#/$defs/summary/properties/version" },
+      "registered": { "type": "boolean" },
+      "complete": { "type": "boolean" },
+      "non_passing_members": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["source", "path", "id", "version", "status"],
+          "properties": {
+            "source": { "$ref": "rules.schema.json#/$defs/summary/properties/source" },
+            "path": { "$ref": "rules.schema.json#/$defs/summary/properties/path" },
+            "id": { "$ref": "rules.schema.json#/$defs/summary/properties/id" },
+            "version": { "$ref": "rules.schema.json#/$defs/summary/properties/version" },
+            "status": { "enum": ["FAIL", "ERROR", "WARN", "NOT_RUN"] }
+          }
+        }
+      }
+    }
+  }
+}

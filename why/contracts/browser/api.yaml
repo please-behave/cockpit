@@ -32,3 +32,13 @@ contracts:
     document: completed-rule-sets.md
     schema: completed-rule-sets.schema.json
     requirements: [REQ-0012, REQ-0013, REQ-0028]
+  - id: CON-0007
+    name: Registered Rule Sets
+    document: rule-sets.md
+    schema: rule-sets.schema.json
+    requirements: [REQ-0012, REQ-0013, REQ-0025, REQ-0026]
+  - id: CON-0008
+    name: Rule Set Compliance by Repository
+    document: rule-set-compliance.md
+    schema: rule-set-compliance.schema.json
+    requirements: [REQ-0012, REQ-0013, REQ-0025, REQ-0026]

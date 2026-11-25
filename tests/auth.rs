@@ -639,6 +639,105 @@ async fn browser_completed_rule_sets_reject_invalid_ledger_data() {
 }
 
 #[tokio::test]
+async fn browser_rule_set_reads_require_sessions_and_preserve_ledger_responses() {
+    const IDENTITY: &str =
+        "source=github.com%2Fteam%2Frules%2Bmore&path=sets%2Fshell%26tools&id=shell";
+    let sets = json!([{
+        "source": "github.com/team/rules+more", "path": "sets/shell&tools", "id": "shell",
+        "version": "1.10", "name": "<b>Shell rules</b>", "member_count": 2,
+        "scan": {"through": 1795334400123456_i64, "registrations": 2}
+    }])
+    .to_string();
+    let compliance = json!([{
+        "repository": "github.com/team/failed", "version": "1.2", "registered": true,
+        "complete": false, "non_passing_members": [{
+            "source": "github.com/team/rules+more", "path": "checks/shell&tools", "id": "syntax",
+            "version": "1.3", "status": "WARN"
+        }]
+    }])
+    .to_string();
+    let upstream_sets = sets.clone();
+    let upstream_compliance = compliance.clone();
+    let site = TestSite::start_with_ledger(
+        Router::new()
+            .route(
+                "/v0/rule-sets",
+                get(move |RawQuery(query): RawQuery| async move {
+                    match query.as_deref() {
+                        Some("limit=100") => (StatusCode::OK, upstream_sets),
+                        Some("limit=1") => {
+                            (StatusCode::OK, r#"[{"name":"missing fields"}]"#.into())
+                        }
+                        _ => (StatusCode::BAD_REQUEST, "upstream query error".into()),
+                    }
+                }),
+            )
+            .route(
+                "/v0/rule-sets/compliance",
+                get(move |RawQuery(query): RawQuery| async move {
+                    match query.as_deref() {
+                        Some(IDENTITY) => (StatusCode::OK, upstream_compliance),
+                        Some("id=malformed") => (StatusCode::OK, r#"[{"complete":false}]"#.into()),
+                        _ => (StatusCode::BAD_REQUEST, "upstream identity error".into()),
+                    }
+                }),
+            ),
+    )
+    .await;
+    let session = cookie_header(&cookie(&site.sign_in("allowed").await, SESSION).unwrap());
+    for (path, body) in [
+        ("/v0/rule-sets?limit=100".to_owned(), sets),
+        (format!("/v0/rule-sets/compliance?{IDENTITY}"), compliance),
+    ] {
+        assert_api_error(
+            site.get(&path).send().await.unwrap(),
+            StatusCode::UNAUTHORIZED,
+            "unauthorized",
+        )
+        .await;
+        let response = site
+            .get(&path)
+            .header(header::COOKIE, &session)
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_api_headers(&response);
+        assert_eq!(response.text().await.unwrap(), body);
+    }
+    for (path, status, code) in [
+        (
+            "/v0/rule-sets?before=invalid",
+            StatusCode::BAD_REQUEST,
+            "invalid_query",
+        ),
+        (
+            "/v0/rule-sets?limit=1",
+            StatusCode::SERVICE_UNAVAILABLE,
+            "ledger_unavailable",
+        ),
+        (
+            "/v0/rule-sets/compliance",
+            StatusCode::BAD_REQUEST,
+            "invalid_query",
+        ),
+        (
+            "/v0/rule-sets/compliance?id=malformed",
+            StatusCode::SERVICE_UNAVAILABLE,
+            "ledger_unavailable",
+        ),
+    ] {
+        let response = site
+            .get(path)
+            .header(header::COOKIE, &session)
+            .send()
+            .await
+            .unwrap();
+        assert_api_error(response, status, code).await;
+    }
+}
+
+#[tokio::test]
 async fn browser_registry_reads_preserve_ledger_texts_order_and_encoded_queries() {
     const IDENTITY: &str =
         "source=github.com%2Fteam%2Frules%2Bmore&path=checks%2Fshell%26tools&id=shell";
@@ -660,6 +759,10 @@ async fn browser_registry_reads_preserve_ledger_texts_order_and_encoded_queries(
     first.as_object_mut().unwrap().remove("knowledge");
     first.as_object_mut().unwrap().remove("owner");
     let mut listed = summary;
+    listed["rule_sets"] = json!([{
+        "source": "github.com/team/rules+more", "path": "sets/shell", "id": "shell",
+        "version": "1.0", "name": MARKUP
+    }]);
     listed["scan"] = json!({"through": 1795334400123456_i64, "registrations": 254});
     let mut second = listed.clone();
     second["id"] = json!("second");

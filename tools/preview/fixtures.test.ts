@@ -1,5 +1,7 @@
 import { expect, test } from 'vitest';
-import type { Attestation, RegisteredRule, RegisteredVersion, RepositoryRuleSets, Summary } from '../../frontend/src/api/client';
+import type {
+  Attestation, RegisteredRule, RegisteredRuleSet, RegisteredVersion, RepositoryRuleSets, RuleSetCompliance, Summary,
+} from '../../frontend/src/api/client';
 import { fixtureTargets, respond } from './fixtures.mjs';
 
 const isString = (value: unknown): value is string => typeof value === 'string';
@@ -165,7 +167,7 @@ test('pages the registered rules in ledger order and rejects invalid cursors', (
     `${fixtureTargets.rules}?${new URLSearchParams({ before: JSON.stringify(before) })}`;
   const next = body<RegisteredRule[]>(target(cursor));
   expect(id).toBe('sample-a');
-  expect(next.map(rule => rule.id)).toEqual(['sample-b', 'versioned-review', 'zebra']);
+  expect(next.map(rule => rule.id)).toEqual(['sample-b', 'versioned-review', 'zebra', 'zsh', 'zsh']);
   expect([...first, ...next]).toEqual(body<RegisteredRule[]>(`${fixtureTargets.rules}?limit=200`));
   const names = [...first, ...next].map(rule => (rule.name ?? rule.id).toLowerCase());
   expect(names).toEqual(names.toSorted());
@@ -178,6 +180,27 @@ test('pages the registered rules in ledger order and rejects invalid cursors', (
   ]) {
     expect(respond(target(invalid))).toEqual({ status: 400, body: { code: 'invalid_query' } });
   }
+});
+
+test('serves Rule Sets, latest rule memberships and current repository compliance', () => {
+  const sets = body<RegisteredRuleSet[]>(fixtureTargets.ruleSets);
+  const rules = body<RegisteredRule[]>(`${fixtureTargets.rules}?limit=200`);
+  expect(new Set(rules.filter(rule => rule.id === 'zsh').map(rule => rule.source)).size).toBe(2);
+  expect(rules.find(rule => rule.id === 'license-file')?.rule_sets?.map(set => set.id)).toEqual(['baseline', 'security']);
+  expect(rules.find(rule => rule.id === 'zsh')?.rule_sets).toEqual([]);
+  for (const [index, set] of sets.entries()) {
+    expect(set.scan.registrations).toBeGreaterThanOrEqual(sets.length);
+    expect(set.member_count).toBe(rules.filter(rule => rule.rule_sets?.some(membership => membership.id === set.id)).length);
+    const bindings = body<RuleSetCompliance[]>(fixtureTargets.ruleSetCompliance[index]);
+    if (set.id === 'baseline') expect(bindings).toEqual([
+      expect.objectContaining({ complete: false, version: '0.9', non_passing_members: [expect.objectContaining({ status: 'WARN' })] }),
+      expect.objectContaining({ complete: true, version: '1.0' }),
+    ]);
+    if (set.id === 'unbound') expect(bindings).toEqual([]);
+  }
+  const [{ source, path, id, version, scan }] = sets;
+  const query = new URLSearchParams({ limit: '1', before: JSON.stringify({ source, path, id, version, scan }) });
+  expect(body<RegisteredRuleSet[]>(`${fixtureTargets.ruleSets}?${query}`)).toEqual(sets.slice(1, 2));
 });
 
 test('answers unknown API routes and leaves other paths to the server', () => {

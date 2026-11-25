@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from 'vitest';
-import { type RegisteredRule, type RegisteredVersion, rulePageSize } from '../api/client';
+import { type RegisteredRule, type RegisteredVersion } from '../api/client';
 import { CockpitApp } from '../components/app';
 import type { DataTable } from '../components/pb-data-table';
 import type { RuleView } from './rule';
@@ -49,33 +49,20 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-// Verifies REQ-0026.
-test('lists the rule name, owner and wrapping description', async () => {
-  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json([summary])));
-  const app = open('/rules');
-  await app.updateComplete;
-  const view = app.shadowRoot!.querySelector<RulesView>('pb-rules')!;
-  const table = await tableFrom(view);
-
-  const headers = [...table.querySelectorAll('thead th')];
-  const cells = [...table.querySelectorAll('tbody tr > *')];
-  expect(headers.map(cell => cell.textContent)).toEqual(['Rule', 'Owner', 'Description']);
-  expect(headers.map(cell => cell.getAttribute('part'))).toEqual(['rule-name', 'rule-owner', 'rule-description']);
-  expect(cells.map(cell => cell.getAttribute('part'))).toEqual(['rule-name', 'rule-owner', 'rule-description']);
-  expect(table.querySelector('pb-badge')).toBeNull();
-});
-
 // Verifies REQ-0004, REQ-0025 and REQ-0026.
 test('opens a registered rule and shows the newest version and switches to an older version with escaped text', async () => {
-  const fetch = vi.fn()
-    .mockResolvedValueOnce(Response.json([summary, { ...summary, id: 'unnamed', name: undefined, owner: undefined }]))
-    .mockResolvedValueOnce(Response.json(history));
+  const fetch = vi.fn(async (path: string) => Response.json(
+    path.startsWith('/v0/rule-sets?') ? []
+      : path.startsWith('/v0/rules/detail?') ? history
+      : [summary, { ...summary, id: 'unnamed', name: undefined, owner: undefined }],
+  ));
   vi.stubGlobal('fetch', fetch);
 
   const app = open('/rules');
   await app.updateComplete;
   const view = app.shadowRoot!.querySelector<RulesView>('pb-rules')!;
   const table = await tableFrom(view);
+  view.shadowRoot!.querySelector('details')!.open = true;
   expect(view.shadowRoot!.querySelector('h1')?.classList.contains('assistive')).toBe(true);
   const rows = [...table.querySelectorAll('tbody tr')];
   expect(rows).toHaveLength(2);
@@ -154,6 +141,7 @@ test('opens a registered rule and shows the newest version and switches to an ol
   expect(first).not.toHaveProperty('Prompt');
   expect(first).not.toHaveProperty('Blocking');
   expect(fetch.mock.calls.map(([path]) => path)).toEqual([
+    '/v0/rule-sets?limit=100',
     '/v0/rules?limit=100',
     '/v0/rules/detail?source=github.com%2Fteam%2Fcatalog%2Bmore&path=.please%2Fchecks%2Fshell%26tools&id=example',
   ]);
@@ -172,50 +160,6 @@ test('uses the local ID and omits absent optional fields for an unnamed check', 
   expect([...root.querySelectorAll('article dt')].map(term => term.textContent)).not.toContain('Owner');
   const facts = root.querySelector('pb-fact-strip')!.shadowRoot!;
   expect([...facts.querySelectorAll('dt')].map(term => term.textContent)).toEqual(['Kind', 'Registered']);
-});
-
-// Verifies REQ-0025 and REQ-0026.
-test('continues using the last summary and displays each page in ledger order', async () => {
-  const fullPage = Array.from({ length: rulePageSize }, (_, index) => ({
-    ...summary, id: String(rulePageSize - index), name: `Audit ${String(index).padStart(2, '0')}`,
-  }));
-  // These names come after Audit, in code point order after lowercasing.
-  const secondPage = [{ ...summary, id: 'b', name: 'Zebra' }, { ...summary, id: 'a', name: 'Åudit' }];
-  const fetch = vi.fn()
-    .mockResolvedValueOnce(Response.json(fullPage))
-    .mockResolvedValueOnce(Response.json(secondPage));
-  vi.stubGlobal('fetch', fetch);
-  const app = open('/rules');
-  await app.updateComplete;
-  const view = app.shadowRoot!.querySelector<RulesView>('pb-rules')!;
-  const table = await tableFrom(view);
-  expect([...table.querySelectorAll('tbody a')].map(link => link.textContent))
-    .toEqual(fullPage.map(rule => rule.name));
-
-  const link = view.shadowRoot!.querySelector<HTMLAnchorElement>('a')!;
-  expect(link.textContent).toBe('Next page');
-  const cursor = new URL(link.href).searchParams.get('before')!;
-  expect(JSON.parse(cursor)).toEqual({ ...identity, id: '1', version: summary.version, scan: summary.scan });
-  link.click();
-  await app.updateComplete;
-
-  const next = app.shadowRoot!.querySelector<RulesView>('pb-rules')!;
-  const nextTable = await tableFrom(next);
-  expect([...nextTable.querySelectorAll('tbody a')].map(link => link.textContent)).toEqual(['Zebra', 'Åudit']);
-  expect([...next.shadowRoot!.querySelectorAll('a')].map(link => link.textContent)).toEqual(['First page']);
-  const query = new URL(fetch.mock.calls[1][0], window.location.origin).searchParams;
-  expect(query.get('before')).toBe(cursor);
-});
-
-// Verifies REQ-0026.
-test('shows the existing invalid page error when the ledger rejects the cursor', async () => {
-  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ code: 'invalid_query' }, { status: 400 })));
-  const app = open('/rules?before=invalid');
-  await app.updateComplete;
-  const view = app.shadowRoot!.querySelector<RulesView>('pb-rules')!;
-  await vi.waitFor(() => expect(view.shadowRoot?.querySelector('pb-error-state')?.getAttribute('heading'))
-    .toBe('Invalid page'));
-  expect(view.shadowRoot?.querySelector('pb-data-table')).toBeNull();
 });
 
 // Verifies REQ-0026 and REQ-0027.

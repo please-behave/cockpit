@@ -11,6 +11,8 @@ the response. Cockpit forwards the ledger's fields, values and order intact.
 Texts and knowledge are untrusted data and are escaped when rendered.
 The optional `owner` is the owner recorded by the ledger for the first
 registration of that version. Older ledgers can omit the field.
+When present, `rule_sets` lists the set identities and versions that contain
+that rule version, as reported by the ledger.
 
 The [session, headers and errors](latest.md#session-headers-and-errors) apply.
 

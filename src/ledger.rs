@@ -112,15 +112,15 @@ pub enum ReportedStatus {
 #[derive(Deserialize)]
 struct CompletedRuleSets {
     repository: String,
-    sets: Vec<CompletedRuleSet>,
+    sets: Vec<RuleSetRegistration>,
 }
 
 #[allow(
     dead_code,
-    reason = "compliance fields are used only for response validation"
+    reason = "registration fields are used only for response validation"
 )]
 #[derive(Deserialize)]
-struct CompletedRuleSet {
+struct RuleSetRegistration {
     source: String,
     path: String,
     id: String,
@@ -136,12 +136,51 @@ struct CompletedRuleSet {
 mod registry {
     use serde::Deserialize;
 
+    use super::RuleSetRegistration;
+
     #[derive(Deserialize)]
     pub(super) struct RegisteredRule {
         #[serde(flatten)]
         identity: RegisteredRuleSummary,
         kind: RegisteredRuleKind,
         scan: RuleScan,
+        rule_sets: Option<Vec<RuleSetRegistration>>,
+    }
+
+    #[derive(Deserialize)]
+    pub(super) struct RegisteredRuleSet {
+        #[serde(flatten)]
+        registration: RuleSetRegistration,
+        description: Option<String>,
+        member_count: u64,
+        scan: RuleScan,
+    }
+
+    #[derive(Deserialize)]
+    pub(super) struct RuleSetCompliance {
+        repository: String,
+        version: String,
+        registered: bool,
+        complete: bool,
+        non_passing_members: Vec<NonPassingMember>,
+    }
+
+    #[derive(Deserialize)]
+    struct NonPassingMember {
+        source: String,
+        path: String,
+        id: String,
+        version: String,
+        status: NonPassingStatus,
+    }
+
+    #[derive(Deserialize)]
+    #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+    enum NonPassingStatus {
+        Fail,
+        Error,
+        Warn,
+        NotRun,
     }
 
     #[derive(Deserialize)]
@@ -160,6 +199,7 @@ mod registry {
         digest: String,
         commit: String,
         registered_at: String,
+        rule_sets: Option<Vec<RuleSetRegistration>>,
     }
 
     #[derive(Deserialize)]
@@ -196,6 +236,8 @@ enum Endpoint<'a> {
     Attestation(&'a str),
     Rules,
     RuleVersions,
+    RuleSets,
+    RuleSetCompliance,
 }
 
 impl LedgerClient {
@@ -278,6 +320,23 @@ impl LedgerClient {
         Ok(body)
     }
 
+    pub(crate) async fn rule_sets_response(&self, query: Option<&str>) -> Result<Bytes, ReadError> {
+        let (_, body) = self
+            .read::<Vec<registry::RegisteredRuleSet>>(Endpoint::RuleSets, query)
+            .await?;
+        Ok(body)
+    }
+
+    pub(crate) async fn rule_set_compliance_response(
+        &self,
+        query: Option<&str>,
+    ) -> Result<Bytes, ReadError> {
+        let (_, body) = self
+            .read::<Vec<registry::RuleSetCompliance>>(Endpoint::RuleSetCompliance, query)
+            .await?;
+        Ok(body)
+    }
+
     pub(crate) async fn rule_versions_response(
         &self,
         query: Option<&str>,
@@ -304,6 +363,8 @@ impl LedgerClient {
             Endpoint::List | Endpoint::Attestation(_) => "/v0/attestations",
             Endpoint::Rules => "/v0/rules",
             Endpoint::RuleVersions => "/v0/rules/detail",
+            Endpoint::RuleSets => "/v0/rule-sets",
+            Endpoint::RuleSetCompliance => "/v0/rule-sets/compliance",
         });
         if let Endpoint::Attestation(id) = endpoint {
             url.path_segments_mut()
@@ -326,9 +387,10 @@ impl LedgerClient {
         match (response.status(), endpoint) {
             (StatusCode::OK, _) => validated_body(response).await,
             (StatusCode::BAD_REQUEST, Endpoint::Attestation(_)) => Err(ReadError::InvalidId),
-            (StatusCode::BAD_REQUEST, Endpoint::List | Endpoint::Rules) => {
-                Err(ReadError::InvalidQuery)
-            }
+            (
+                StatusCode::BAD_REQUEST,
+                Endpoint::List | Endpoint::Rules | Endpoint::RuleSets | Endpoint::RuleSetCompliance,
+            ) => Err(ReadError::InvalidQuery),
             (StatusCode::NOT_FOUND, Endpoint::Attestation(_)) => Err(ReadError::NotFound),
             (StatusCode::BAD_REQUEST, Endpoint::RuleVersions) => {
                 Err(ReadError::InvalidRuleIdentity)

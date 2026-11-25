@@ -1,14 +1,25 @@
 id: REQ-0026
 name: Registered Rule Views
 description: >-
-  The Rules navigation opens a paged list of registered rules from CON-0004.
-  The list preserves the ledger's display-name order across pages and builds
-  the next-page cursor from the last summary of each full page as CON-0004
-  defines it. Each identity appears once with its name or local ID, the owner
-  reported for its greatest registered version, and any description, without a
-  kind column. The description takes the remaining width
-  and wraps without truncation. The table scrolls horizontally when necessary. Its detail page
-  uses CON-0005. It uses the selected version's registered name or local ID as
+  The Rules navigation opens two areas, registered Rule Sets and local rules
+  grouped by source repository. The view reads registered rules and sets in
+  ledger order with the cursors specified by CON-0004 and CON-0007. It uses
+  the latest-version memberships reported by the ledger. A rule appears in
+  each of those sets or, if it belongs to none, in its local repository group.
+  The Rule Set header uses the shared Rule Set token and shows the display
+  name, latest version, member count, distinct current repository count, and
+  a text marker when any binding is incomplete according to CON-0008.
+  Local repository headers use neutral tokens and start collapsed.
+  Case-insensitive search matches rule names, rule IDs, set names and IDs,
+  and source or bound repositories. It opens matching groups and shows only
+  those groups. Viewers can combine search with a rule-kind filter and a
+  Rule Set or local filter using labeled native controls. Search covers all
+  registry pages, and the view reveals groups and their rules in batches.
+  Within a group, rule summaries retain ledger order and show a link named
+  with the display name or ID, the reported owner, and the description.
+  The description wraps without truncation, and the table scrolls
+  horizontally when necessary. The list renders registered text as escaped
+  plain text. The rule detail uses CON-0005 and uses the selected version's registered name or local ID as
   the headline, its description as an introduction when present, and a
   fact strip with Kind, Blocking for reviews, and Registered, in that
   order. Beneath the strip, three muted, labeled fields show Repository,
@@ -47,7 +58,10 @@ decisions:
   - DEC-0005
   - DEC-0006
   - DEC-0009
+  - why:DEC-0009
   - why:DEC-0011
   - why:DEC-0012
   - why:DEC-0014
   - why:DEC-0015
+  - why:DEC-0016
+  - why:DEC-0019

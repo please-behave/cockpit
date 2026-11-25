@@ -62,6 +62,8 @@ const rules = [
   rule('check', 'checks/sample', 'sample-b', ['1.0'], { name: 'Tie at page boundary' }),
   rule('check', 'checks/sample', 'sample-a', ['1.0', '2.0'], { name: 'tie at page boundary' }),
   rule('check', 'checks/sample', 'zebra', ['1.0'], { name: 'Zebra' }),
+  ...['github.com/acme/cli', 'github.com/acme/dashboard'].map(source =>
+    rule('check', 'checks/zsh', 'zsh', ['1.0'], { source, name: 'Zsh syntax', description: 'Parse the repository scripts.' })),
   ...Array.from({ length: 92 }, (_, index) => {
     const number = String(index + 1).padStart(2, '0');
     return rule('check', 'checks/sample', `sample-${number}`, ['1.0'], { name: `Sample rule ${number}` });
@@ -195,6 +197,25 @@ const completedRuleSets = [{
   ],
 }];
 
+const [markupSet, baselineSet, securitySet] = completedRuleSets.flatMap(entry => entry.sets);
+const sets = [
+  { registration: markupSet, members: ['markup'] },
+  { registration: baselineSet, members: ['license-file', 'design-review'], description: 'Common repository checks and reviews.' },
+  { registration: securitySet, members: ['license-file', 'no-secrets'] },
+  { registration: { source: ruleSource, path: 'sets/unbound', id: 'unbound', version: '1.0', name: 'Unbound set' }, members: [] },
+];
+const setScan = { through: Date.UTC(2026, 10, 25) * 1000, registrations: sets.length + 1 };
+const nonPassingRule = rules.find(([rule]) => rule.id === 'design-review').at(-1);
+const failedBaseline = {
+  repository: 'github.com/acme/failed-baseline',
+  version: '0.9',
+  registered: true,
+  complete: false,
+  non_passing_members: [{
+    source: nonPassingRule.source, path: nonPassingRule.path, id: nonPassingRule.id, version: nonPassingRule.version, status: 'WARN',
+  }],
+};
+
 const scan = {
   through: Math.max(...rules.flat().map(version => Date.parse(version.registered_at))) * 1000,
   registrations: rules.flat().length,
@@ -203,10 +224,17 @@ const scan = {
 // The fixture names use ASCII, so lowercased strings compare in ledger order.
 const compare = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
 const displayName = rule => (rule.name ?? rule.id).toLowerCase();
+const setSummaries = sets
+  .map(({ registration, members, description }) => ({
+    ...registration, member_count: members.length, scan: setScan, ...(description ? { description } : {}),
+  }))
+  .sort((a, b) => compare(displayName(a), displayName(b)));
 const ruleSummaries = rules
   .map(versions => versions.at(-1))
   .map(({ source, path, id, version, kind, name, description, owner }) => ({
     source, path, id, version, kind, scan,
+    rule_sets: sets.filter(set => source === ruleSource && set.members.includes(id))
+      .map(set => set.registration).sort((a, b) => compare(a.path, b.path)),
     ...(name ? { name } : {}),
     ...(description ? { description } : {}),
     ...(owner === undefined ? {} : { owner }),
@@ -231,7 +259,7 @@ function attestations(params) {
   return json(200, page.slice(0, limit));
 }
 
-function ruleList(params) {
+function registryList(params, summaries, scan) {
   const limit = limitFrom(params);
   if (limit === undefined) return code(400, 'invalid_query');
   const before = params.get('before');
@@ -244,7 +272,7 @@ function ruleList(params) {
           || bound.through !== scan.through || bound.registrations !== scan.registrations) {
         return code(400, 'invalid_query');
       }
-      const index = ruleSummaries.findIndex(item =>
+      const index = summaries.findIndex(item =>
         item.source === source && item.path === path && item.id === id && item.version === version);
       if (index === -1) return code(400, 'invalid_query');
       start = index + 1;
@@ -252,7 +280,17 @@ function ruleList(params) {
       return code(400, 'invalid_query');
     }
   }
-  return json(200, ruleSummaries.slice(start, start + limit));
+  return json(200, summaries.slice(start, start + limit));
+}
+
+function setCompliance(params) {
+  const [source, path, id] = ['source', 'path', 'id'].map(name => params.get(name));
+  if (params.size !== 3 || !source || !path || !id) return code(400, 'invalid_query');
+  const bindings = completedRuleSets.flatMap(({ repository, sets }) => sets
+    .filter(set => set.source === source && set.path === path && set.id === id)
+    .map(({ version }) => ({ repository, version, registered: true, complete: true, non_passing_members: [] })));
+  if (source === baselineSet.source && path === baselineSet.path && id === baselineSet.id) bindings.push(failedBaseline);
+  return json(200, bindings.sort((a, b) => compare(a.repository, b.repository)));
 }
 
 function ruleDetail(params) {
@@ -271,7 +309,9 @@ export function respond(target) {
     // Keep the initial loading and busy refresh states visible for browser review.
     return searchParams.get('preview') === 'slow-refresh' ? { ...response, delay: 750 } : response;
   }
-  if (pathname === '/v0/rules') return ruleList(searchParams);
+  if (pathname === '/v0/rules') return registryList(searchParams, ruleSummaries, scan);
+  if (pathname === '/v0/rule-sets') return registryList(searchParams, setSummaries, setScan);
+  if (pathname === '/v0/rule-sets/compliance') return setCompliance(searchParams);
   if (pathname === '/v0/repositories/completed-rule-sets') return json(200, completedRuleSets);
   if (pathname === '/v0/rules/detail') return ruleDetail(searchParams);
   const detail = /^\/v0\/attestations\/([^/]+)$/.exec(pathname);
@@ -287,6 +327,9 @@ export const fixtureTargets = {
   completedRuleSets: '/v0/repositories/completed-rule-sets',
   history: '/v0/attestations',
   rules: '/v0/rules',
+  ruleSets: '/v0/rule-sets',
+  ruleSetCompliance: setSummaries.map(({ source, path, id }) =>
+    `/v0/rule-sets/compliance?${new URLSearchParams({ source, path, id })}`),
   details: [...details.keys()].map(id => `/v0/attestations/${id}`),
   ruleDetails: rules.map(([first]) => `/v0/rules/detail?${new URLSearchParams({ source: first.source, path: first.path, id: first.id })}`),
 };

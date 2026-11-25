@@ -11,6 +11,8 @@ vi.mock(import('../api/client'), async original => ({
   ...await original(),
   latestAttestations: vi.fn(async () => []),
   completedRuleSets: vi.fn(async () => []),
+  registeredRuleSets: vi.fn(async () => []),
+  registeredRules: vi.fn(async () => []),
   getAttestation: vi.fn(),
   attestationPage: vi.fn(async () => []),
 }));

@@ -6,11 +6,27 @@
     "$ref": "#/$defs/summary",
     "required": ["scan"],
     "properties": {
-      "scan": { "$ref": "#/$defs/scan" }
+      "scan": { "$ref": "#/$defs/scan" },
+      "rule_sets": {
+        "type": "array",
+        "items": { "$ref": "#/$defs/ruleSetMembership" }
+      }
     },
     "unevaluatedProperties": false
   },
   "$defs": {
+    "ruleSetMembership": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "path", "id", "version", "name"],
+      "properties": {
+        "source": { "$ref": "#/$defs/summary/properties/source" },
+        "path": { "$ref": "#/$defs/summary/properties/path" },
+        "id": { "$ref": "#/$defs/summary/properties/id" },
+        "version": { "$ref": "#/$defs/summary/properties/version" },
+        "name": { "type": "string" }
+      }
+    },
     "cursor": {
       "type": "object",
       "additionalProperties": false,

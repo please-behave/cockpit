@@ -35,13 +35,12 @@ export interface RuleIdentity {
   id: string;
 }
 
-export interface CompletedRuleSet {
-  source: string;
-  path: string;
-  id: string;
+export interface RuleSetRegistration extends RuleIdentity {
   version: string;
   name: string;
 }
+
+export type CompletedRuleSet = RuleSetRegistration;
 
 export interface RepositoryRuleSets {
   repository: string;
@@ -53,11 +52,29 @@ interface Registration extends RuleIdentity {
   name?: string;
   description?: string;
   owner?: string;
+  rule_sets?: RuleSetRegistration[];
 }
 
-export interface RegisteredRule extends Registration {
-  kind: 'check' | 'review';
+export interface RegistryCursor extends RuleIdentity {
+  version: string;
   scan: { through: number; registrations: number };
+}
+
+export interface RegisteredRule extends Registration, RegistryCursor {
+  kind: 'check' | 'review';
+}
+
+export interface RegisteredRuleSet extends RuleSetRegistration, RegistryCursor {
+  description?: string;
+  member_count: number;
+}
+
+export interface RuleSetCompliance {
+  repository: string;
+  version: string;
+  registered: boolean;
+  complete: boolean;
+  non_passing_members: (RuleIdentity & { version: string; status: Exclude<Attestation['results'][number]['status'], 'PASS'> })[];
 }
 
 export type RegisteredVersion = Registration & {
@@ -161,9 +178,21 @@ export async function getAttestation(id: string, signal: AbortSignal): Promise<A
 export const rulePageSize = 100;
 
 export function registeredRules(before: string | null, signal: AbortSignal): Promise<RegisteredRule[]> {
+  return registryPage('/v0/rules', before, signal);
+}
+
+export function registeredRuleSets(before: string | null, signal: AbortSignal): Promise<RegisteredRuleSet[]> {
+  return registryPage('/v0/rule-sets', before, signal);
+}
+
+function registryPage<T>(path: string, before: string | null, signal: AbortSignal): Promise<T[]> {
   const query = new URLSearchParams({ limit: String(rulePageSize) });
   if (before !== null) query.set('before', before);
-  return read(`/v0/rules?${query}`, signal, 'invalid_query');
+  return read(`${path}?${query}`, signal, 'invalid_query');
+}
+
+export function ruleSetCompliance({ source, path, id }: RuleIdentity, signal: AbortSignal): Promise<RuleSetCompliance[]> {
+  return read(`/v0/rule-sets/compliance?${new URLSearchParams({ source, path, id })}`, signal, 'invalid_query');
 }
 
 export function registeredVersions(identity: URLSearchParams, signal: AbortSignal): Promise<RegisteredVersion[]> {
