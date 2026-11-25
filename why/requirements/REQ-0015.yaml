@@ -7,14 +7,16 @@ description: >-
   usable at 320 CSS pixels and 200 percent zoom. The shell exposes banner,
   navigation, and main landmarks with a keyboard-accessible skip link.
   The header presents adjoining, full-height navigation segments labeled
-  "Please Behave Dashboard", "Attestations", and "Rules" on the raised surface.
+  "Please Behave Dashboard", "Attestations", "Releases", and "Rules" on the
+  raised surface.
   Segments wrap when space is constrained and stay free of underlines in every state.
   The current segment uses the page surface and semibold brand text, and
-  exposes aria-current="page", including on attestation and rule detail routes.
+  exposes aria-current="page", including on attestation detail, repository
+  release history and rule detail routes.
   Hover slightly darkens the segment surface and adds a thin outline. Keyboard
   focus uses a thicker inset ring. The headline of the dashboard, attestations,
-  and rules views is hidden visually but remains exposed to assistive technology
-  and receives focus after navigation; detail pages show their headline.
+  releases and rules views is hidden visually but remains exposed to assistive
+  technology and receives focus after navigation; detail pages show their headline.
   The theme control and sign-out link appear as
   separate actions at the end of the header.
   Text links in content and tables are underlined. In both themes, link text

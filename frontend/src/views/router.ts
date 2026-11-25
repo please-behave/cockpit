@@ -3,6 +3,8 @@ import type { RuleIdentity } from '../api/client';
 export type Route =
   | { view: 'dashboard' }
   | { view: 'history' }
+  | { view: 'releases' }
+  | { view: 'repository-releases'; repository: string }
   | { view: 'detail'; id: string }
   | { view: 'rules'; search: string }
   | { view: 'rule' | 'rule-set'; search: string; version: string | null }
@@ -29,12 +31,22 @@ export function followHistoryBack(event: MouseEvent) {
   window.history.back();
 }
 
+export function repositoryReleasesPath(repository: string) {
+  return `/releases/repository?${new URLSearchParams({ repository })}`;
+}
+
 export function routeFor(location: string): Route {
   const query = location.indexOf('?');
   const path = query === -1 ? location : location.slice(0, query);
   const search = query === -1 ? '' : location.slice(query);
   if (path === '/') return { view: 'dashboard' };
   if (path === '/attestations') return { view: 'history' };
+  if (path === '/releases') return { view: 'releases' };
+  if (path === '/releases/repository') {
+    const params = new URLSearchParams(search);
+    const repository = params.get('repository');
+    if (repository && params.size === 1) return { view: 'repository-releases', repository };
+  }
   if (path === '/rules') return { view: 'rules', search };
   if (path === '/rules/detail' || path === '/rule-sets/detail') {
     const identity = new URLSearchParams(search);

@@ -13,6 +13,7 @@ vi.mock(import('../api/client'), async original => ({
   completedRuleSets: vi.fn(async () => []),
   registeredRuleSets: vi.fn(async () => []),
   registeredRules: vi.fn(async () => []),
+  releases: vi.fn(async () => []),
   getAttestation: vi.fn(),
   attestationPage: vi.fn(async () => []),
 }));
@@ -45,7 +46,7 @@ test('pb-app renders its content in the application shell', async () => {
   const nav = root.querySelector('header nav[aria-label="Main"]')!;
   const tabs = [...nav.querySelectorAll<NavTab>('pb-nav-tab')];
   expect(tabs.map(tab => [tab.textContent?.trim(), tab.getAttribute('href')]))
-    .toEqual([['Please Behave Dashboard', '/'], ['Attestations', '/attestations'], ['Rules', '/rules']]);
+    .toEqual([['Please Behave Dashboard', '/'], ['Attestations', '/attestations'], ['Releases', '/releases'], ['Rules', '/rules']]);
   expect(root.querySelector('header .actions pb-theme-toggle + a.sign-out')?.getAttribute('href')).toBe('/sign-out');
   expect(root.querySelector('main slot')).not.toBeNull();
 
@@ -73,11 +74,12 @@ test('updates the header links for direct routes, link clicks, and history trave
   await app.updateComplete;
   await shell.updateComplete;
   await tabs[2].updateComplete;
-  expect(window.location.pathname).toBe('/rules');
+  expect(window.location.pathname).toBe('/releases');
   expect(current()).toEqual([links[2]]);
 
   for (const [path, expected] of [
-    ['/rules/detail', [links[2]]],
+    ['/releases/repository?repository=org%2Frepo', [links[2]]],
+    ['/rules/detail', [links[3]]],
     ['/attestations', [links[1]]],
     ['/?sort=name', [links[0]]],
     ['/future/view', []],

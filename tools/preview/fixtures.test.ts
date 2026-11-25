@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import type {
-  Attestation, RegisteredRule, RegisteredRuleSet, RegisteredRuleSetVersion, RegisteredVersion, RepositoryRuleSets, RuleSetCompliance, Summary,
+  Attestation, RegisteredRule, RegisteredRuleSet, RegisteredRuleSetVersion, RegisteredVersion, RepositoryRuleSets, RuleSetCompliance, ReleaseSummary, Summary,
 } from '../../frontend/src/api/client';
 import { fixtureTargets, respond } from './fixtures.mjs';
 
@@ -252,4 +252,35 @@ test('serves Rule Set histories with valid member links, including a historical 
   expect(baseline[0].knowledge).toHaveProperty('future');
   expect(baseline[0].knowledge).not.toHaveProperty('audience');
   expect(baseline[1].knowledge?.admission).toHaveLength(2);
+});
+
+test('serves paged release summaries and repository history in the client shape', () => {
+  const first = body<ReleaseSummary[]>(fixtureTargets.releases);
+  const { repository, version } = first.at(-1)!;
+  const before = new URLSearchParams({ before: JSON.stringify({ repository, version }) });
+  const next = body<ReleaseSummary[]>(`${fixtureTargets.releases}?${before}`);
+  const all = [...first, ...next];
+  expect(first).toHaveLength(100);
+  expect(next.length).toBeGreaterThan(0);
+  expect(new Set(all.map(entry => entry.repository)).size).toBe(all.length);
+  expect(new Set(all.map(entry => entry.evidence?.overall))).toEqual(new Set([undefined, 'PASS', 'FAIL', 'ERROR']));
+  for (const entry of all) {
+    expect(entry).toEqual(expect.objectContaining({
+      repository: expect.any(String), version: expect.any(String), commit: expect.stringMatching(/^[0-9a-f]{40}$/),
+      sender: expect.any(String), auth_method: 'github_oidc', received_at: expect.any(String),
+    }));
+    expect(entry).toHaveProperty('evidence');
+    expect(Number.isNaN(Date.parse(entry.received_at))).toBe(false);
+    for (const set of entry.evidence?.completed_rule_sets ?? []) {
+      expect(set).toEqual(expect.objectContaining({
+        source: expect.any(String), path: expect.any(String), id: expect.any(String),
+        version: expect.any(String), name: expect.any(String),
+      }));
+    }
+  }
+  const history = body<ReleaseSummary[]>(fixtureTargets.releaseHistory);
+  expect(history.map(entry => entry.version)).toEqual(['2.0', '1.11', '1.9']);
+  expect(history[0]).toEqual(all.find(entry => entry.repository === history[0].repository));
+  expect(body<ReleaseSummary[]>('/v0/releases?repository=unknown')).toEqual([]);
+  expect(respond('/v0/releases/latest?before=invalid')?.status).toBe(400);
 });

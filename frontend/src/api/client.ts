@@ -53,6 +53,16 @@ export interface RepositoryRuleSets {
   sets: CompletedRuleSet[];
 }
 
+export interface ReleaseSummary {
+  repository: string;
+  version: string;
+  commit: string;
+  received_at: string;
+  sender: string;
+  auth_method: 'api_key' | 'github_oidc';
+  evidence: { overall: Overall; completed_rule_sets: CompletedRuleSet[] } | null;
+}
+
 interface Registration extends RuleIdentity {
   version: string;
   name?: string;
@@ -185,6 +195,32 @@ export function attestationPage(
   if (before !== undefined) query.set('before', before);
   const suffix = query.size > 0 ? `?${query}` : '';
   return read(`/v0/attestations${suffix}`, signal, 'invalid_query');
+}
+
+const releasePageSize = 100;
+
+export async function releases(repository: string | null, signal: AbortSignal): Promise<ReleaseSummary[]> {
+  const path = repository === null ? '/v0/releases/latest' : '/v0/releases';
+  const query = new URLSearchParams({ limit: String(releasePageSize) });
+  if (repository !== null) query.set('repository', repository);
+
+  const entries = new Map<string, ReleaseSummary>();
+  const cursors = new Set<string>();
+  for (;;) {
+    const page = await read<ReleaseSummary[]>(`${path}?${query}`, signal, 'invalid_query');
+    for (const entry of page) {
+      // A release can become the newest for a repository while pages are in flight.
+      const key = repository === null ? entry.repository : entry.version;
+      if (!entries.has(key)) entries.set(key, entry);
+    }
+    if (page.length < releasePageSize) return [...entries.values()];
+
+    const last = page[page.length - 1];
+    const cursor = JSON.stringify({ repository: last.repository, version: last.version });
+    if (cursors.has(cursor)) throw new ApiError('ledger_unavailable');
+    cursors.add(cursor);
+    query.set('before', cursor);
+  }
 }
 
 export async function getAttestation(id: string, signal: AbortSignal): Promise<Attestation> {

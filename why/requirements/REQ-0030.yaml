@@ -1,0 +1,25 @@
+id: REQ-0030
+name: Releases by Repository
+description: >-
+  The Releases tab shows one entry per repository with a recorded release.
+  Each entry shows the repository, its newest recorded version, the ledger
+  receipt time, and the release's reported evidence. Repositories with no
+  evidence or a FAIL or ERROR outcome appear first. Within each group, the
+  list is ordered by repository name. The repository name opens a directly
+  linkable page of that repository's releases in descending receipt order.
+  Its entries show the version, the first seven characters of the commit,
+  the receipt time, and the reported evidence. The full commit is available
+  in an accessible tooltip. Both views show relative receipt times with the
+  localized exact time in an accessible tooltip and explain when no release
+  has been recorded. Evidence shows the reported status or “No evidence” as
+  text with an icon and uses the same completed Rule Set chips as REQ-0028,
+  using the completed sets of that release's evidence. Both views follow
+  REQ-0004, REQ-0015 and REQ-0016.
+rationale: >-
+  Viewers can find each repository's releases and see what evidence was
+  reported for the released commits.
+decisions:
+  - DEC-0001
+  - DEC-0002
+  - why:DEC-0020
+  - why:DEC-0021

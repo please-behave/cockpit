@@ -47,3 +47,13 @@ contracts:
     document: rule-set.md
     schema: rule-set.schema.json
     requirements: [REQ-0012, REQ-0013, REQ-0025, REQ-0029]
+  - id: CON-0010
+    name: Latest Releases
+    document: latest-releases.md
+    schema: releases.schema.json
+    requirements: [REQ-0012, REQ-0013, REQ-0030, REQ-0031]
+  - id: CON-0011
+    name: Repository Release History
+    document: release-history.md
+    schema: releases.schema.json
+    requirements: [REQ-0012, REQ-0013, REQ-0030, REQ-0031]

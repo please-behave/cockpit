@@ -315,6 +315,54 @@ function attestations(params) {
   return json(200, page.slice(0, limit));
 }
 
+const releaseRepository = 'github.com/acme/return-navigation';
+const releaseFacts = [
+  release(releaseRepository, '2.0', 1, 'PASS', [baselineSet, securitySet]),
+  release(releaseRepository, '1.11', 8, 'ERROR'),
+  release(releaseRepository, '1.9', 10, 'PASS'),
+  release('github.com/acme/missing-evidence', '1.0', 2, null),
+  release('github.com/acme/failing-evidence', '1.0', 3, 'FAIL'),
+  release('github.com/acme/evidence-error', '1.0', 4, 'ERROR'),
+  release(completedRuleSets[0].repository, `release-${markup}-${'v'.repeat(190)}`, 5, 'PASS', [markupSet]),
+  ...Array.from({ length: 103 }, (_, index) =>
+    release(`github.com/acme/project-${String(index + 1).padStart(3, '0')}`, '1.0', 20 + index, 'PASS')),
+].sort((a, b) => compare(b.received_at, a.received_at)
+  || compare(b.repository, a.repository) || compare(b.version, a.version));
+const latestReleases = [...new Set(releaseFacts.map(fact => fact.repository))]
+  .map(repository => releaseFacts.find(fact => fact.repository === repository));
+
+function release(repository, version, minutesAgo, overall, completed_rule_sets = []) {
+  return {
+    repository, version, commit: sha('c').slice(0, -2) + minutesAgo.toString(16).padStart(2, '0'),
+    sender: 'ci@example.com', auth_method: 'github_oidc',
+    received_at: new Date(now - minutesAgo * 60_000).toISOString(),
+    evidence: overall === null ? null : { overall, completed_rule_sets },
+  };
+}
+
+function releasePage(params, latestOnly) {
+  const limit = limitFrom(params);
+  const repository = params.get('repository');
+  const allowed = latestOnly ? ['limit', 'before'] : ['limit', 'before', 'repository'];
+  if (limit === undefined || (!latestOnly && !repository) ||
+      [...params.keys()].some(key => !allowed.includes(key) || params.getAll(key).length !== 1)) {
+    return code(400, 'invalid_query');
+  }
+  const history = latestOnly ? releaseFacts : releaseFacts.filter(fact => fact.repository === repository);
+  const page = latestOnly ? latestReleases : history;
+  const before = params.get('before');
+  if (before === null) return json(200, page.slice(0, limit));
+  try {
+    const cursor = JSON.parse(before);
+    const index = history.findIndex(fact => fact.repository === cursor.repository && fact.version === cursor.version);
+    if (index === -1 || Object.keys(cursor).length !== 2) return code(400, 'invalid_query');
+    const older = new Set(history.slice(index + 1));
+    return json(200, page.filter(fact => older.has(fact)).slice(0, limit));
+  } catch {
+    return code(400, 'invalid_query');
+  }
+}
+
 function registryList(params, summaries, scan) {
   const limit = limitFrom(params);
   if (limit === undefined) return code(400, 'invalid_query');
@@ -365,6 +413,9 @@ export function respond(target) {
     // Keep the initial loading and busy refresh states visible for browser review.
     return searchParams.get('preview') === 'slow-refresh' ? { ...response, delay: 750 } : response;
   }
+  if (pathname === '/v0/releases/latest' || pathname === '/v0/releases') {
+    return releasePage(searchParams, pathname.endsWith('/latest'));
+  }
   if (pathname === '/v0/rules') return registryList(searchParams, ruleSummaries, scan);
   if (pathname === '/v0/rule-sets') return registryList(searchParams, setSummaries, setScan);
   if (pathname === '/v0/rule-sets/detail') {
@@ -388,6 +439,8 @@ export const fixtureTargets = {
   latest: '/v0/attestations/latest',
   completedRuleSets: '/v0/repositories/completed-rule-sets',
   history: '/v0/attestations',
+  releases: '/v0/releases/latest',
+  releaseHistory: `/v0/releases?${new URLSearchParams({ repository: releaseRepository })}`,
   rules: '/v0/rules',
   ruleSets: '/v0/rule-sets',
   ruleSetDetails: setSummaries.map(({ source, path, id }) =>

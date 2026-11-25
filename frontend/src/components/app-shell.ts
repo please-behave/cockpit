@@ -204,6 +204,9 @@ export class CockpitAppShell extends LitElement {
             <pb-nav-tab href="/attestations" .active=${this.currentView === 'history' || this.currentView === 'detail'}>
               ${this.navLabel('Attestations')}
             </pb-nav-tab>
+            <pb-nav-tab href="/releases" .active=${this.currentView === 'releases' || this.currentView === 'repository-releases'}>
+              ${this.navLabel('Releases')}
+            </pb-nav-tab>
             <pb-nav-tab href="/rules" .active=${['rules', 'rule', 'rule-set'].includes(this.currentView)}>
               ${this.navLabel('Rules')}
             </pb-nav-tab>

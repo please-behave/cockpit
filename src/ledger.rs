@@ -128,6 +128,47 @@ struct CompletedRuleSets {
     sets: Vec<RuleSetRegistration>,
 }
 
+// Release lists share the ledger response shape (ledger:CON-0017 and ledger:CON-0018).
+#[allow(
+    dead_code,
+    reason = "release fields are used only for response validation"
+)]
+mod releases {
+    use serde::{Deserialize, Deserializer};
+
+    use super::{Overall, RuleSetRegistration};
+
+    #[derive(Deserialize)]
+    pub(super) struct Summary {
+        repository: String,
+        version: String,
+        commit: String,
+        sender: String,
+        auth_method: AuthMethod,
+        received_at: String,
+        #[serde(deserialize_with = "evidence")]
+        evidence: Option<Evidence>,
+    }
+
+    #[derive(Deserialize)]
+    #[serde(rename_all = "snake_case")]
+    enum AuthMethod {
+        ApiKey,
+        GithubOidc,
+    }
+
+    #[derive(Deserialize)]
+    struct Evidence {
+        overall: Overall,
+        completed_rule_sets: Vec<RuleSetRegistration>,
+    }
+
+    // The ledger must report absent evidence explicitly as null.
+    fn evidence<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Option<Evidence>, D::Error> {
+        Option::deserialize(deserializer)
+    }
+}
+
 #[allow(
     dead_code,
     reason = "registration fields are used only for response validation"
@@ -277,6 +318,8 @@ enum Endpoint<'a> {
     RuleSets,
     RuleSetVersions,
     RuleSetCompliance,
+    LatestReleases,
+    ReleaseHistory,
 }
 
 impl LedgerClient {
@@ -392,6 +435,20 @@ impl LedgerClient {
             .await
     }
 
+    pub(crate) async fn releases_response(
+        &self,
+        latest: bool,
+        query: Option<&str>,
+    ) -> Result<Bytes, ReadError> {
+        let endpoint = if latest {
+            Endpoint::LatestReleases
+        } else {
+            Endpoint::ReleaseHistory
+        };
+        let (_, body) = self.read::<Vec<releases::Summary>>(endpoint, query).await?;
+        Ok(body)
+    }
+
     async fn version_history<T: DeserializeOwned>(
         &self,
         endpoint: Endpoint<'_>,
@@ -420,6 +477,8 @@ impl LedgerClient {
             Endpoint::RuleSets => "/v0/rule-sets",
             Endpoint::RuleSetVersions => "/v0/rule-sets/detail",
             Endpoint::RuleSetCompliance => "/v0/rule-sets/compliance",
+            Endpoint::LatestReleases => "/v0/releases/latest",
+            Endpoint::ReleaseHistory => "/v0/releases",
         });
         if let Endpoint::Attestation(id) = endpoint {
             url.path_segments_mut()
@@ -444,7 +503,12 @@ impl LedgerClient {
             (StatusCode::BAD_REQUEST, Endpoint::Attestation(_)) => Err(ReadError::InvalidId),
             (
                 StatusCode::BAD_REQUEST,
-                Endpoint::List | Endpoint::Rules | Endpoint::RuleSets | Endpoint::RuleSetCompliance,
+                Endpoint::List
+                | Endpoint::Rules
+                | Endpoint::RuleSets
+                | Endpoint::RuleSetCompliance
+                | Endpoint::LatestReleases
+                | Endpoint::ReleaseHistory,
             ) => Err(ReadError::InvalidQuery),
             (StatusCode::NOT_FOUND, Endpoint::Attestation(_)) => Err(ReadError::NotFound),
             (StatusCode::BAD_REQUEST, Endpoint::RuleVersions) => {

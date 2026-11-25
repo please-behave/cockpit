@@ -156,7 +156,7 @@ export class RulesView extends CockpitView<Registry> {
     }
   `];
 
-  protected override readonly headingVisible = false;
+  protected override get headingVisible() { return false; }
   private query = '';
   private kind = '';
   private scope = '';

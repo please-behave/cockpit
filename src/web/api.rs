@@ -29,6 +29,8 @@ pub(super) fn router(ledger: LedgerClient, auth: &Auth) -> Router {
         .route("/v0/rule-sets", get(rule_sets))
         .route("/v0/rule-sets/detail", get(rule_set_versions))
         .route("/v0/rule-sets/compliance", get(rule_set_compliance))
+        .route("/v0/releases/latest", get(latest_releases))
+        .route("/v0/releases", get(release_history))
         .method_not_allowed_fallback(|| async { ApiError::MethodNotAllowed })
         .with_state(ledger)
         .layer(middleware::from_fn_with_state(
@@ -126,6 +128,22 @@ async fn rule_set_compliance(
     let body = ledger
         .rule_set_compliance_response(query.as_deref())
         .await?;
+    Ok(json_response(StatusCode::OK, body))
+}
+
+async fn latest_releases(
+    State(ledger): State<LedgerClient>,
+    RawQuery(query): RawQuery,
+) -> Result<Response, ApiError> {
+    let body = ledger.releases_response(true, query.as_deref()).await?;
+    Ok(json_response(StatusCode::OK, body))
+}
+
+async fn release_history(
+    State(ledger): State<LedgerClient>,
+    RawQuery(query): RawQuery,
+) -> Result<Response, ApiError> {
+    let body = ledger.releases_response(false, query.as_deref()).await?;
     Ok(json_response(StatusCode::OK, body))
 }
 

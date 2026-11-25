@@ -177,7 +177,7 @@ export class DashboardView extends CockpitView<DashboardData> {
     return 'Dashboard';
   }
 
-  protected override readonly headingVisible = false;
+  protected override get headingVisible() { return false; }
   protected override readonly refreshable = true;
 
   protected override content(data?: DashboardData) {

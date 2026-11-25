@@ -5,6 +5,7 @@ const statuses = new Map([
   ['FAIL', { style: 'failed', symbol: '×' }],
   ['ERROR', { style: 'error', symbol: '!' }],
   ['WARN', { style: 'warning', symbol: '▲' }],
+  ['No evidence', { style: 'not-run', symbol: '–' }],
   ['NOT_RUN', { style: 'not-run', symbol: '–' }],
   ['Verified', { style: 'passed', symbol: '✓' }],
   ['Unverified', { style: 'warning', symbol: '▲' }],

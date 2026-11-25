@@ -54,7 +54,7 @@ export abstract class CockpitView<T = never> extends LitElement {
   private announced?: { updatedAt?: Date; refreshing: boolean };
 
   /** Top-level views hide the headline visually; it stays exposed and focusable. */
-  protected readonly headingVisible: boolean = true;
+  protected get headingVisible(): boolean { return true; }
   /** A refreshable view reads again periodically and on demand, and reports its state to the shell. */
   protected readonly refreshable: boolean = false;
   protected abstract heading(data?: T): string;

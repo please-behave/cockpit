@@ -110,7 +110,7 @@ export class HistoryView extends CockpitView<Summary[]> {
     return 'Attestations';
   }
 
-  protected override readonly headingVisible = false;
+  protected override get headingVisible() { return false; }
   protected override readonly refreshable = true;
 
   protected override content(page?: Summary[]) {
