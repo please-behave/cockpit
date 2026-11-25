@@ -10,6 +10,7 @@ import type { NavTab } from './pb-nav-tab';
 vi.mock(import('../api/client'), async original => ({
   ...await original(),
   latestAttestations: vi.fn(async () => []),
+  completedRuleSets: vi.fn(async () => []),
   getAttestation: vi.fn(),
   attestationPage: vi.fn(async () => []),
 }));

@@ -19,6 +19,10 @@ pub(super) fn router(ledger: LedgerClient, auth: &Auth) -> Router {
     Router::new()
         .route("/v0/attestations", get(list))
         .route("/v0/attestations/latest", get(latest))
+        .route(
+            "/v0/repositories/completed-rule-sets",
+            get(completed_rule_sets),
+        )
         .route("/v0/attestations/{id}", get(attestation))
         .route("/v0/rules", get(rules))
         .route("/v0/rules/detail", get(rule_versions))
@@ -54,6 +58,11 @@ async fn require_session(
 
 async fn latest(State(ledger): State<LedgerClient>) -> Result<Response, ApiError> {
     let (_, body) = ledger.latest_response().await?;
+    Ok(json_response(StatusCode::OK, body))
+}
+
+async fn completed_rule_sets(State(ledger): State<LedgerClient>) -> Result<Response, ApiError> {
+    let body = ledger.completed_rule_sets_response().await?;
     Ok(json_response(StatusCode::OK, body))
 }
 

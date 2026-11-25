@@ -184,6 +184,17 @@ for (let number = total; number >= 1; number -= 1) {
 
 const latest = history.slice(0, newest.length);
 
+const completedRuleSets = [{
+  repository: latest.find(summary => summary.repository.includes(markup)).repository,
+  sets: [{ source: ruleSource, path: 'sets/markup', id: 'markup', version: '1.0', name: `Publisher baseline ${markup}` }],
+}, {
+  repository: 'github.com/acme/return-navigation',
+  sets: [
+    { source: ruleSource, path: 'sets/baseline', id: 'baseline', version: '1.0', name: 'Repository baseline' },
+    { source: ruleSource, path: 'sets/security', id: 'security', version: '2.0', name: 'Security and release readiness for shared repositories with additional compliance requirements' },
+  ],
+}];
+
 const scan = {
   through: Math.max(...rules.flat().map(version => Date.parse(version.registered_at))) * 1000,
   registrations: rules.flat().length,
@@ -261,6 +272,7 @@ export function respond(target) {
     return searchParams.get('preview') === 'slow-refresh' ? { ...response, delay: 750 } : response;
   }
   if (pathname === '/v0/rules') return ruleList(searchParams);
+  if (pathname === '/v0/repositories/completed-rule-sets') return json(200, completedRuleSets);
   if (pathname === '/v0/rules/detail') return ruleDetail(searchParams);
   const detail = /^\/v0\/attestations\/([^/]+)$/.exec(pathname);
   if (detail) {
@@ -272,6 +284,7 @@ export function respond(target) {
 
 export const fixtureTargets = {
   latest: '/v0/attestations/latest',
+  completedRuleSets: '/v0/repositories/completed-rule-sets',
   history: '/v0/attestations',
   rules: '/v0/rules',
   details: [...details.keys()].map(id => `/v0/attestations/${id}`),

@@ -1,11 +1,16 @@
 import { css, html, nothing, type CSSResult } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
-import { latestAttestations, type Summary } from '../api/client';
+import { completedRuleSets, latestAttestations, type CompletedRuleSet, type Summary } from '../api/client';
 import '../components/pb-empty-state';
 import '../components/pb-repository-tile';
 import { CockpitView } from './cockpit-view';
 
 type Sort = 'time' | 'name';
+
+interface DashboardData {
+  summaries: Summary[];
+  setsByRepository: ReadonlyMap<string, CompletedRuleSet[]>;
+}
 
 const sortOptions: readonly { value: Sort; label: string }[] = [
   { value: 'time', label: 'Last attestation' },
@@ -60,7 +65,7 @@ function tileKey(summary: Summary) {
   return JSON.stringify([summary.repository, ...summary.execution_points]);
 }
 
-export class DashboardView extends CockpitView<Summary[]> {
+export class DashboardView extends CockpitView<DashboardData> {
   static override properties = { sort: { state: true } };
 
   static override styles = [CockpitView.styles as CSSResult, css`
@@ -159,8 +164,13 @@ export class DashboardView extends CockpitView<Summary[]> {
     this.sort = sortFromLocation();
   }
 
-  protected override read(signal: AbortSignal) {
-    return latestAttestations(signal);
+  protected override async read(signal: AbortSignal): Promise<DashboardData> {
+    const [summaries, completed] = await Promise.all([
+      latestAttestations(signal),
+      completedRuleSets(signal),
+    ]);
+    const setsByRepository = new Map(completed.map(({ repository, sets }) => [repository, sets]));
+    return { summaries, setsByRepository };
   }
 
   protected override heading() {
@@ -170,10 +180,8 @@ export class DashboardView extends CockpitView<Summary[]> {
   protected override readonly headingVisible = false;
   protected override readonly refreshable = true;
 
-  protected override content(summaries?: Summary[]) {
-    return html`
-      ${summaries === undefined ? nothing : this.results(summaries)}
-    `;
+  protected override content(data?: DashboardData) {
+    return html`${data === undefined ? nothing : this.results(data)}`;
   }
 
   private changeSort(event: Event) {
@@ -184,7 +192,7 @@ export class DashboardView extends CockpitView<Summary[]> {
     window.history.replaceState(null, '', url);
   }
 
-  private results(summaries: Summary[]) {
+  private results({ summaries, setsByRepository }: DashboardData) {
     if (summaries.length === 0) {
       return html`<pb-empty-state heading="No attestations"
         message="No attestations have been reported yet."></pb-empty-state>`;
@@ -215,6 +223,7 @@ export class DashboardView extends CockpitView<Summary[]> {
       <ul class="tiles" aria-label="Repositories">
         ${repeat(sorted, tileKey, summary => html`
           <li><pb-repository-tile .summary=${summary}
+            .completedSets=${setsByRepository.get(summary.repository)}
             .showExecutionPoints=${tilesPerRepository.get(summary.repository)! > 1}></pb-repository-tile></li>
         `)}
       </ul>

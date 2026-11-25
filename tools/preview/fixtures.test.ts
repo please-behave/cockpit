@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import type { Attestation, RegisteredRule, RegisteredVersion, Summary } from '../../frontend/src/api/client';
+import type { Attestation, RegisteredRule, RegisteredVersion, RepositoryRuleSets, Summary } from '../../frontend/src/api/client';
 import { fixtureTargets, respond } from './fixtures.mjs';
 
 const isString = (value: unknown): value is string => typeof value === 'string';
@@ -40,6 +40,24 @@ test('serves latest summaries in the client shape', () => {
 
 test.each([fixtureTargets.latest, fixtureTargets.history])('delays %s for refresh review', target => {
   expect(respond(`${target}?preview=slow-refresh`)).toEqual({ ...respond(target), delay: 750 });
+});
+
+test('serves completed Rule Sets in the client shape, including short, long and untrusted names', () => {
+  const repositories = body<RepositoryRuleSets[]>(fixtureTargets.completedRuleSets);
+  const latest = body<Summary[]>(fixtureTargets.latest);
+  expect(latest.some(summary => !repositories.some(entry => entry.repository === summary.repository))).toBe(true);
+  for (const { repository, sets } of repositories) {
+    expect(latest.some(summary => summary.repository === repository)).toBe(true);
+    expect(sets.length).toBeGreaterThan(0);
+    for (const { source, path, id, version, name } of sets) {
+      expect([source, path, id, name].every(isString)).toBe(true);
+      expect(version).toMatch(/^\d+\.\d+$/);
+    }
+  }
+  const names = repositories.flatMap(entry => entry.sets.map(set => set.name));
+  expect(names).toContain('Repository baseline');
+  expect(names.some(name => name.length > 80)).toBe(true);
+  expect(names.some(name => name.includes('<img'))).toBe(true);
 });
 
 test('pages the history newest first with limit and before', () => {

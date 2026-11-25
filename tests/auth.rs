@@ -1,5 +1,5 @@
 // Verifies REQ-0004, REQ-0006, REQ-0007, REQ-0011, REQ-0012, REQ-0013,
-// REQ-0014, REQ-0015, REQ-0024 and REQ-0025.
+// REQ-0014, REQ-0015, REQ-0024, REQ-0025 and REQ-0028.
 
 #[path = "support/auth_settings.rs"]
 mod support;
@@ -30,6 +30,7 @@ const ATTESTATION: &str = "00000000-0000-0000-0000-000000000001";
 const API_LATEST: &str = "/v0/attestations/latest";
 const API_LIST: &str = "/v0/attestations";
 const API_DETAIL: &str = "/v0/attestations/00000000-0000-0000-0000-000000000001";
+const API_COMPLETED_SETS: &str = "/v0/repositories/completed-rule-sets";
 const DETAIL_PATH: &str = "/attestations/00000000-0000-0000-0000-000000000001";
 
 struct Server {
@@ -579,6 +580,62 @@ async fn assert_api_error(response: Response, status: StatusCode, code: &str) {
         serde_json::from_str::<Value>(&response.text().await.unwrap()).unwrap(),
         json!({ "code": code })
     );
+}
+
+#[tokio::test]
+async fn browser_completed_rule_sets_require_a_session_and_preserve_ledger_values() {
+    let body = json!([{
+        "repository": "github.com/acme/widget",
+        "sets": [{
+            "source": "github.com/acme/rules",
+            "path": "sets/baseline",
+            "id": "baseline",
+            "version": "2.0",
+            "name": "<img src=x onerror=alert(1)>"
+        }]
+    }])
+    .to_string();
+    let ledger_body = body.clone();
+    let site = TestSite::start_with_ledger(
+        Router::new().route(API_COMPLETED_SETS, get(move || async { ledger_body })),
+    )
+    .await;
+
+    let response = site.get(API_COMPLETED_SETS).send().await.unwrap();
+    assert_api_error(response, StatusCode::UNAUTHORIZED, "unauthorized").await;
+
+    let session = cookie_header(&cookie(&site.sign_in("allowed").await, SESSION).unwrap());
+    let response = site
+        .get(API_COMPLETED_SETS)
+        .header(header::COOKIE, session)
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_api_headers(&response);
+    assert_eq!(response.text().await.unwrap(), body);
+}
+
+#[tokio::test]
+async fn browser_completed_rule_sets_reject_invalid_ledger_data() {
+    let site = TestSite::start_with_ledger(Router::new().route(
+        API_COMPLETED_SETS,
+        get(|| async { r#"[{"repository":"github.com/acme/widget","sets":[]}]"# }),
+    ))
+    .await;
+    let session = cookie_header(&cookie(&site.sign_in("allowed").await, SESSION).unwrap());
+    let response = site
+        .get(API_COMPLETED_SETS)
+        .header(header::COOKIE, session)
+        .send()
+        .await
+        .unwrap();
+    assert_api_error(
+        response,
+        StatusCode::SERVICE_UNAVAILABLE,
+        "ledger_unavailable",
+    )
+    .await;
 }
 
 #[tokio::test]

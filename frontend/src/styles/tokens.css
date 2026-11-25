@@ -36,6 +36,10 @@
     --chip-neutral-text: #3A3A42;
     --chip-neutral-border: #7A7A85;
 
+    --rule-set: #637A92;
+    --rule-set-surface: #E7EDF4;
+    --rule-set-text: #344A61;
+
     --status-passed: #176639;
     --status-failed: #A41C2C;
     --status-error: #753396;
@@ -101,6 +105,10 @@
       --chip-neutral-text: #D0CED8;
       --chip-neutral-border: #8F8C99;
 
+      --rule-set: #91A6BD;
+      --rule-set-surface: #2B3949;
+      --rule-set-text: #C8D8E7;
+
       --status-passed: #78D69A;
       --status-failed: #FF929C;
       --status-error: #DAB0F3;
@@ -141,6 +149,10 @@
     --chip-neutral-text: #D0CED8;
     --chip-neutral-border: #8F8C99;
 
+    --rule-set: #91A6BD;
+    --rule-set-surface: #2B3949;
+    --rule-set-text: #C8D8E7;
+
     --status-passed: #78D69A;
     --status-failed: #FF929C;
     --status-error: #DAB0F3;
@@ -173,6 +185,9 @@
       --chip-neutral-surface: Canvas;
       --chip-neutral-text: CanvasText;
       --chip-neutral-border: CanvasText;
+      --rule-set: CanvasText;
+      --rule-set-surface: Canvas;
+      --rule-set-text: CanvasText;
       --panel-surface: Canvas;
       --panel-border: CanvasText;
       --focus-ring: 0.125rem solid Highlight;

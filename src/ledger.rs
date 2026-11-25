@@ -104,6 +104,30 @@ pub enum ReportedStatus {
     Warn,
 }
 
+// Deserialize to validate the compliance response before forwarding the original bytes.
+#[allow(
+    dead_code,
+    reason = "compliance fields are used only for response validation"
+)]
+#[derive(Deserialize)]
+struct CompletedRuleSets {
+    repository: String,
+    sets: Vec<CompletedRuleSet>,
+}
+
+#[allow(
+    dead_code,
+    reason = "compliance fields are used only for response validation"
+)]
+#[derive(Deserialize)]
+struct CompletedRuleSet {
+    source: String,
+    path: String,
+    id: String,
+    version: String,
+    name: String,
+}
+
 // Deserialize to validate the registry response before forwarding the original bytes.
 #[allow(
     dead_code,
@@ -167,6 +191,7 @@ mod registry {
 #[derive(Clone, Copy)]
 enum Endpoint<'a> {
     Latest,
+    CompletedRuleSets,
     List,
     Attestation(&'a str),
     Rules,
@@ -210,6 +235,17 @@ impl LedgerClient {
 
     pub(crate) async fn latest_response(&self) -> Result<(Vec<Summary>, Bytes), ReadError> {
         self.read(Endpoint::Latest, None).await
+    }
+
+    pub(crate) async fn completed_rule_sets_response(&self) -> Result<Bytes, ReadError> {
+        let (repositories, body) = self
+            .read::<Vec<CompletedRuleSets>>(Endpoint::CompletedRuleSets, None)
+            .await?;
+        if repositories.iter().any(|entry| entry.sets.is_empty()) {
+            tracing::warn!(reason = "empty completed set list", "Ledger read failed");
+            return Err(ReadError::Unavailable);
+        }
+        Ok(body)
     }
 
     pub async fn list(&self, query: Option<&str>) -> Result<Vec<Summary>, ReadError> {
@@ -264,6 +300,7 @@ impl LedgerClient {
         let mut url = self.base_url.clone();
         url.set_path(match endpoint {
             Endpoint::Latest => "/v0/attestations/latest",
+            Endpoint::CompletedRuleSets => "/v0/repositories/completed-rule-sets",
             Endpoint::List | Endpoint::Attestation(_) => "/v0/attestations",
             Endpoint::Rules => "/v0/rules",
             Endpoint::RuleVersions => "/v0/rules/detail",

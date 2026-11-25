@@ -35,6 +35,19 @@ export interface RuleIdentity {
   id: string;
 }
 
+export interface CompletedRuleSet {
+  source: string;
+  path: string;
+  id: string;
+  version: string;
+  name: string;
+}
+
+export interface RepositoryRuleSets {
+  repository: string;
+  sets: CompletedRuleSet[];
+}
+
 interface Registration extends RuleIdentity {
   version: string;
   name?: string;
@@ -116,6 +129,10 @@ async function read<T>(
 
 export function latestAttestations(signal: AbortSignal): Promise<Summary[]> {
   return read('/v0/attestations/latest', signal);
+}
+
+export function completedRuleSets(signal: AbortSignal): Promise<RepositoryRuleSets[]> {
+  return read('/v0/repositories/completed-rule-sets', signal);
 }
 
 export interface PageOptions {

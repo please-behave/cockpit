@@ -1,15 +1,19 @@
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
-import { ApiError, latestAttestations, type Summary } from '../api/client';
+import { ApiError, completedRuleSets, latestAttestations, type Summary } from '../api/client';
 import type { ErrorState } from '../components/pb-error-state';
 import type { RepositoryTile } from '../components/pb-repository-tile';
+import type { RuleSetChip } from '../components/pb-rule-set-chip';
+import type { Tooltip } from '../components/pb-tooltip';
 import { DashboardView } from './dashboard';
 
 vi.mock(import('../api/client'), async original => ({
   ...await original(),
   latestAttestations: vi.fn(),
+  completedRuleSets: vi.fn(),
 }));
 
 const latest = vi.mocked(latestAttestations);
+const completed = vi.mocked(completedRuleSets);
 
 const summary = (id: string, overall: Summary['overall'], repository: string,
   execution_points = ['check'], received_at = '2026-11-22T11:18:19Z'): Summary => ({
@@ -25,12 +29,16 @@ const summary = (id: string, overall: Summary['overall'], repository: string,
   result_count: 7,
 });
 
-beforeEach(() => window.history.replaceState(null, '', '/'));
+beforeEach(() => {
+  window.history.replaceState(null, '', '/');
+  completed.mockResolvedValue([]);
+});
 
 afterEach(() => {
   document.body.replaceChildren();
   vi.useRealTimers();
   vi.resetAllMocks();
+  vi.restoreAllMocks();
 });
 
 async function mount() {
@@ -45,6 +53,50 @@ const tiles = (view: DashboardView) =>
   [...view.shadowRoot!.querySelectorAll<RepositoryTile>('ul.tiles > li > pb-repository-tile')];
 const hrefs = (view: DashboardView) =>
   tiles(view).map(tile => tile.shadowRoot!.querySelector('a.repository')!.getAttribute('href'));
+
+// Verifies REQ-0004, REQ-0015 and REQ-0028.
+test('shows only the completed sets for each repository and escapes the full name', async () => {
+  const name = '<img src=x onerror=alert(1)> Shared security rules';
+  const set = { source: 'github.com/acme/rules', path: 'sets/security', id: 'security', version: '1.0', name };
+  latest.mockResolvedValue([
+    summary('1', 'PASS', 'a/one', ['check']),
+    summary('2', 'PASS', 'a/one', ['deploy']),
+    summary('3', 'PASS', 'a/two'),
+  ]);
+  completed.mockResolvedValue([{ repository: 'a/one', sets: [
+    set, { ...set, id: 'licensing', name: 'Licensing' },
+  ] }]);
+  vi.spyOn(Element.prototype, 'scrollWidth', 'get').mockImplementation(function (this: Element) {
+    return this.textContent === name ? 300 : 0;
+  });
+
+  const view = await mount();
+  for (const tile of tiles(view)) {
+    const chips = [...tile.shadowRoot!.querySelectorAll<RuleSetChip>('pb-rule-set-chip')];
+    expect(chips.map(chip => chip.label)).toEqual(tile.summary!.repository === 'a/one'
+      ? [name, 'Licensing'] : []);
+    if (!chips.length) {
+      expect(tile.shadowRoot!.querySelector('.sets')).toBeNull();
+      continue;
+    }
+    const [long, short] = chips;
+    await vi.waitFor(() => expect(long.shadowRoot!.querySelector('pb-tooltip')).not.toBeNull());
+    const tooltip = long.shadowRoot!.querySelector<Tooltip>('pb-tooltip')!;
+    await tooltip.updateComplete;
+    expect(long.shadowRoot!.querySelector('.chip')?.textContent).toBe(name);
+    expect(tooltip.shadowRoot!.querySelector('[role=tooltip]')?.textContent?.trim()).toBe(name);
+    expect(long.shadowRoot!.querySelector('img, a')).toBeNull();
+    expect(tooltip.shadowRoot!.querySelector('img')).toBeNull();
+    expect(short.shadowRoot!.querySelector('pb-tooltip')).toBeNull();
+  }
+
+  completed.mockResolvedValue([]);
+  view.refresh();
+  await vi.waitFor(() => {
+    expect(completed).toHaveBeenCalledTimes(2);
+    expect(tiles(view).every(tile => tile.shadowRoot!.querySelector('.sets') === null)).toBe(true);
+  });
+});
 
 // Verifies REQ-0019.
 test('has a loading state, then an explicit empty state without header and tiles', async () => {

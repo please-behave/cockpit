@@ -1,8 +1,10 @@
 import { css, html, LitElement, nothing } from 'lit';
-import type { Summary } from '../api/client';
+import { repeat } from 'lit/directives/repeat.js';
+import type { CompletedRuleSet, Summary } from '../api/client';
 import { linkStyles } from '../styles/links';
 import './pb-commit-link';
 import './pb-relative-time';
+import './pb-rule-set-chip';
 import { ownerName } from './pb-short-name';
 import './pb-status-pill';
 import './pb-tooltip';
@@ -10,6 +12,7 @@ import './pb-tooltip';
 export class RepositoryTile extends LitElement {
   static override properties = {
     summary: { attribute: false },
+      completedSets: { attribute: false },
     showExecutionPoints: { type: Boolean },
   };
 
@@ -19,6 +22,8 @@ export class RepositoryTile extends LitElement {
     @layer components {
       :host {
         display: grid;
+        min-inline-size: 0;
+        grid-template-columns: minmax(0, 1fr);
       }
 
       .tile {
@@ -74,14 +79,30 @@ export class RepositoryTile extends LitElement {
       }
 
       pb-commit-link,
-      pb-relative-time {
+        pb-relative-time,
+        pb-rule-set-chip {
         position: relative;
         z-index: 1;
+      }
+
+      .sets {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+        margin: var(--space-1) 0 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .sets li {
+        min-inline-size: 0;
+        max-inline-size: 100%;
       }
     }
   `;
 
   declare summary?: Summary;
+  declare completedSets?: readonly CompletedRuleSet[];
   declare showExecutionPoints: boolean;
 
   constructor() {
@@ -90,7 +111,7 @@ export class RepositoryTile extends LitElement {
   }
 
   override render() {
-    const { summary, showExecutionPoints } = this;
+      const { summary, showExecutionPoints, completedSets } = this;
     if (!summary) return nothing;
 
     const owner = ownerName(summary.repository);
@@ -113,6 +134,13 @@ export class RepositoryTile extends LitElement {
         <span class="meta"><pb-commit-link .repository=${summary.repository}
           .commit=${summary.commit}></pb-commit-link></span>
         <span class="meta">Reported <pb-relative-time .value=${summary.received_at}></pb-relative-time> · ${summary.result_count} ${summary.result_count === 1 ? 'rule' : 'rules'}</span>
+        ${completedSets?.length ? html`
+          <ul class="sets" role="list" aria-label="Completed Rule Sets">
+            ${repeat(completedSets, set => JSON.stringify([set.source, set.path, set.id, set.version]), set => html`
+              <li><pb-rule-set-chip .label=${set.name}></pb-rule-set-chip></li>
+            `)}
+          </ul>
+        ` : nothing}
       </div>
     `;
   }
