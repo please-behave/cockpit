@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import type {
-  Attestation, RegisteredRule, RegisteredRuleSet, RegisteredRuleSetVersion, RegisteredVersion, RepositoryRuleSets, RuleSetCompliance, ReleaseSummary, Summary,
+  Attestation, RegisteredRule, RegisteredRuleSet, RegisteredRuleSetVersion, RegisteredVersion, RepositoryRuleSets, RuleSetCompliance, ReleaseDetail, ReleaseSummary, Summary,
 } from '../../frontend/src/api/client';
 import { fixtureTargets, respond } from './fixtures.mjs';
 
@@ -267,7 +267,7 @@ test('serves paged release summaries and repository history in the client shape'
   for (const entry of all) {
     expect(entry).toEqual(expect.objectContaining({
       repository: expect.any(String), version: expect.any(String), commit: expect.stringMatching(/^[0-9a-f]{40}$/),
-      sender: expect.any(String), auth_method: 'github_oidc', received_at: expect.any(String),
+      sender: expect.any(String), auth_method: expect.stringMatching(/^(github_oidc|api_key)$/), received_at: expect.any(String),
     }));
     expect(entry).toHaveProperty('evidence');
     expect(Number.isNaN(Date.parse(entry.received_at))).toBe(false);
@@ -283,4 +283,21 @@ test('serves paged release summaries and repository history in the client shape'
   expect(history[0]).toEqual(all.find(entry => entry.repository === history[0].repository));
   expect(body<ReleaseSummary[]>('/v0/releases?repository=unknown')).toEqual([]);
   expect(respond('/v0/releases/latest?before=invalid')?.status).toBe(400);
+});
+
+test('serves release details with the complete evidence in the client shape', () => {
+  const details = fixtureTargets.releaseDetails.map(target => body<ReleaseDetail>(target));
+  expect(details.map(detail => detail.evidence?.overall)).toEqual(expect.arrayContaining([undefined, 'PASS', 'FAIL', 'ERROR']));
+  expect(details.map(detail => detail.auth_method)).toEqual(expect.arrayContaining(['api_key', 'github_oidc']));
+  for (const detail of details) {
+    expect(detail.commit).toMatch(/^[0-9a-f]{40}$/);
+    if (detail.evidence === null) continue;
+    expect(Object.keys(detail.evidence).sort()).toEqual(['auth_method', 'id', 'overall', 'received_at', 'rule_sets', 'sender']);
+    for (const set of detail.evidence.rule_sets) {
+      expect(set.complete).toBe(set.non_passing_members.length === 0);
+    }
+  }
+  expect(details.some(detail => detail.evidence?.rule_sets.some(set => !set.complete))).toBe(true);
+  expect(respond('/v0/releases/detail?repository=x')?.status).toBe(400);
+  expect(respond('/v0/releases/detail?repository=x&version=y')?.status).toBe(404);
 });

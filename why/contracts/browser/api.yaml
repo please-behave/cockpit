@@ -57,3 +57,8 @@ contracts:
     document: release-history.md
     schema: releases.schema.json
     requirements: [REQ-0012, REQ-0013, REQ-0030, REQ-0031]
+  - id: CON-0012
+    name: Release Detail
+    document: release-detail.md
+    schema: release.schema.json
+    requirements: [REQ-0012, REQ-0013, REQ-0031, REQ-0032]

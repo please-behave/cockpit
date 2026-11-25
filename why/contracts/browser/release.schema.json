@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Release detail",
+  "type": "object",
+  "required": ["repository", "version", "commit", "sender", "auth_method", "received_at", "evidence"],
+  "properties": {
+    "repository": { "$ref": "releases.schema.json#/items/properties/repository" },
+    "version": { "$ref": "releases.schema.json#/items/properties/version" },
+    "commit": { "$ref": "releases.schema.json#/items/properties/commit" },
+    "sender": { "$ref": "releases.schema.json#/items/properties/sender" },
+    "auth_method": { "$ref": "releases.schema.json#/items/properties/auth_method" },
+    "received_at": { "$ref": "releases.schema.json#/items/properties/received_at" },
+    "evidence": {
+      "type": ["object", "null"],
+      "required": ["id", "overall", "received_at", "sender", "auth_method", "rule_sets"],
+      "properties": {
+        "id": { "$ref": "attestation.schema.json#/$defs/summary/properties/id" },
+        "overall": { "$ref": "attestation.schema.json#/$defs/summary/properties/overall" },
+        "received_at": { "$ref": "attestation.schema.json#/$defs/summary/properties/received_at" },
+        "sender": { "$ref": "attestation.schema.json#/$defs/summary/properties/sender" },
+        "auth_method": { "enum": ["api_key", "github_oidc", null] },
+        "rule_sets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["source", "path", "id", "version", "name", "registered", "complete", "non_passing_members"],
+            "properties": {
+              "source": { "type": "string" },
+              "path": { "type": "string" },
+              "id": { "type": "string" },
+              "version": { "type": "string" },
+              "name": { "type": "string" },
+              "registered": { "type": "boolean" },
+              "complete": { "type": "boolean" },
+              "non_passing_members": { "$ref": "rule-set-compliance.schema.json#/items/properties/non_passing_members" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

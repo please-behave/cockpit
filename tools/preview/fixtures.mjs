@@ -323,7 +323,7 @@ const releaseFacts = [
   release('github.com/acme/missing-evidence', '1.0', 2, null),
   release('github.com/acme/failing-evidence', '1.0', 3, 'FAIL'),
   release('github.com/acme/evidence-error', '1.0', 4, 'ERROR'),
-  release(completedRuleSets[0].repository, `release-${markup}-${'v'.repeat(190)}`, 5, 'PASS', [markupSet]),
+  release(completedRuleSets[0].repository, `release-${markup}-${'v'.repeat(190)}`, 5, 'PASS', [markupSet], 'api_key'),
   ...Array.from({ length: 103 }, (_, index) =>
     release(`github.com/acme/project-${String(index + 1).padStart(3, '0')}`, '1.0', 20 + index, 'PASS')),
 ].sort((a, b) => compare(b.received_at, a.received_at)
@@ -331,13 +331,38 @@ const releaseFacts = [
 const latestReleases = [...new Set(releaseFacts.map(fact => fact.repository))]
   .map(repository => releaseFacts.find(fact => fact.repository === repository));
 
-function release(repository, version, minutesAgo, overall, completed_rule_sets = []) {
+function release(repository, version, minutesAgo, overall, completed_rule_sets = [], auth_method = 'github_oidc') {
   return {
     repository, version, commit: sha('c').slice(0, -2) + minutesAgo.toString(16).padStart(2, '0'),
-    sender: 'ci@example.com', auth_method: 'github_oidc',
+    sender: 'ci@example.com', auth_method,
     received_at: new Date(now - minutesAgo * 60_000).toISOString(),
     evidence: overall === null ? null : { overall, completed_rule_sets },
   };
+}
+
+function releaseDetail(params) {
+  const repository = params.get('repository');
+  const version = params.get('version');
+  if (params.size !== 2 || !repository || !version) return code(400, 'invalid_query');
+  const fact = releaseFacts.find(candidate => candidate.repository === repository && candidate.version === version);
+  if (!fact) return code(404, 'release_not_found');
+  if (fact.evidence === null) return json(200, fact);
+  const { overall, completed_rule_sets } = fact.evidence;
+  const complete = completed_rule_sets.map(set => ({ ...set, registered: true, complete: true, non_passing_members: [] }));
+  const incomplete = overall === 'PASS' ? [] : [{
+    ...baselineSet, registered: true, complete: false,
+    non_passing_members: [{
+      source: nonPassingRule.source, path: nonPassingRule.path, id: nonPassingRule.id,
+      version: nonPassingRule.version, status: overall,
+    }],
+  }];
+  return json(200, {
+    ...fact,
+    evidence: {
+      id: history[0].id, overall, received_at: fact.received_at, sender: fact.sender, auth_method: fact.auth_method,
+      rule_sets: [...complete, ...incomplete],
+    },
+  });
 }
 
 function releasePage(params, latestOnly) {
@@ -416,6 +441,7 @@ export function respond(target) {
   if (pathname === '/v0/releases/latest' || pathname === '/v0/releases') {
     return releasePage(searchParams, pathname.endsWith('/latest'));
   }
+  if (pathname === '/v0/releases/detail') return releaseDetail(searchParams);
   if (pathname === '/v0/rules') return registryList(searchParams, ruleSummaries, scan);
   if (pathname === '/v0/rule-sets') return registryList(searchParams, setSummaries, setScan);
   if (pathname === '/v0/rule-sets/detail') {
@@ -441,6 +467,8 @@ export const fixtureTargets = {
   history: '/v0/attestations',
   releases: '/v0/releases/latest',
   releaseHistory: `/v0/releases?${new URLSearchParams({ repository: releaseRepository })}`,
+  releaseDetails: releaseFacts.map(({ repository, version }) =>
+    `/v0/releases/detail?${new URLSearchParams({ repository, version })}`),
   rules: '/v0/rules',
   ruleSets: '/v0/rule-sets',
   ruleSetDetails: setSummaries.map(({ source, path, id }) =>

@@ -23,6 +23,7 @@ pub enum ReadError {
     RuleNotFound,
     InvalidRuleSetIdentity,
     RuleSetNotFound,
+    ReleaseNotFound,
     Unavailable,
 }
 
@@ -128,7 +129,7 @@ struct CompletedRuleSets {
     sets: Vec<RuleSetRegistration>,
 }
 
-// Release lists share the ledger response shape (ledger:CON-0017 and ledger:CON-0018).
+// Release reads follow ledger:CON-0017, ledger:CON-0018 and ledger:CON-0019.
 #[allow(
     dead_code,
     reason = "release fields are used only for response validation"
@@ -163,8 +164,53 @@ mod releases {
         completed_rule_sets: Vec<RuleSetRegistration>,
     }
 
+    #[derive(Deserialize)]
+    pub(super) struct Detail {
+        repository: String,
+        version: String,
+        commit: String,
+        sender: String,
+        auth_method: AuthMethod,
+        received_at: String,
+        #[serde(deserialize_with = "evidence")]
+        evidence: Option<CommitEvidence>,
+    }
+
+    #[derive(Deserialize)]
+    struct CommitEvidence {
+        id: String,
+        overall: Overall,
+        received_at: String,
+        sender: String,
+        auth_method: Option<AuthMethod>,
+        rule_sets: Vec<BoundRuleSet>,
+    }
+
+    #[derive(Deserialize)]
+    struct BoundRuleSet {
+        source: String,
+        path: String,
+        id: String,
+        version: String,
+        name: String,
+        registered: bool,
+        complete: bool,
+        non_passing_members: Vec<NonPassingMember>,
+    }
+
+    #[derive(Deserialize)]
+    struct NonPassingMember {
+        source: String,
+        path: String,
+        id: String,
+        version: String,
+        status: String,
+    }
+
     // The ledger must report absent evidence explicitly as null.
-    fn evidence<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Option<Evidence>, D::Error> {
+    fn evidence<'de, D: Deserializer<'de>, T: Deserialize<'de>>(
+        deserializer: D,
+    ) -> Result<Option<T>, D::Error> {
         Option::deserialize(deserializer)
     }
 }
@@ -320,6 +366,7 @@ enum Endpoint<'a> {
     RuleSetCompliance,
     LatestReleases,
     ReleaseHistory,
+    ReleaseDetail,
 }
 
 impl LedgerClient {
@@ -449,6 +496,13 @@ impl LedgerClient {
         Ok(body)
     }
 
+    pub(crate) async fn release_response(&self, query: Option<&str>) -> Result<Bytes, ReadError> {
+        let (_, body) = self
+            .read::<releases::Detail>(Endpoint::ReleaseDetail, query)
+            .await?;
+        Ok(body)
+    }
+
     async fn version_history<T: DeserializeOwned>(
         &self,
         endpoint: Endpoint<'_>,
@@ -479,6 +533,7 @@ impl LedgerClient {
             Endpoint::RuleSetCompliance => "/v0/rule-sets/compliance",
             Endpoint::LatestReleases => "/v0/releases/latest",
             Endpoint::ReleaseHistory => "/v0/releases",
+            Endpoint::ReleaseDetail => "/v0/releases/detail",
         });
         if let Endpoint::Attestation(id) = endpoint {
             url.path_segments_mut()
@@ -508,8 +563,10 @@ impl LedgerClient {
                 | Endpoint::RuleSets
                 | Endpoint::RuleSetCompliance
                 | Endpoint::LatestReleases
-                | Endpoint::ReleaseHistory,
+                | Endpoint::ReleaseHistory
+                | Endpoint::ReleaseDetail,
             ) => Err(ReadError::InvalidQuery),
+            (StatusCode::NOT_FOUND, Endpoint::ReleaseDetail) => Err(ReadError::ReleaseNotFound),
             (StatusCode::NOT_FOUND, Endpoint::Attestation(_)) => Err(ReadError::NotFound),
             (StatusCode::BAD_REQUEST, Endpoint::RuleVersions) => {
                 Err(ReadError::InvalidRuleIdentity)

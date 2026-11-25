@@ -6,6 +6,7 @@ export const fixtureTargets: {
   history: string;
   releases: string;
   releaseHistory: string;
+  releaseDetails: string[];
   rules: string;
   ruleSets: string;
   ruleSetDetails: string[];

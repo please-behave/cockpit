@@ -31,6 +31,7 @@ pub(super) fn router(ledger: LedgerClient, auth: &Auth) -> Router {
         .route("/v0/rule-sets/compliance", get(rule_set_compliance))
         .route("/v0/releases/latest", get(latest_releases))
         .route("/v0/releases", get(release_history))
+        .route("/v0/releases/detail", get(release_detail))
         .method_not_allowed_fallback(|| async { ApiError::MethodNotAllowed })
         .with_state(ledger)
         .layer(middleware::from_fn_with_state(
@@ -147,6 +148,14 @@ async fn release_history(
     Ok(json_response(StatusCode::OK, body))
 }
 
+async fn release_detail(
+    State(ledger): State<LedgerClient>,
+    RawQuery(query): RawQuery,
+) -> Result<Response, ApiError> {
+    let body = ledger.release_response(query.as_deref()).await?;
+    Ok(json_response(StatusCode::OK, body))
+}
+
 enum ApiError {
     Unauthorized,
     MethodNotAllowed,
@@ -189,6 +198,9 @@ impl IntoResponse for ApiError {
             ),
             Self::Ledger(ReadError::RuleSetNotFound) => {
                 (StatusCode::NOT_FOUND, r#"{"code":"rule_set_not_found"}"#)
+            }
+            Self::Ledger(ReadError::ReleaseNotFound) => {
+                (StatusCode::NOT_FOUND, r#"{"code":"release_not_found"}"#)
             }
             Self::Ledger(ReadError::Unavailable) => (
                 StatusCode::SERVICE_UNAVAILABLE,

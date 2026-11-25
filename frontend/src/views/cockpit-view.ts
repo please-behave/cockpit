@@ -186,6 +186,12 @@ export abstract class CockpitView<T = never> extends LitElement {
       case 'attestation_not_found':
         return html`<pb-error-state heading="Attestation not found"
           message="There is no attestation with that identifier."></pb-error-state>`;
+      case 'invalid_release':
+        return html`<pb-error-state heading="Invalid release address"
+          message="The release address is malformed."></pb-error-state>`;
+      case 'release_not_found':
+        return html`<pb-error-state heading="Release not found"
+          message="There is no recorded release with that repository and version."></pb-error-state>`;
       case 'invalid_rule_identity':
         return html`<pb-error-state heading="Invalid rule identity"
           message="The registered rule address is malformed."></pb-error-state>`;

@@ -2,8 +2,9 @@ id: REQ-0031
 name: Browser Release Reads
 description: >-
   Cockpit serves same-origin authenticated paged reads for the latest
-  release of each repository and for the release history of a repository.
-  It forwards queries to ledger:CON-0017 and ledger:CON-0018, validates
+  release of each repository, for the release history of a repository and
+  for one release with its commit evidence. It forwards queries to
+  ledger:CON-0017, ledger:CON-0018 and ledger:CON-0019, validates
   successful responses, and preserves the ledger's JSON fields, values,
   and order. The reads follow REQ-0012 and REQ-0013.
 rationale: >-

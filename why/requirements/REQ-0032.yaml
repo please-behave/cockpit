@@ -1,0 +1,29 @@
+id: REQ-0032
+name: Release Detail
+description: >-
+  Each release version links to a directly linkable detail page that reads
+  CON-0012 and shows the version as its headline. The page shows the
+  version, repository, full commit with a link to the commit when the
+  repository host is known, the ledger receipt time and the sender with its
+  authentication method. For an API key, the page states the weaker trust
+  level in text with an icon: the sender is self-asserted and the key is not
+  bound to the repository. The page shows the release's evidence as
+  reported: the overall status with a link to the attestation detail, and
+  each Rule Set bound at check as a chip that links to its registered
+  version, together with the text Complete or Incomplete. An incomplete Rule
+  Set names its non-passing rules, each with its status and a link to the
+  registered rule version, and states when its version is unregistered. A
+  release without evidence says so explicitly as No evidence. The page does
+  not repeat the attestation's result list. It links back to the releases
+  of its repository, explains an unknown release, renders stored text as
+  escaped plain text and follows REQ-0004, REQ-0015 and REQ-0016.
+rationale: >-
+  Viewers can see what the evidence of a release says and judge how far its
+  sender can be trusted, then follow the evidence to the attestation and
+  the rules behind it.
+decisions:
+  - DEC-0001
+  - DEC-0002
+  - why:DEC-0008
+  - why:DEC-0020
+  - why:DEC-0021

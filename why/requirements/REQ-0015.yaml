@@ -12,7 +12,7 @@ description: >-
   Segments wrap when space is constrained and stay free of underlines in every state.
   The current segment uses the page surface and semibold brand text, and
   exposes aria-current="page", including on attestation detail, repository
-  release history and rule detail routes.
+  release history, release detail and rule detail routes.
   Hover slightly darkens the segment surface and adds a thin outline. Keyboard
   focus uses a thicker inset ring. The headline of the dashboard, attestations,
   releases and rules views is hidden visually but remains exposed to assistive

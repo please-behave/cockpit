@@ -7,7 +7,7 @@ import '../components/pb-rule-set-chip';
 import '../components/pb-status-pill';
 import '../components/pb-tooltip';
 import { CockpitView } from './cockpit-view';
-import { repositoryReleasesPath, ruleSetPath } from './router';
+import { releasePath, repositoryReleasesPath, ruleSetPath } from './router';
 
 function needsAttention({ evidence }: ReleaseSummary) {
   return evidence === null || evidence.overall === 'FAIL' || evidence.overall === 'ERROR';
@@ -100,9 +100,9 @@ export class ReleasesView extends CockpitView<ReleaseSummary[]> {
       <li class="release">
         <h2>${overview
           ? html`<a data-route href=${repositoryReleasesPath(entry.repository)}>${entry.repository}</a>`
-          : entry.version}</h2>
+          : html`<a data-route href=${releasePath(entry.repository, entry.version)}>${entry.version}</a>`}</h2>
         <dl>
-          ${overview ? html`<div><dt>Newest version</dt><dd>${entry.version}</dd></div>`
+          ${overview ? html`<div><dt>Newest version</dt><dd><a data-route href=${releasePath(entry.repository, entry.version)}>${entry.version}</a></dd></div>`
             : html`<div><dt>Commit</dt><dd><pb-tooltip .description=${entry.commit}>
               <code>${entry.commit.slice(0, 7)}</code></pb-tooltip></dd></div>`}
           <div><dt>Recorded</dt><dd><pb-relative-time .value=${entry.received_at}></pb-relative-time></dd></div>

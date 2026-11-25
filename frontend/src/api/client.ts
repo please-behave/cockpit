@@ -63,6 +63,25 @@ export interface ReleaseSummary {
   evidence: { overall: Overall; completed_rule_sets: CompletedRuleSet[] } | null;
 }
 
+export type AuthMethod = ReleaseSummary['auth_method'];
+
+export interface ReleaseEvidenceRuleSet extends CompletedRuleSet {
+  registered: boolean;
+  complete: boolean;
+  non_passing_members: RuleSetCompliance['non_passing_members'];
+}
+
+export interface ReleaseDetail extends Omit<ReleaseSummary, 'evidence'> {
+  evidence: {
+    id: string;
+    overall: Overall;
+    received_at: string;
+    sender: string;
+    auth_method: AuthMethod | null;
+    rule_sets: ReleaseEvidenceRuleSet[];
+  } | null;
+}
+
 interface Registration extends RuleIdentity {
   version: string;
   name?: string;
@@ -120,6 +139,8 @@ type ApiErrorCode = typeof errorCodes[keyof typeof errorCodes]
   | 'attestation_not_found'
   | 'rule_not_found'
   | 'rule_set_not_found'
+  | 'release_not_found'
+  | 'invalid_release'
   | 'invalid_rule_set_identity'
   | 'invalid_identifier'
   | 'invalid_query'
@@ -140,8 +161,8 @@ const requestTimeout = 10_000;
 async function read<T>(
   path: string,
   signal: AbortSignal,
-  badRequest: 'invalid_identifier' | 'invalid_query' | 'invalid_rule_identity' | 'invalid_rule_set_identity' = 'invalid_identifier',
-  notFound: 'attestation_not_found' | 'rule_not_found' | 'rule_set_not_found' = 'attestation_not_found',
+  badRequest: 'invalid_identifier' | 'invalid_query' | 'invalid_release' | 'invalid_rule_identity' | 'invalid_rule_set_identity' = 'invalid_identifier',
+  notFound: 'attestation_not_found' | 'release_not_found' | 'rule_not_found' | 'rule_set_not_found' = 'attestation_not_found',
 ): Promise<T> {
   const deadline = new AbortController();
   const timeout = window.setTimeout(() => deadline.abort(), requestTimeout);
@@ -221,6 +242,11 @@ export async function releases(repository: string | null, signal: AbortSignal): 
     cursors.add(cursor);
     query.set('before', cursor);
   }
+}
+
+export function getRelease(repository: string, version: string, signal: AbortSignal): Promise<ReleaseDetail> {
+  const query = new URLSearchParams({ repository, version });
+  return read(`/v0/releases/detail?${query}`, signal, 'invalid_release', 'release_not_found');
 }
 
 export async function getAttestation(id: string, signal: AbortSignal): Promise<Attestation> {

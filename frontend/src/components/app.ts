@@ -5,6 +5,7 @@ import '../views/dashboard';
 import '../views/detail';
 import '../views/history';
 import '../views/not-found';
+import '../views/release';
 import '../views/releases';
 import '../views/rule';
 import '../views/rule-set';
@@ -71,6 +72,7 @@ export class CockpitApp extends LitElement {
         .origin=${typeof this.origin === 'string' ? this.origin : undefined}></pb-attestation>`;
       case 'releases': return html`<pb-releases></pb-releases>`;
       case 'repository-releases': return html`<pb-releases .repository=${route.repository}></pb-releases>`;
+      case 'release': return html`<pb-release .repository=${route.repository} .version=${route.version}></pb-release>`;
       case 'rules': return html`<pb-rules></pb-rules>`;
       case 'rule': return html`<pb-rule .search=${route.search} .requestedVersion=${route.version}
         @version-change=${this.selectVersion}

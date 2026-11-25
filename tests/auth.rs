@@ -1,5 +1,5 @@
 // Verifies REQ-0004, REQ-0006, REQ-0007, REQ-0011, REQ-0012, REQ-0013,
-// REQ-0014, REQ-0015, REQ-0024, REQ-0025, REQ-0028 and REQ-0031.
+// REQ-0014, REQ-0015, REQ-0024, REQ-0025, REQ-0028, REQ-0031 and REQ-0032.
 
 #[path = "support/auth_settings.rs"]
 mod support;
@@ -500,6 +500,7 @@ async fn authenticated_page_requests_return_the_embedded_shell() {
         "/rules",
         "/releases",
         "/releases/repository?repository=github.com%2Fteam%2Fapp",
+        "/releases/detail?repository=github.com%2Fteam%2Fapp&version=v1",
         "/rules/detail?source=github.com%2Forg%2Frules&path=checks%2Fexample&id=example",
         "/future/view?query=1",
     ] {
@@ -1233,6 +1234,88 @@ async fn browser_release_reads_preserve_paged_ledger_responses_and_require_sessi
         ),
         (
             "/v0/releases/latest?before=malformed-response",
+            StatusCode::SERVICE_UNAVAILABLE,
+            "ledger_unavailable",
+        ),
+    ] {
+        let response = site
+            .get(path)
+            .header(header::COOKIE, &session)
+            .send()
+            .await
+            .unwrap();
+        assert_api_error(response, status, code).await;
+    }
+}
+
+#[tokio::test]
+async fn browser_release_detail_preserves_the_ledger_response_and_maps_errors() {
+    const QUERY: &str = "repository=github.com%2Fteam%2Fapp&version=v1+%3Cb%3E";
+    let release = json!({
+        "repository": "github.com/team/app", "version": "v1 <b>", "commit": "a".repeat(40),
+        "sender": "ci", "auth_method": "api_key", "received_at": "2026-11-23T09:00:00Z",
+        "evidence": {
+            "id": "5f7ff5b5-1c85-4c80-bd0d-f9b0a38fdc6a", "overall": "FAIL",
+            "received_at": "2026-11-23T08:00:00Z", "sender": "ci", "auth_method": null,
+            "rule_sets": [{
+                "source": "github.com/team/rules", "path": "sets/base", "id": "base",
+                "version": "1.0", "name": "<b>Baseline</b>", "registered": true,
+                "complete": false, "non_passing_members": [{
+                    "source": "github.com/team/rules", "path": "checks/a", "id": "a",
+                    "version": "1.0", "status": "FAIL"
+                }]
+            }]
+        }
+    });
+    let mut missing = release.clone();
+    missing.as_object_mut().unwrap().remove("evidence");
+    let body = release.to_string();
+    let upstream = body.clone();
+    let malformed = missing.to_string();
+    let site = TestSite::start_with_ledger(Router::new().route(
+        "/v0/releases/detail",
+        get(move |RawQuery(query): RawQuery| async move {
+            match query.as_deref() {
+                Some(QUERY) => (StatusCode::OK, upstream),
+                Some("repository=gone&version=v1") => (StatusCode::NOT_FOUND, "".to_owned()),
+                Some("repository=broken&version=v1") => (StatusCode::OK, malformed),
+                _ => (StatusCode::BAD_REQUEST, "".to_owned()),
+            }
+        }),
+    ))
+    .await;
+    let session = cookie_header(&cookie(&site.sign_in("allowed").await, SESSION).unwrap());
+    let path = format!("/v0/releases/detail?{QUERY}");
+
+    assert_api_error(
+        site.get(&path).send().await.unwrap(),
+        StatusCode::UNAUTHORIZED,
+        "unauthorized",
+    )
+    .await;
+    let response = site
+        .get(&path)
+        .header(header::COOKIE, &session)
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_api_headers(&response);
+    assert_eq!(response.text().await.unwrap(), body);
+
+    for (path, status, code) in [
+        (
+            "/v0/releases/detail?repository=gone&version=v1",
+            StatusCode::NOT_FOUND,
+            "release_not_found",
+        ),
+        (
+            "/v0/releases/detail?repository=x",
+            StatusCode::BAD_REQUEST,
+            "invalid_query",
+        ),
+        (
+            "/v0/releases/detail?repository=broken&version=v1",
             StatusCode::SERVICE_UNAVAILABLE,
             "ledger_unavailable",
         ),
