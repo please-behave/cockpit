@@ -15,6 +15,7 @@ export interface Summary {
 }
 
 export interface Attestation extends Summary {
+  rule_sets?: BoundRuleSet[];
   results: {
     id: string;
     name?: string;
@@ -33,6 +34,11 @@ export interface RuleIdentity {
   source: string;
   path: string;
   id: string;
+}
+
+export interface BoundRuleSet extends RuleIdentity {
+  version: string;
+  execution_points: string[];
 }
 
 export interface RuleSetRegistration extends RuleIdentity {

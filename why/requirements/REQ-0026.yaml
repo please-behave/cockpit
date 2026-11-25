@@ -24,7 +24,11 @@ description: >-
   fact strip with Kind, Blocking for reviews, and Registered, in that
   order. Beneath the strip, three muted, labeled fields show Repository,
   Path and Rule ID and wrap on narrow screens. Repository shows the short
-  name and exposes the full name in a tooltip. The detail shows one version in a
+  name and exposes the full name in a tooltip. The "Part of" field shows one
+  chip linking to each registered Rule Set version reported by CON-0005 for
+  the selected rule version. With no memberships, it shows a repository chip
+  linking to the rule's source when the source forms a valid HTTPS repository
+  address. The chips follow REQ-0015. The detail shows one version in a
   panel and defaults to the newest. When several versions exist, a native
   keyboard-operable dropdown named Version lists them in descending numeric
   order with their registration times and marks the newest as Latest. The

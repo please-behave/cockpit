@@ -46,6 +46,17 @@ pub struct Attestation {
     #[serde(flatten)]
     pub summary: Summary,
     pub results: Vec<ReportedResult>,
+    #[serde(default)]
+    pub rule_sets: Vec<BoundRuleSet>,
+}
+
+#[derive(Debug, Deserialize, Eq, PartialEq)]
+pub struct BoundRuleSet {
+    pub source: String,
+    pub path: String,
+    pub id: String,
+    pub version: String,
+    pub execution_points: Vec<String>,
 }
 
 #[derive(Debug, Deserialize, Eq, PartialEq)]

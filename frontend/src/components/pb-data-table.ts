@@ -8,6 +8,12 @@ export interface DataTableRow {
   cells: readonly (string | TemplateResult)[];
 }
 
+export interface DataTableGroup {
+  key: string;
+  heading: string | TemplateResult;
+  rows: readonly DataTableRow[];
+}
+
 export interface DataTableColumn {
   label: string;
   /** Optional CSS part name for the column header and cells. */
@@ -24,6 +30,7 @@ export class DataTable extends LitElement {
     label: { type: String },
     columns: { attribute: false },
     rows: { attribute: false },
+    groups: { attribute: false },
     rowHeaderColumn: { type: Number, attribute: 'row-header-column' },
   };
 
@@ -89,7 +96,7 @@ export class DataTable extends LitElement {
         border-block-end: 1px solid var(--border);
       }
 
-      thead {
+      thead, th[scope='rowgroup'] {
         background: var(--surface-raised);
       }
     }
@@ -98,6 +105,7 @@ export class DataTable extends LitElement {
   declare label: string;
   declare columns: readonly (string | DataTableColumn)[];
   declare rows: readonly DataTableRow[];
+  declare groups?: readonly DataTableGroup[];
   /** Zero-based column index. Use -1 for a table without row headers. */
   declare rowHeaderColumn: number;
 
@@ -111,6 +119,11 @@ export class DataTable extends LitElement {
 
   override render() {
     const columns = this.columns.map(column => typeof column === 'string' ? { label: column } : column);
+    const rows = (items: readonly DataTableRow[]) => repeat(items, row => row.key, row => html`
+      <tr>${columns.map(({ mode, part }, index) => index === this.rowHeaderColumn
+        ? html`<th scope="row" class=${mode ?? nothing} part=${part ?? nothing}>${row.cells[index]}</th>`
+        : html`<td class=${mode ?? nothing} part=${part ?? nothing}>${row.cells[index]}</td>`)}</tr>
+    `);
     return html`
       <div class="scroll" role="region" aria-labelledby="caption" tabindex="0">
         <table>
@@ -119,13 +132,13 @@ export class DataTable extends LitElement {
             <tr>${columns.map(({ label, mode, part }) => html`
               <th scope="col" class=${mode ?? nothing} part=${part ?? nothing}>${label}</th>`)}</tr>
           </thead>
-          <tbody>
-            ${repeat(this.rows, row => row.key, row => html`
-              <tr>${columns.map(({ mode, part }, index) => index === this.rowHeaderColumn
-                ? html`<th scope="row" class=${mode ?? nothing} part=${part ?? nothing}>${row.cells[index]}</th>`
-                : html`<td class=${mode ?? nothing} part=${part ?? nothing}>${row.cells[index]}</td>`)}</tr>
+          ${this.groups === undefined ? html`<tbody>${rows(this.rows)}</tbody>`
+            : repeat(this.groups, group => group.key, group => html`
+              <tbody>
+                <tr><th scope="rowgroup" colspan=${columns.length}>${group.heading}</th></tr>
+                ${rows(group.rows)}
+              </tbody>
             `)}
-          </tbody>
         </table>
       </div>
     `;

@@ -1,10 +1,11 @@
 import { afterEach, expect, test, vi } from 'vitest';
-import { ApiError, getAttestation, type Summary } from '../api/client';
+import { ApiError, getAttestation, registeredRuleSetVersions, type Attestation, type Summary } from '../api/client';
 import type { CommitLink } from '../components/pb-commit-link';
 import type { DataTable } from '../components/pb-data-table';
 import type { ErrorState } from '../components/pb-error-state';
 import type { FactStrip } from '../components/pb-fact-strip';
 import type { CockpitTime } from '../components/pb-time';
+import type { RuleSetChip } from '../components/pb-rule-set-chip';
 import type { StatusPill } from '../components/pb-status-pill';
 import type { Tooltip } from '../components/pb-tooltip';
 import { DetailView } from './detail';
@@ -13,9 +14,11 @@ import { DashboardView } from './dashboard';
 vi.mock(import('../api/client'), async original => ({
   ...await original(),
   getAttestation: vi.fn(),
+  registeredRuleSetVersions: vi.fn(),
 }));
 
 const detail = vi.mocked(getAttestation);
+const setVersions = vi.mocked(registeredRuleSetVersions);
 const receipt = '2026-11-22T11:18:19Z';
 
 const summary = (id: string, overall: Summary['overall'], repository: string,
@@ -109,7 +112,9 @@ test.each(['light', 'dark'])('detail presents reported results and verification 
   expect(facts.querySelector('img, script')).toBeNull();
 
   const table = await tableRoot(view);
-  const rows = [...table.querySelectorAll<HTMLTableRowElement>('tbody tr')];
+  expect(table.querySelector('th[scope="rowgroup"]')?.textContent).toBe('Unassigned');
+  expect(setVersions).not.toHaveBeenCalled();
+  const rows = [...table.querySelectorAll<HTMLTableRowElement>('tbody tr + tr')];
   expect([...table.querySelectorAll('thead th.content')].map(cell => cell.textContent))
     .toEqual(['Kind', 'Status', 'Verification']);
   expect(rows.map(row => [...row.querySelectorAll('td.content')])).toEqual(
@@ -159,6 +164,78 @@ test.each(['light', 'dark'])('detail presents reported results and verification 
     expect(tooltip.shadowRoot!.getElementById(trigger.getAttribute('aria-describedby')!)?.textContent?.trim())
       .toBe(tooltip.description);
   }
+});
+
+// Verifies REQ-0010 and REQ-0015.
+test('groups results by the exact bound versions, preserving both binding and result order', async () => {
+  const value = summary('id', 'FAIL', 'github.com/acme/widget');
+  const source = 'github.com/team/catalog';
+  const first = { source, path: 'sets/first & policy', id: 'first', version: '1.0', execution_points: ['check'] };
+  const second = { ...first, path: 'sets/second', id: 'second', version: '2.0' };
+  const missing = { ...first, path: 'sets/missing', id: 'missing' };
+  const rule = { source, path: 'rules/license', id: 'license', version: '1.0' };
+  const sibling = { ...rule, path: 'rules/build' };
+  const makeResult = (name: string, rule?: Attestation['results'][number]['rule']): Attestation['results'][number] =>
+    ({ id: name, name, rule, kind: 'check', status: 'PASS', verification: { status: 'verified' } });
+  const makeSet = (binding: typeof first, name: string, members: (typeof rule)[]) => ({
+    ...binding, name, members: members.map(member => ({ ...member, digest: 'digest', enabled: true })),
+    digest: 'digest', commit: value.commit, registered_at: receipt,
+  });
+  detail.mockResolvedValue({
+    ...value,
+    rule_sets: [second, first, missing],
+    results: [
+      makeResult('Build', sibling),
+      makeResult('License', rule),
+      makeResult('Local', { ...rule, source: value.repository }),
+      makeResult('Wrong path', { ...rule, path: 'other' }),
+      makeResult('Wrong version', { ...rule, version: '3.0' }),
+      makeResult('Run identifier'),
+    ],
+  });
+  setVersions.mockImplementation(async query => {
+    switch (query.get('id')) {
+      case 'first': return [makeSet(first, '<b>First</b>', [rule, sibling]), makeSet({ ...first, version: '2.0' }, 'Latest', [])];
+      case 'second': return [makeSet(second, 'Second', [rule])];
+      default: throw new ApiError('rule_set_not_found');
+    }
+  });
+
+  const view = mountDetail(value.id);
+  await vi.waitFor(() => expect(view.shadowRoot!.querySelector('pb-data-table')).not.toBeNull());
+  const table = await tableRoot(view);
+  const groups = [...table.querySelectorAll('tbody')];
+  const headers = [...table.querySelectorAll('th[scope="rowgroup"]')];
+  expect(headers.map(header => header.getAttribute('colspan'))).toEqual(['4', '4', '4', '4', '4']);
+  const chips = [...table.querySelectorAll<RuleSetChip>('pb-rule-set-chip')];
+  await Promise.all(chips.map(chip => chip.updateComplete));
+  const links = chips.map(chip => chip.shadowRoot!.querySelector('a')!);
+  expect(links.map(link => link.textContent)).toEqual(['Second · 2.0', '<b>First</b> · 1.0', 'missing · 1.0']);
+  expect(chips[1].shadowRoot!.querySelector('b')).toBeNull();
+  expect(links.map(link => Object.fromEntries(new URL(link.href).searchParams)))
+    .toEqual([second, first, missing].map(({ source, path, id, version }) => ({ source, path, id, version })));
+  expect(headers.slice(3).map(header => header.textContent)).toEqual(['Local rules', 'Unassigned']);
+  expect(groups.map(group => [...group.querySelectorAll('th[scope="row"]')].map(cell =>
+    cell.querySelector('a')?.textContent ?? cell.textContent))).toEqual([
+    ['License'], ['Build', 'License'], [], ['Local'], ['Wrong path', 'Wrong version', 'Run identifier'],
+  ]);
+});
+
+test('an empty binding list places even repository rules under Unassigned', async () => {
+  const value = summary('id', 'PASS', 'github.com/acme/widget');
+  detail.mockResolvedValue({
+    ...value, rule_sets: [],
+    results: [{
+      id: 'check', kind: 'check', status: 'PASS', verification: { status: 'unverified', reason: 'unregistered' },
+      rule: { source: value.repository, path: 'checks/local', id: 'local' },
+    }],
+  });
+  const view = mountDetail(value.id);
+  await vi.waitFor(() => expect(view.shadowRoot!.querySelector('pb-data-table')).not.toBeNull());
+  const table = await tableRoot(view);
+  expect(table.querySelector('th[scope="rowgroup"]')?.textContent).toBe('Unassigned');
+  expect(table.querySelector('th[scope="row"]')?.textContent).toBe('local');
+  expect(setVersions).not.toHaveBeenCalled();
 });
 
 test('detail links the full commit using the shared GitHub target', async () => {

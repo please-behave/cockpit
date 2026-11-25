@@ -81,6 +81,11 @@ test('serves every attestation in the client shape with matching counts', () => 
     const attestation = body<Attestation>(target);
     expectSummary(attestation);
     expect(attestation.results).toHaveLength(attestation.result_count);
+    for (const binding of attestation.rule_sets ?? []) {
+      expect([binding.source, binding.path, binding.id].every(isString)).toBe(true);
+      expect(binding.version).toMatch(/^\d+\.\d+$/);
+      expect(binding.execution_points.every(isString)).toBe(true);
+    }
     expect(attestation.results.filter(item => item.status === 'WARN')).toHaveLength(attestation.warn_count);
     expect(attestation.results.filter(item => item.status === 'NOT_RUN')).toHaveLength(attestation.not_run_count);
     for (const item of attestation.results) {
@@ -94,7 +99,11 @@ test('serves every attestation in the client shape with matching counts', () => 
   }
   expect(statuses.size).toBe(5);
   expect(verifications).toEqual(new Set(['verified', 'unverified']));
-  const mixed = body<Attestation>(fixtureTargets.details[0]).results;
+  const grouped = body<Attestation>(fixtureTargets.details[0]);
+  expect(grouped.rule_sets?.map(set => set.id)).toEqual(['baseline', 'security', 'markup', 'unregistered-set']);
+  expect(body<Attestation>(fixtureTargets.details[1]).rule_sets).toEqual([]);
+  expect(body<Attestation>(fixtureTargets.details[2])).not.toHaveProperty('rule_sets');
+  const mixed = grouped.results;
   expect(mixed.find(item => item.id === 'run-5')?.name).toBe('License file present (older)');
   expect(mixed.find(item => item.id === 'run-6')).not.toHaveProperty('name');
   expect(mixed.find(item => item.id === 'run-9')?.name).toContain('<img');
@@ -128,6 +137,7 @@ test('serves registered rules and their versions in the client shape', () => {
   expect(rules.find(rule => rule.id === 'markup')?.owner).toContain('<img');
   expect(rules.find(rule => rule.id === 'no-secrets')).not.toHaveProperty('owner');
 
+  const sets = fixtureTargets.ruleSetDetails.flatMap(target => body<RegisteredRuleSetVersion[]>(target));
   let longest = 0;
   for (const target of fixtureTargets.ruleDetails) {
     const versions = body<RegisteredVersion[]>(target);
@@ -138,6 +148,13 @@ test('serves registered rules and their versions in the client shape', () => {
     longest = Math.max(longest, versions.length);
     for (const version of versions) {
       expectRule(version);
+      for (const membership of version.rule_sets ?? []) {
+        const set = sets.find(set => set.source === membership.source && set.path === membership.path
+          && set.id === membership.id && set.version === membership.version);
+        expect(set?.name || set?.id).toBe(membership.name);
+        expect(set?.members.some(member => member.source === version.source && member.path === version.path
+          && member.id === version.id && member.version === version.version)).toBe(true);
+      }
       expect(version.digest).toMatch(/^v1:sha256:[0-9a-f]{64}$/);
       expect(version.commit).toMatch(/^[0-9a-f]{40}$/);
       expect(Number.isNaN(Date.parse(version.registered_at))).toBe(false);

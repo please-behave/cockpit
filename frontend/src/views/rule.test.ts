@@ -2,6 +2,7 @@ import { afterEach, expect, test, vi } from 'vitest';
 import { type RegisteredRule, type RegisteredVersion } from '../api/client';
 import { CockpitApp } from '../components/app';
 import type { DataTable } from '../components/pb-data-table';
+import type { RuleSetChip } from '../components/pb-rule-set-chip';
 import type { RuleView } from './rule';
 import type { RulesView } from './rules';
 
@@ -47,6 +48,43 @@ afterEach(() => {
   window.history.replaceState(null, '', '/');
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
+});
+
+// Verifies REQ-0015 and REQ-0026.
+test('links each Rule Set for the selected version and the repository for a local version', async () => {
+  const sets = [
+    { source: identity.source, path: 'sets/base & tools', id: 'base', name: markup, version: '1.0' },
+    { source: identity.source, path: 'sets/release', id: 'release', name: 'Release rules', version: '2.0' },
+  ];
+  const versions = [history[0], { ...history[1], rule_sets: sets }];
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json(versions)));
+  const app = open(`/rules/detail?${new URLSearchParams(identity)}`);
+  await app.updateComplete;
+  const view = app.shadowRoot!.querySelector<RuleView>('pb-rule')!;
+  const root = view.shadowRoot!;
+  await vi.waitFor(() => expect(root.querySelector('.memberships dt')?.textContent).toBe('Part of'));
+  const chips = [...root.querySelectorAll<RuleSetChip>('.memberships pb-rule-set-chip')];
+  expect(chips).toHaveLength(2);
+  await Promise.all(chips.map(chip => chip.updateComplete));
+  for (const [index, chip] of chips.entries()) {
+    const { source, path, id, version, name } = sets[index];
+    const link = chip.shadowRoot!.querySelector('a')!;
+    expect(link.textContent).toBe(`${name} · ${version}`);
+    expect(chip.shadowRoot!.querySelector('img')).toBeNull();
+    const url = new URL(link.href);
+    expect(url.pathname).toBe('/rule-sets/detail');
+    expect(Object.fromEntries(url.searchParams)).toEqual({ source, path, id, version });
+  }
+
+  const selector = root.querySelector('select')!;
+  selector.value = '1.2';
+  selector.dispatchEvent(new Event('change', { bubbles: true }));
+  await app.updateComplete;
+  await view.updateComplete;
+  const repository = root.querySelector<HTMLAnchorElement>('.memberships a')!;
+  expect(repository.href).toBe('https://github.com/team/catalog%2Bmore');
+  expect(repository.textContent).toBe('catalog+more');
+  expect(root.querySelector('.memberships pb-rule-set-chip')).toBeNull();
 });
 
 // Verifies REQ-0004, REQ-0025 and REQ-0026.

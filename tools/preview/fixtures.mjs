@@ -115,7 +115,7 @@ const mixedResults = [
   result('run-3', 'review', 'NOT_RUN', identity('reviews/design', 'design-review', '2.0')),
   result('run-4', 'review', 'PASS', identity('reviews/docs', 'docs-review', '1.0')),
   mismatchedResult,
-  result('run-6', 'check', 'PASS', { source: ruleSource, path: 'checks/unknown', id: 'unregistered-rule' }, { status: 'unverified', reason: 'unregistered' }),
+  result('run-6', 'check', 'PASS', { source: 'github.com/acme/widget', path: 'checks/unknown', id: 'unregistered-rule' }, { status: 'unverified', reason: 'unregistered' }),
   result('run-7', 'integrity', 'PASS', undefined, { status: 'unverified', reason: 'unregistered' }),
   result('run-8', 'check', 'PASS', identity('checks/long', 'rule-with-a-very-long-identifier-that-needs-to-wrap-on-narrow-screens', '1.0')),
   result('run-9', 'check', 'PASS', identity('checks/markup', 'markup', '1.0')),
@@ -253,6 +253,24 @@ const setHistories = sets.map(({ registration, members, description }) => {
   ];
   return [setVersion(registration, memberRules, description)];
 });
+
+const fixtureBindings = [baselineSet, securitySet, markupSet,
+  { source: ruleSource, path: 'sets/missing', id: 'unregistered-set', version: '1.0' },
+].map(({ source, path, id, version }) => ({ source, path, id, version, execution_points: ['deploy'] }));
+details.get(history[0].id).rule_sets = fixtureBindings;
+details.get(history[1].id).rule_sets = [];
+
+const ruleVersionKey = ({ source, path, id, version }) => JSON.stringify([source, path, id, version]);
+const memberships = new Map();
+for (const { source, path, id, version, name, members } of setHistories.flat()) {
+  for (const member of members) {
+    const key = ruleVersionKey(member);
+    memberships.set(key, [...(memberships.get(key) ?? []), { source, path, id, version, name: name || id }]);
+  }
+}
+for (const version of rules.flat()) {
+  version.rule_sets = memberships.get(ruleVersionKey(version)) ?? [];
+}
 
 const scan = {
   through: Math.max(...rules.flat().map(version => Date.parse(version.registered_at))) * 1000,

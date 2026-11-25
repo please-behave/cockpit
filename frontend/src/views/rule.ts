@@ -1,13 +1,15 @@
 import { css, html, nothing, type CSSResult } from 'lit';
 import { registeredVersions, type RegisteredVersion } from '../api/client';
+import { repositoryUrl } from '../commit-link';
 import '../components/pb-badge';
 import '../components/pb-fact-strip';
 import '../components/pb-panel';
+import '../components/pb-rule-set-chip';
 import { shortName } from '../components/pb-short-name';
 import '../components/pb-time';
 import '../components/pb-tooltip';
 import { CockpitView } from './cockpit-view';
-import { followHistoryBack, type AttestationOrigin } from './router';
+import { followHistoryBack, ruleSetPath, type AttestationOrigin } from './router';
 import { selectedVersion, versionSelector, versionSelectorStyles } from './registry-version';
 
 const knowledgeFields = {
@@ -113,6 +115,20 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
         overflow-wrap: anywhere;
       }
 
+      .memberships {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-2);
+      }
+
+      .memberships dd {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+        min-inline-size: 0;
+      }
+
       .identity > div {
         flex: 1 1 10rem;
         min-inline-size: 0;
@@ -186,6 +202,23 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
         </dd></div>
         <div><dt>Path</dt><dd><code>${version.path}</code></dd></div>
         <div><dt>Rule ID</dt><dd><code>${version.id}</code></dd></div>
+      </dl>
+      ${this.memberships(version)}
+    `;
+  }
+
+  private memberships(version: RegisteredVersion) {
+    const sets = version.rule_sets ?? [];
+    const repository = repositoryUrl(version.source);
+    return html`
+      <dl class="memberships">
+        <dt>Part of</dt>
+        <dd>${sets.length > 0 ? sets.map(set => html`
+          <pb-rule-set-chip .label=${`${set.name || set.id} · ${set.version}`}
+            .href=${ruleSetPath(set, set.version)}></pb-rule-set-chip>
+        `) : html`<pb-badge>${repository
+          ? html`<a href=${repository} title=${version.source}>${shortName(version.source)}</a>`
+          : version.source}</pb-badge>`}</dd>
       </dl>
     `;
   }

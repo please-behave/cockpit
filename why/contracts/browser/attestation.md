@@ -3,8 +3,12 @@
 `GET /v0/attestations/{id}` takes the attestation UUID in the path. HTTP 200
 returns the JSON object reported by the ledger under `ledger:CON-0003`.
 [attestation.schema.json](attestation.schema.json) defines its structure.
-The object contains the summary fields and the results in reported order.
-Fields and values are preserved as reported.
+The object contains the summary fields, the bound Rule Sets and the results
+in reported order. Fields and values are preserved as reported. Each binding
+in `rule_sets` contains the set's `source`, `path`, `id`, `version` and
+`execution_points`, including bindings whose set version is unregistered.
+Older responses can omit the array. The ledger returns an empty array when
+it has no bindings for an attestation.
 
 Each result carries the ledger's `verification` object. The status is
 `verified` or `unverified`. An unverified result includes the ledger's reason,

@@ -71,6 +71,13 @@ async fn reads_the_two_v0_contracts_and_preserves_reported_values() {
                 match id.as_str() {
                     ID => {
                         let mut value = summary(ID, "org/<reported>");
+                        value["rule_sets"] = json!([{
+                            "source": "github.com/org/catalog",
+                            "path": "sets/baseline",
+                            "id": "baseline",
+                            "version": "1.0",
+                            "execution_points": ["check"]
+                        }]);
                         value["results"] = json!([
                             {"id": "first", "kind": "review", "status": "WARN",
                              "verification": {"status": "verified"}},
@@ -98,6 +105,14 @@ async fn reads_the_two_v0_contracts_and_preserves_reported_values() {
     );
     let attestation = ledger.attestation(ID).await.unwrap();
     assert_eq!(attestation.summary, latest[0]);
+    let [binding] = attestation.rule_sets.as_slice() else {
+        panic!("expected one Rule Set binding");
+    };
+    assert_eq!(binding.source, "github.com/org/catalog");
+    assert_eq!(binding.path, "sets/baseline");
+    assert_eq!(binding.id, "baseline");
+    assert_eq!(binding.version, "1.0");
+    assert_eq!(binding.execution_points, ["check"]);
     assert_eq!(attestation.summary.repository, "org/<reported>");
     assert_eq!(attestation.summary.execution_points, ["check", "release"]);
     assert_eq!(attestation.summary.overall, Overall::Fail);
