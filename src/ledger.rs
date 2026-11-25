@@ -21,6 +21,8 @@ pub enum ReadError {
     NotFound,
     InvalidRuleIdentity,
     RuleNotFound,
+    InvalidRuleSetIdentity,
+    RuleSetNotFound,
     Unavailable,
 }
 
@@ -157,6 +159,31 @@ mod registry {
     }
 
     #[derive(Deserialize)]
+    pub(super) struct RegisteredRuleSetVersion {
+        source: String,
+        path: String,
+        id: String,
+        version: String,
+        name: Option<String>,
+        description: Option<String>,
+        knowledge: Option<serde_json::Map<String, serde_json::Value>>,
+        members: Vec<RuleSetMember>,
+        digest: String,
+        commit: String,
+        registered_at: String,
+    }
+
+    #[derive(Deserialize)]
+    struct RuleSetMember {
+        source: String,
+        path: String,
+        id: String,
+        version: String,
+        digest: String,
+        enabled: bool,
+    }
+
+    #[derive(Deserialize)]
     pub(super) struct RuleSetCompliance {
         repository: String,
         version: String,
@@ -237,6 +264,7 @@ enum Endpoint<'a> {
     Rules,
     RuleVersions,
     RuleSets,
+    RuleSetVersions,
     RuleSetCompliance,
 }
 
@@ -341,9 +369,24 @@ impl LedgerClient {
         &self,
         query: Option<&str>,
     ) -> Result<Bytes, ReadError> {
-        let (versions, body) = self
-            .read::<Vec<registry::RegisteredVersion>>(Endpoint::RuleVersions, query)
-            .await?;
+        self.version_history::<registry::RegisteredVersion>(Endpoint::RuleVersions, query)
+            .await
+    }
+
+    pub(crate) async fn rule_set_versions_response(
+        &self,
+        query: Option<&str>,
+    ) -> Result<Bytes, ReadError> {
+        self.version_history::<registry::RegisteredRuleSetVersion>(Endpoint::RuleSetVersions, query)
+            .await
+    }
+
+    async fn version_history<T: DeserializeOwned>(
+        &self,
+        endpoint: Endpoint<'_>,
+        query: Option<&str>,
+    ) -> Result<Bytes, ReadError> {
+        let (versions, body) = self.read::<Vec<T>>(endpoint, query).await?;
         if versions.is_empty() {
             tracing::warn!(reason = "empty version history", "Ledger read failed");
             return Err(ReadError::Unavailable);
@@ -364,6 +407,7 @@ impl LedgerClient {
             Endpoint::Rules => "/v0/rules",
             Endpoint::RuleVersions => "/v0/rules/detail",
             Endpoint::RuleSets => "/v0/rule-sets",
+            Endpoint::RuleSetVersions => "/v0/rule-sets/detail",
             Endpoint::RuleSetCompliance => "/v0/rule-sets/compliance",
         });
         if let Endpoint::Attestation(id) = endpoint {
@@ -396,6 +440,10 @@ impl LedgerClient {
                 Err(ReadError::InvalidRuleIdentity)
             }
             (StatusCode::NOT_FOUND, Endpoint::RuleVersions) => Err(ReadError::RuleNotFound),
+            (StatusCode::BAD_REQUEST, Endpoint::RuleSetVersions) => {
+                Err(ReadError::InvalidRuleSetIdentity)
+            }
+            (StatusCode::NOT_FOUND, Endpoint::RuleSetVersions) => Err(ReadError::RuleSetNotFound),
             (status, _) => {
                 tracing::warn!(status = status.as_u16(), "Unexpected ledger status");
                 Err(ReadError::Unavailable)

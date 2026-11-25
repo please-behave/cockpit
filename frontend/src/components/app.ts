@@ -6,6 +6,7 @@ import '../views/detail';
 import '../views/history';
 import '../views/not-found';
 import '../views/rule';
+import '../views/rule-set';
 import '../views/rules';
 import './app-shell';
 
@@ -69,19 +70,22 @@ export class CockpitApp extends LitElement {
         .origin=${typeof this.origin === 'string' ? this.origin : undefined}></pb-attestation>`;
       case 'rules': return html`<pb-rules></pb-rules>`;
       case 'rule': return html`<pb-rule .search=${route.search} .requestedVersion=${route.version}
-        @version-change=${this.selectRuleVersion}
+        @version-change=${this.selectVersion}
         .origin=${typeof this.origin === 'object' ? this.origin : undefined}></pb-rule>`;
+      case 'rule-set': return html`<pb-rule-set .search=${route.search} .requestedVersion=${route.version}
+        @version-change=${this.selectVersion}></pb-rule-set>`;
       case 'not-found': return html`<pb-not-found></pb-not-found>`;
     }
   }
 
-  private selectRuleVersion(event: CustomEvent<string>) {
-    this.router.selectRuleVersion(event.detail);
+  private selectVersion(event: CustomEvent<string>) {
+    this.router.selectVersion(event.detail);
   }
 
   override render() {
     const route = routeFor(this.path);
-    const key = route.view === 'rule' ? `/rules/detail?${route.search}` : this.path;
+    const key = route.view === 'rule' || route.view === 'rule-set'
+      ? `${route.view}?${route.search}` : this.path;
     return html`
       <pb-app-shell .currentView=${route.view}>
         ${keyed(key, this.view(route))}

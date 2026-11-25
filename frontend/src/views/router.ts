@@ -5,7 +5,7 @@ export type Route =
   | { view: 'history' }
   | { view: 'detail'; id: string }
   | { view: 'rules'; search: string }
-  | { view: 'rule'; search: string; version: string | null }
+  | { view: 'rule' | 'rule-set'; search: string; version: string | null }
   | { view: 'not-found' };
 
 export type AttestationOrigin = { attestationPath: string };
@@ -36,11 +36,11 @@ export function routeFor(location: string): Route {
   if (path === '/') return { view: 'dashboard' };
   if (path === '/attestations') return { view: 'history' };
   if (path === '/rules') return { view: 'rules', search };
-  if (path === '/rules/detail') {
+  if (path === '/rules/detail' || path === '/rule-sets/detail') {
     const identity = new URLSearchParams(search);
     const version = identity.get('version');
     identity.delete('version');
-    return { view: 'rule', search: identity.toString(), version };
+    return { view: path === '/rules/detail' ? 'rule' : 'rule-set', search: identity.toString(), version };
   }
   const detail = /^\/attestations\/([^/]+)$/.exec(path);
   if (detail) {
@@ -54,10 +54,18 @@ export function routeFor(location: string): Route {
   return { view: 'not-found' };
 }
 
-export function rulePath({ source, path, id }: RuleIdentity, version?: string): string {
+export function rulePath(identity: RuleIdentity, version?: string): string {
+  return registryPath('/rules/detail', identity, version);
+}
+
+export function ruleSetPath(identity: RuleIdentity, version?: string): string {
+  return registryPath('/rule-sets/detail', identity, version);
+}
+
+function registryPath(route: string, { source, path, id }: RuleIdentity, version?: string): string {
   const query = new URLSearchParams({ source, path, id });
   if (version !== undefined) query.set('version', version);
-  return `/rules/detail?${query}`;
+  return `${route}?${query}`;
 }
 
 export class Router {
@@ -77,7 +85,7 @@ export class Router {
     window.removeEventListener('popstate', this.traverse);
   }
 
-  selectRuleVersion(version: string) {
+  selectVersion(version: string) {
     const url = new URL(window.location.href);
     url.searchParams.set('version', version);
     window.history.replaceState(window.history.state, '', url);

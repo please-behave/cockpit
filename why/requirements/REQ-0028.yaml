@@ -5,11 +5,11 @@ description: >-
   Sets by repository through CON-0006 alongside the latest attestations.
   Each tile shows one chip per completed set for its repository, using the
   bound version's display name as plain text. Tiles for repositories without
-  completed sets show no chips. A chip links to the set detail page when the
-  Cockpit provides that page. Chips use the filled platinum-blue Rule Set
-  tokens in both themes and system colors in forced-colors mode. Labels that
-  do not fit end with an ellipsis, with the full name available through an
-  accessible tooltip. The chips follow REQ-0015.
+  completed sets show no chips. A chip links to the bound version on the
+  Rule Set detail page described by REQ-0029. Chips use the filled
+  platinum-blue Rule Set tokens in both themes and system colors in
+  forced-colors mode. Labels that do not fit end with an ellipsis, with the
+  full name available through an accessible tooltip. The chips follow REQ-0015.
 rationale: >-
   Viewers can see which shared Rule Sets a repository fully meets using the
   ledger's compliance definition and a color reserved for shared Rule Sets.

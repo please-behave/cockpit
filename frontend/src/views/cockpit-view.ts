@@ -192,6 +192,12 @@ export abstract class CockpitView<T = never> extends LitElement {
       case 'rule_not_found':
         return html`<pb-error-state heading="Registered rule not found"
           message="There are no registered versions for this rule."></pb-error-state>`;
+      case 'invalid_rule_set_identity':
+        return html`<pb-error-state heading="Invalid Rule Set identity"
+          message="The registered Rule Set address is malformed."></pb-error-state>`;
+      case 'rule_set_not_found':
+        return html`<pb-error-state heading="Registered Rule Set not found"
+          message="There are no registered versions for this Rule Set."></pb-error-state>`;
       case 'invalid_query':
         return html`<pb-error-state heading="Invalid page"
           message="The page cursor is invalid."></pb-error-state>`;

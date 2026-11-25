@@ -41,4 +41,9 @@ contracts:
     name: Rule Set Compliance by Repository
     document: rule-set-compliance.md
     schema: rule-set-compliance.schema.json
-    requirements: [REQ-0012, REQ-0013, REQ-0025, REQ-0026]
+    requirements: [REQ-0012, REQ-0013, REQ-0025, REQ-0026, REQ-0029]
+  - id: CON-0009
+    name: Registered Rule Set Versions
+    document: rule-set.md
+    schema: rule-set.schema.json
+    requirements: [REQ-0012, REQ-0013, REQ-0025, REQ-0029]

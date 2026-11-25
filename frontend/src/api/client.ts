@@ -69,6 +69,17 @@ export interface RegisteredRuleSet extends RuleSetRegistration, RegistryCursor {
   member_count: number;
 }
 
+export interface RegisteredRuleSetVersion extends RuleIdentity {
+  version: string;
+  name?: string;
+  description?: string;
+  knowledge?: Record<string, unknown>;
+  members: (RuleIdentity & { version: string; digest: string; enabled: boolean })[];
+  digest: string;
+  commit: string;
+  registered_at: string;
+}
+
 export interface RuleSetCompliance {
   repository: string;
   version: string;
@@ -92,6 +103,8 @@ const errorCodes = {
 type ApiErrorCode = typeof errorCodes[keyof typeof errorCodes]
   | 'attestation_not_found'
   | 'rule_not_found'
+  | 'rule_set_not_found'
+  | 'invalid_rule_set_identity'
   | 'invalid_identifier'
   | 'invalid_query'
   | 'invalid_rule_identity'
@@ -111,8 +124,8 @@ const requestTimeout = 10_000;
 async function read<T>(
   path: string,
   signal: AbortSignal,
-  badRequest: 'invalid_identifier' | 'invalid_query' | 'invalid_rule_identity' = 'invalid_identifier',
-  notFound: 'attestation_not_found' | 'rule_not_found' = 'attestation_not_found',
+  badRequest: 'invalid_identifier' | 'invalid_query' | 'invalid_rule_identity' | 'invalid_rule_set_identity' = 'invalid_identifier',
+  notFound: 'attestation_not_found' | 'rule_not_found' | 'rule_set_not_found' = 'attestation_not_found',
 ): Promise<T> {
   const deadline = new AbortController();
   const timeout = window.setTimeout(() => deadline.abort(), requestTimeout);
@@ -193,6 +206,10 @@ function registryPage<T>(path: string, before: string | null, signal: AbortSigna
 
 export function ruleSetCompliance({ source, path, id }: RuleIdentity, signal: AbortSignal): Promise<RuleSetCompliance[]> {
   return read(`/v0/rule-sets/compliance?${new URLSearchParams({ source, path, id })}`, signal, 'invalid_query');
+}
+
+export function registeredRuleSetVersions(identity: URLSearchParams, signal: AbortSignal): Promise<RegisteredRuleSetVersion[]> {
+  return read(`/v0/rule-sets/detail?${identity}`, signal, 'invalid_rule_set_identity', 'rule_set_not_found');
 }
 
 export function registeredVersions(identity: URLSearchParams, signal: AbortSignal): Promise<RegisteredVersion[]> {

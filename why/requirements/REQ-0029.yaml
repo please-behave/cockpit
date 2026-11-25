@@ -1,0 +1,30 @@
+id: REQ-0029
+name: Registered Rule Set Detail
+description: >-
+  The Rules view links each registered Rule Set to its detail page. The page
+  reads CON-0009 and uses the selected version's display name or set ID as its
+  headline and shows its description when present. It defaults to the newest
+  version and, when several are registered, offers a native Version dropdown
+  in descending numeric order that marks the newest as Latest. The version
+  query parameter selects the version on open. Selecting a version replaces
+  the current history entry. An unavailable version prompts a notice and
+  falls back to the newest. The page shows the selected version's knowledge,
+  including purpose, audience, commonality, admission criteria, and reasons
+  for its execution points. It links every registered member to that rule's
+  registered version and shows the member's role when known. Missing or
+  unfamiliar knowledge fields do not prevent the detail from rendering. The
+  page also shows each current repository binding reported by CON-0008,
+  with its bound version, completeness at check and each non-passing rule's
+  status and link to the registered rule version. The bindings remain visible
+  when viewing historical versions. The page follows REQ-0015 and renders
+  registered text as escaped plain text.
+rationale: >-
+  Viewers can understand why a Rule Set exists, see its registered membership,
+  and identify which repositories meet it and which rules need attention.
+decisions:
+  - DEC-0001
+  - DEC-0005
+  - DEC-0006
+  - why:DEC-0016
+  - why:DEC-0017
+  - why:DEC-0019

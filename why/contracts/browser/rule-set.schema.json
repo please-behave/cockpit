@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Registered Rule Set versions",
+  "type": "array",
+  "minItems": 1,
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["source", "path", "id", "version", "members", "digest", "commit", "registered_at"],
+    "properties": {
+      "source": { "$ref": "rules.schema.json#/$defs/summary/properties/source" },
+      "path": { "$ref": "rules.schema.json#/$defs/summary/properties/path" },
+      "id": { "$ref": "rules.schema.json#/$defs/summary/properties/id" },
+      "version": { "$ref": "rules.schema.json#/$defs/summary/properties/version" },
+      "name": { "type": "string" },
+      "description": { "type": "string" },
+      "knowledge": { "type": "object" },
+      "members": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["source", "path", "id", "version", "digest", "enabled"],
+          "properties": {
+            "source": { "$ref": "rules.schema.json#/$defs/summary/properties/source" },
+            "path": { "$ref": "rules.schema.json#/$defs/summary/properties/path" },
+            "id": { "$ref": "rules.schema.json#/$defs/summary/properties/id" },
+            "version": { "$ref": "rules.schema.json#/$defs/summary/properties/version" },
+            "digest": { "$ref": "rule.schema.json#/items/properties/digest" },
+            "enabled": { "type": "boolean" }
+          }
+        }
+      },
+      "digest": { "$ref": "rule.schema.json#/items/properties/digest" },
+      "commit": { "$ref": "rule.schema.json#/items/properties/commit" },
+      "registered_at": { "$ref": "rule.schema.json#/items/properties/registered_at" }
+    }
+  }
+}

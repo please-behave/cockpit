@@ -4,6 +4,7 @@ import './pb-tooltip';
 export class RuleSetChip extends LitElement {
   static override properties = {
     label: { type: String },
+    href: { type: String },
     truncated: { state: true },
   };
 
@@ -12,13 +13,9 @@ export class RuleSetChip extends LitElement {
       :host {
         display: block;
         max-inline-size: min(100%, 16rem);
-        pointer-events: none;
       }
 
-      pb-tooltip {
-        display: block;
-        pointer-events: auto;
-      }
+      pb-tooltip { display: block; }
 
       .chip {
         display: block;
@@ -30,13 +27,25 @@ export class RuleSetChip extends LitElement {
         background: var(--rule-set-surface);
         color: var(--rule-set-text);
         font-size: 0.875rem;
+        text-decoration: underline;
+        text-underline-offset: 0.15em;
         text-overflow: ellipsis;
         white-space: nowrap;
+      }
+
+      @media (forced-colors: active) {
+        .chip { color: var(--link); }
+      }
+
+      .chip:focus-visible {
+        outline: var(--focus-ring);
+        outline-offset: var(--focus-offset);
       }
     }
   `;
 
   declare label: string;
+  declare href: string;
   protected declare truncated: boolean;
 
   private observer?: ResizeObserver;
@@ -44,6 +53,7 @@ export class RuleSetChip extends LitElement {
   constructor() {
     super();
     this.label = '';
+    this.href = '';
     this.truncated = false;
   }
 
@@ -70,9 +80,9 @@ export class RuleSetChip extends LitElement {
   }
 
   override render() {
-    const chip = html`<span class="chip">${this.label}</span>`;
+    const chip = html`<a class="chip" data-route href=${this.href}>${this.label}</a>`;
     return this.truncated
-      ? html`<pb-tooltip .description=${this.label}>${chip}</pb-tooltip>`
+      ? html`<pb-tooltip external-trigger .description=${this.label}>${chip}</pb-tooltip>`
       : chip;
   }
 }

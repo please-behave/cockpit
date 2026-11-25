@@ -656,6 +656,25 @@ async fn browser_rule_set_reads_require_sessions_and_preserve_ledger_responses()
         }]
     }])
     .to_string();
+    let versions = json!([
+        {
+            "source": "github.com/team/rules+more", "path": "sets/shell&tools", "id": "shell",
+            "version": "1.2", "members": [], "digest": "old", "commit": "abc",
+            "registered_at": "2026-11-20T09:00:00Z"
+        },
+        {
+            "source": "github.com/team/rules+more", "path": "sets/shell&tools", "id": "shell",
+            "version": "1.10", "name": "<b>Shell rules</b>", "digest": "new", "commit": "def",
+            "registered_at": "2026-11-23T09:00:00Z",
+            "knowledge": {"purpose":"<b>Stored text</b>", "unknown": [false]},
+            "members": [{
+                "source": "github.com/team/rules+more", "path": "checks/shell", "id": "syntax",
+                "version": "1.3", "digest": "member", "enabled": true
+            }]
+        }
+    ])
+    .to_string();
+    let upstream_versions = versions.clone();
     let upstream_sets = sets.clone();
     let upstream_compliance = compliance.clone();
     let site = TestSite::start_with_ledger(
@@ -669,6 +688,18 @@ async fn browser_rule_set_reads_require_sessions_and_preserve_ledger_responses()
                             (StatusCode::OK, r#"[{"name":"missing fields"}]"#.into())
                         }
                         _ => (StatusCode::BAD_REQUEST, "upstream query error".into()),
+                    }
+                }),
+            )
+            .route(
+                "/v0/rule-sets/detail",
+                get(move |RawQuery(query): RawQuery| async move {
+                    match query.as_deref() {
+                        Some(IDENTITY) => (StatusCode::OK, upstream_versions),
+                        Some("id=unknown") => (StatusCode::NOT_FOUND, "unknown".into()),
+                        Some("id=empty") => (StatusCode::OK, "[]".into()),
+                        Some("id=malformed") => (StatusCode::OK, r#"[{"version":"1.0"}]"#.into()),
+                        _ => (StatusCode::BAD_REQUEST, "upstream identity error".into()),
                     }
                 }),
             )
@@ -688,6 +719,7 @@ async fn browser_rule_set_reads_require_sessions_and_preserve_ledger_responses()
     for (path, body) in [
         ("/v0/rule-sets?limit=100".to_owned(), sets),
         (format!("/v0/rule-sets/compliance?{IDENTITY}"), compliance),
+        (format!("/v0/rule-sets/detail?{IDENTITY}"), versions),
     ] {
         assert_api_error(
             site.get(&path).send().await.unwrap(),
@@ -713,6 +745,26 @@ async fn browser_rule_set_reads_require_sessions_and_preserve_ledger_responses()
         ),
         (
             "/v0/rule-sets?limit=1",
+            StatusCode::SERVICE_UNAVAILABLE,
+            "ledger_unavailable",
+        ),
+        (
+            "/v0/rule-sets/detail",
+            StatusCode::BAD_REQUEST,
+            "invalid_rule_set_identity",
+        ),
+        (
+            "/v0/rule-sets/detail?id=unknown",
+            StatusCode::NOT_FOUND,
+            "rule_set_not_found",
+        ),
+        (
+            "/v0/rule-sets/detail?id=empty",
+            StatusCode::SERVICE_UNAVAILABLE,
+            "ledger_unavailable",
+        ),
+        (
+            "/v0/rule-sets/detail?id=malformed",
             StatusCode::SERVICE_UNAVAILABLE,
             "ledger_unavailable",
         ),

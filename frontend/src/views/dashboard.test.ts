@@ -85,7 +85,9 @@ test('shows only the completed sets for each repository and escapes the full nam
     await tooltip.updateComplete;
     expect(long.shadowRoot!.querySelector('.chip')?.textContent).toBe(name);
     expect(tooltip.shadowRoot!.querySelector('[role=tooltip]')?.textContent?.trim()).toBe(name);
-    expect(long.shadowRoot!.querySelector('img, a')).toBeNull();
+    expect(long.shadowRoot!.querySelector('img')).toBeNull();
+    const query = new URLSearchParams({ source: set.source, path: set.path, id: set.id, version: set.version });
+    expect(long.shadowRoot!.querySelector('a[data-route]')?.getAttribute('href')).toBe(`/rule-sets/detail?${query}`);
     expect(tooltip.shadowRoot!.querySelector('img')).toBeNull();
     expect(short.shadowRoot!.querySelector('pb-tooltip')).toBeNull();
   }

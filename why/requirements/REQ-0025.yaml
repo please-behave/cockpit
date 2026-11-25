@@ -3,11 +3,12 @@ name: Browser Registry Reads
 description: >-
   The Cockpit provides same-origin authenticated read endpoints for a page
   of registered rules, all registered versions of a rule identity, a page of
-  registered Rule Sets and the current repository compliance for a set.
-  Its bounded ledger client forwards queries to ledger:CON-0007,
-  ledger:CON-0008, ledger:CON-0011 and ledger:CON-0013, validates successful
-  responses and preserves the ledger's
-  JSON fields, values and order. The endpoints follow REQ-0012 and REQ-0013.
+  registered Rule Sets, all registered versions of a set identity, and the
+  current repository compliance for a set. Its bounded ledger client forwards
+  queries to ledger:CON-0007, ledger:CON-0008, ledger:CON-0011, ledger:CON-0012
+  and ledger:CON-0013, validates successful responses and preserves the
+  ledger's JSON fields, values and order. The endpoints follow REQ-0012
+  and REQ-0013.
 rationale: >-
   Viewers can read registered rule evidence through the Cockpit origin.
 decisions:

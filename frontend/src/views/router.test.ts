@@ -138,7 +138,7 @@ test('replaces the rule version in history and keeps the attestation as the Back
   try {
     link.click();
     const length = window.history.length;
-    router.selectRuleVersion('2.0');
+    router.selectVersion('2.0');
     const selected = rule.replace('version=1.0', 'version=2.0');
     expect(window.history.length).toBe(length);
     expect(navigate).toHaveBeenLastCalledWith(selected, { attestationPath: from }, false);

@@ -216,6 +216,44 @@ const failedBaseline = {
   }],
 };
 
+function setVersion(registration, memberRules, description, knowledge) {
+  return {
+    ...registration,
+    ...(description ? { description } : {}),
+    ...(knowledge ? { knowledge } : {}),
+    digest: `v1:sha256:${'d'.repeat(64)}`,
+    commit: 'e'.repeat(40),
+    registered_at: '2026-11-24T12:00:00Z',
+    members: memberRules.map(({ source, path, id, version, digest }) => ({ source, path, id, version, digest, enabled: true })),
+  };
+}
+
+const setHistories = sets.map(({ registration, members, description }) => {
+  const memberRules = members.map(id => rules.find(([rule]) => rule.id === id).at(-1));
+  if (registration.id === 'baseline') return [
+    setVersion({ ...registration, version: failedBaseline.version, name: 'Original repository baseline' },
+      [nonPassingRule], 'Early baseline for shared reviews.', { purpose: 'Establish the first review checks.', future: { ignored: true } }),
+    setVersion(registration, memberRules, description, {
+      purpose: 'Establish a common standard for repository maintenance.',
+      audience: 'Repositories maintained by more than one team.',
+      commonality: 'These rules protect shared maintenance work.',
+      rules: [
+        { rule: 'license-file', role: 'Keep the license visible at the repository root.' },
+        { rule: 'design-review', role: 'Record the reason for design decisions.' },
+      ],
+      admission: ['Applies across languages and build systems.', 'Reports an actionable result.'],
+      execution_points: 'Run in CI so each repository reports its current state.',
+    }),
+  ];
+  if (registration.id === 'markup') return [
+    setVersion(registration, memberRules, `Registered description ${markup}`, {
+      purpose: `Registered purpose ${markup}`,
+      rules: [{ rule: 'markup', role: `Registered role ${markup}` }],
+    }),
+  ];
+  return [setVersion(registration, memberRules, description)];
+});
+
 const scan = {
   through: Math.max(...rules.flat().map(version => Date.parse(version.registered_at))) * 1000,
   registrations: rules.flat().length,
@@ -311,6 +349,12 @@ export function respond(target) {
   }
   if (pathname === '/v0/rules') return registryList(searchParams, ruleSummaries, scan);
   if (pathname === '/v0/rule-sets') return registryList(searchParams, setSummaries, setScan);
+  if (pathname === '/v0/rule-sets/detail') {
+    const [source, path, id] = ['source', 'path', 'id'].map(name => searchParams.get(name));
+    if (searchParams.size !== 3 || !source || !path || !id) return code(400, 'invalid_rule_set_identity');
+    const versions = setHistories.find(([set]) => set.source === source && set.path === path && set.id === id);
+    return versions ? json(200, versions) : code(404, 'rule_set_not_found');
+  }
   if (pathname === '/v0/rule-sets/compliance') return setCompliance(searchParams);
   if (pathname === '/v0/repositories/completed-rule-sets') return json(200, completedRuleSets);
   if (pathname === '/v0/rules/detail') return ruleDetail(searchParams);
@@ -328,6 +372,8 @@ export const fixtureTargets = {
   history: '/v0/attestations',
   rules: '/v0/rules',
   ruleSets: '/v0/rule-sets',
+  ruleSetDetails: setSummaries.map(({ source, path, id }) =>
+    `/v0/rule-sets/detail?${new URLSearchParams({ source, path, id })}`),
   ruleSetCompliance: setSummaries.map(({ source, path, id }) =>
     `/v0/rule-sets/compliance?${new URLSearchParams({ source, path, id })}`),
   details: [...details.keys()].map(id => `/v0/attestations/${id}`),

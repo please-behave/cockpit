@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import type {
-  Attestation, RegisteredRule, RegisteredRuleSet, RegisteredVersion, RepositoryRuleSets, RuleSetCompliance, Summary,
+  Attestation, RegisteredRule, RegisteredRuleSet, RegisteredRuleSetVersion, RegisteredVersion, RepositoryRuleSets, RuleSetCompliance, Summary,
 } from '../../frontend/src/api/client';
 import { fixtureTargets, respond } from './fixtures.mjs';
 
@@ -206,4 +206,33 @@ test('serves Rule Sets, latest rule memberships and current repository complianc
 test('answers unknown API routes and leaves other paths to the server', () => {
   expect(respond('/v0/nothing')).toEqual({ status: 404, body: { code: 'route_not_found' } });
   expect(respond('/rules')).toBeUndefined();
+});
+
+test('serves Rule Set histories with valid member links, including a historical version with sparse knowledge', () => {
+  const sets = body<RegisteredRuleSet[]>(fixtureTargets.ruleSets);
+  const rules = fixtureTargets.ruleDetails.flatMap(target => body<RegisteredVersion[]>(target));
+  for (const target of fixtureTargets.ruleSetDetails) {
+    const versions = body<RegisteredRuleSetVersion[]>(target);
+    const latest = versions.at(-1)!;
+    const summary = sets.find(set => set.id === latest.id)!;
+    expect(latest.version).toBe(summary.version);
+    expect(latest.members).toHaveLength(summary.member_count);
+    for (const version of versions) {
+      expect([version.source, version.path, version.id]).toEqual([summary.source, summary.path, summary.id]);
+      expect(version.version).toMatch(/^\d+\.\d+$/);
+      expect(version.digest).toMatch(/^v1:sha256:[0-9a-f]{64}$/);
+      expect(version.commit).toMatch(/^[0-9a-f]{40}$/);
+      expect(Date.parse(version.registered_at)).not.toBeNaN();
+      for (const member of version.members) {
+        expect(rules.some(rule => rule.source === member.source && rule.path === member.path &&
+          rule.id === member.id && rule.version === member.version && rule.digest === member.digest)).toBe(true);
+        expect(typeof member.enabled).toBe('boolean');
+      }
+    }
+  }
+  const baseline = body<RegisteredRuleSetVersion[]>(fixtureTargets.ruleSetDetails.find(target => target.endsWith('id=baseline'))!);
+  expect(baseline.map(version => version.version)).toEqual(['0.9', '1.0']);
+  expect(baseline[0].knowledge).toHaveProperty('future');
+  expect(baseline[0].knowledge).not.toHaveProperty('audience');
+  expect(baseline[1].knowledge?.admission).toHaveLength(2);
 });

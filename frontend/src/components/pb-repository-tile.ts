@@ -4,6 +4,7 @@ import type { CompletedRuleSet, Summary } from '../api/client';
 import { linkStyles } from '../styles/links';
 import './pb-commit-link';
 import './pb-relative-time';
+import { ruleSetPath } from '../views/router';
 import './pb-rule-set-chip';
 import { ownerName } from './pb-short-name';
 import './pb-status-pill';
@@ -137,7 +138,7 @@ export class RepositoryTile extends LitElement {
         ${completedSets?.length ? html`
           <ul class="sets" role="list" aria-label="Completed Rule Sets">
             ${repeat(completedSets, set => JSON.stringify([set.source, set.path, set.id, set.version]), set => html`
-              <li><pb-rule-set-chip .label=${set.name}></pb-rule-set-chip></li>
+              <li><pb-rule-set-chip .label=${set.name} .href=${ruleSetPath(set, set.version)}></pb-rule-set-chip></li>
             `)}
           </ul>
         ` : nothing}

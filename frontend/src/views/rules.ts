@@ -9,7 +9,7 @@ import '../components/pb-data-table';
 import type { DataTableColumn } from '../components/pb-data-table';
 import '../components/pb-empty-state';
 import { CockpitView } from './cockpit-view';
-import { rulePath } from './router';
+import { rulePath, ruleSetPath } from './router';
 
 const columns: readonly DataTableColumn[] = [
   { label: 'Rule', part: 'rule-name' },
@@ -256,7 +256,9 @@ export class RulesView extends CockpitView<Registry> {
     return html`
       <details class=${setGroup ? 'set' : 'local'} ?open=${open}>
         <summary>
-          <strong>${group.label}</strong>
+          <strong>${setGroup
+            ? html`<a data-route href=${ruleSetPath(setGroup.set)}>${group.label}</a>`
+            : group.label}</strong>
           ${setGroup ? html`
             <span class="facts">
               <span>Version ${setGroup.set.version}</span>

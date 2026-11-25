@@ -1,5 +1,4 @@
 import { css, html, nothing, type CSSResult } from 'lit';
-import { live } from 'lit/directives/live.js';
 import { registeredVersions, type RegisteredVersion } from '../api/client';
 import '../components/pb-badge';
 import '../components/pb-fact-strip';
@@ -9,8 +8,7 @@ import '../components/pb-time';
 import '../components/pb-tooltip';
 import { CockpitView } from './cockpit-view';
 import { followHistoryBack, type AttestationOrigin } from './router';
-
-const optionTime = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+import { selectedVersion, versionSelector, versionSelectorStyles } from './registry-version';
 
 const knowledgeFields = {
   purpose: 'Purpose',
@@ -60,7 +58,7 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
   static override properties = {
     search: { attribute: false }, requestedVersion: { attribute: false }, origin: { attribute: false },
   };
-  static override styles = [CockpitView.styles as CSSResult, css`
+  static override styles = [CockpitView.styles as CSSResult, versionSelectorStyles, css`
     @layer components {
       pb-panel {
         margin-block: var(--space-4);
@@ -106,24 +104,6 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
       .introduction { overflow-wrap: anywhere; }
       pb-fact-strip { margin-block-start: var(--space-4); }
 
-      .version-field {
-        display: flex;
-        flex-direction: column;
-        align-items: start;
-        gap: var(--space-1);
-      }
-
-      .version-field select {
-        max-inline-size: 100%;
-        min-block-size: 2.75rem;
-        padding: var(--space-1) var(--space-2);
-        border: 1px solid var(--panel-border);
-        border-radius: var(--radius-control);
-        background: var(--surface);
-        color: var(--text);
-        font: inherit;
-      }
-
       .identity {
         display: flex;
         flex-wrap: wrap;
@@ -146,16 +126,12 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
   declare origin?: AttestationOrigin;
   private positioned = false;
 
-  private selection(versions?: RegisteredVersion[]) {
-    return versions?.find(version => version.version === this.requestedVersion) ?? versions?.at(-1);
-  }
-
   protected override read(signal: AbortSignal) {
     return registeredVersions(new URLSearchParams(this.search), signal);
   }
 
   protected override heading(versions?: RegisteredVersion[]) {
-    const selected = this.selection(versions);
+    const selected = selectedVersion(versions, this.requestedVersion);
     return selected ? selected.name || selected.id : 'Registered rule';
   }
 
@@ -175,7 +151,7 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
   }
 
   protected override content(versions?: RegisteredVersion[]) {
-    const selected = this.selection(versions);
+    const selected = selectedVersion(versions, this.requestedVersion);
     const latest = versions?.at(-1);
     const requested = this.requestedVersion;
     return html`
@@ -186,30 +162,10 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
       ${selected && versions ? html`
         ${requested !== null && selected.version !== requested
           ? html`<p>Version <code>${requested}</code> is unavailable.</p>` : nothing}
-        ${versions.length > 1 ? this.selector(versions, selected) : nothing}
+        ${versionSelector(this, versions, selected)}
         ${this.version(selected, requested, selected === latest)}
       ` : nothing}
     `;
-  }
-
-  private selector(versions: RegisteredVersion[], selected: RegisteredVersion) {
-    const latest = versions.at(-1);
-    return html`<label class="version-field">
-      Version
-      <select @change=${this.changeVersion}>
-        ${versions.slice().reverse().map(version => {
-          const date = new Date(version.registered_at);
-          const time = Number.isNaN(date.getTime()) ? version.registered_at : optionTime.format(date);
-          const label = `${version.version} · ${time}${version === latest ? ' · Latest' : ''}`;
-          return html`<option value=${version.version} .selected=${live(version === selected)}>${label}</option>`;
-        })}
-      </select>
-    </label>`;
-  }
-
-  private changeVersion(event: Event) {
-    const select = event.currentTarget as HTMLSelectElement;
-    this.dispatchEvent(new CustomEvent('version-change', { detail: select.value }));
   }
 
   private summary(version: RegisteredVersion) {

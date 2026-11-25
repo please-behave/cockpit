@@ -27,6 +27,7 @@ pub(super) fn router(ledger: LedgerClient, auth: &Auth) -> Router {
         .route("/v0/rules", get(rules))
         .route("/v0/rules/detail", get(rule_versions))
         .route("/v0/rule-sets", get(rule_sets))
+        .route("/v0/rule-sets/detail", get(rule_set_versions))
         .route("/v0/rule-sets/compliance", get(rule_set_compliance))
         .method_not_allowed_fallback(|| async { ApiError::MethodNotAllowed })
         .with_state(ledger)
@@ -110,6 +111,14 @@ async fn rule_sets(
     Ok(json_response(StatusCode::OK, body))
 }
 
+async fn rule_set_versions(
+    State(ledger): State<LedgerClient>,
+    RawQuery(query): RawQuery,
+) -> Result<Response, ApiError> {
+    let body = ledger.rule_set_versions_response(query.as_deref()).await?;
+    Ok(json_response(StatusCode::OK, body))
+}
+
 async fn rule_set_compliance(
     State(ledger): State<LedgerClient>,
     RawQuery(query): RawQuery,
@@ -155,6 +164,13 @@ impl IntoResponse for ApiError {
             ),
             Self::Ledger(ReadError::RuleNotFound) => {
                 (StatusCode::NOT_FOUND, r#"{"code":"rule_not_found"}"#)
+            }
+            Self::Ledger(ReadError::InvalidRuleSetIdentity) => (
+                StatusCode::BAD_REQUEST,
+                r#"{"code":"invalid_rule_set_identity"}"#,
+            ),
+            Self::Ledger(ReadError::RuleSetNotFound) => {
+                (StatusCode::NOT_FOUND, r#"{"code":"rule_set_not_found"}"#)
             }
             Self::Ledger(ReadError::Unavailable) => (
                 StatusCode::SERVICE_UNAVAILABLE,
