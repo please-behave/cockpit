@@ -59,32 +59,31 @@ function luminance(value) {
 test('declared token pairings meet the shared contrast minimums in both themes and use system colors when forced', () => {
   const path = new URL('../../../frontend/src/styles/tokens.css', import.meta.url);
   const stylesheet = parse(readFileSync(path, 'utf8'));
-  const defaults = new Map();
-  const darkOverrides = new Map();
-  const chosenDark = new Map();
+  const light = new Map();
+  const dark = new Map();
   const forcedColors = new Map();
   stylesheet.walkDecls(/^--/, ({ prop, value, parent }) => {
     const scope = parent.parent;
-    if (parent.selector === ':root' && scope.name === 'layer' && scope.params === 'tokens') defaults.set(prop, value);
-    if (parent.selector === ':root:where(:not([data-theme="light"]))' && scope.name === 'media'
-      && scope.params === '(prefers-color-scheme: dark)') {
-      darkOverrides.set(prop, value);
-    }
-    if (parent.selector === ':root:where([data-theme="dark"])') chosenDark.set(prop, value);
     if (parent.selector === ':root' && scope.name === 'media' && scope.params === '(forced-colors: active)') {
       forcedColors.set(prop, value);
+      return;
     }
+    if (prop === '--logo-light-display' || prop === '--logo-dark-display') return;
+    assert.ok(parent.selector === ':root' && scope.name === 'layer' && scope.params === 'tokens',
+      `${prop} belongs in the root tokens`);
+    assert.ok(!light.has(prop), `${prop} has one declaration outside forced colors`);
+    const pair = value.match(/^light-dark\(([^,]+),\s*([^,]+)\)$/);
+    light.set(prop, pair ? pair[1].trim() : value);
+    dark.set(prop, pair ? pair[2].trim() : value);
   });
-  assert.ok(darkOverrides.size > 0, 'the system dark theme overrides tokens');
-  assert.deepEqual(chosenDark, darkOverrides, 'a chosen dark theme matches the system dark theme');
 
   const textTokens = [
     'text', 'text-muted', 'link', 'status-passed', 'status-failed', 'status-error',
     'status-warning', 'status-not-run', 'status-allowed',
   ];
   for (const [theme, tokens] of [
-    ['light', defaults],
-    ['dark', new Map([...defaults, ...darkOverrides])],
+    ['light', light],
+    ['dark', dark],
   ]) {
     function token(name) {
       const value = tokens.get(`--${name}`);
