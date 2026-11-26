@@ -1,0 +1,26 @@
+id: REQ-0034
+name: Current Deployments
+description: >-
+  The Deployments tab shows the ledger's current deployment for each target owner,
+  target name and canonical subject repository. It reads every page through CON-0013.
+  Each row links the canonical repository to REQ-0033, links a recorded release
+  version to REQ-0032, shows an unrecorded version as plain text with
+  "release not recorded", or shows the first seven characters of the reported
+  commit with the full identifier in an accessible tooltip for a commit-only deployment.
+  The row shows both parts of the target identity and the ledger receipt time,
+  with the localized exact time in an accessible tooltip. Reported evidence shows
+  the ledger's outcome, "No evidence" for a known commit without evidence, or
+  "release not recorded" for an unresolved version, each with text and an icon.
+  It shows a linked chip for each completed Rule Set. Viewers can group by target
+  (the default) or repository and combine filters for target, repository and evidence
+  status. Group headers show the worst visible status and its count. Reported errors,
+  failures and entries without evidence appear before passing entries.
+  The view follows REQ-0004, REQ-0015 and REQ-0016.
+rationale: >-
+  Viewers can see which versions or commits were reported on each target and
+  what evidence is available for them.
+decisions:
+  - DEC-0001
+  - DEC-0002
+  - why:DEC-0022
+  - why:DEC-0023

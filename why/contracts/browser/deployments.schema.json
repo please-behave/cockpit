@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Current deployments",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["id", "target", "repository", "version", "reported_commit", "commit", "sender", "auth_method", "received_at", "state", "evidence"],
+    "properties": {
+      "id": { "type": "string", "pattern": "^[1-9][0-9]{0,18}$" },
+      "target": {
+        "type": "object",
+        "required": ["owner", "name"],
+        "properties": {
+          "owner": { "$ref": "releases.schema.json#/$defs/releaseText" },
+          "name": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$" }
+        }
+      },
+      "repository": { "$ref": "releases.schema.json#/$defs/releaseText" },
+      "version": { "anyOf": [{ "type": "null" }, { "$ref": "releases.schema.json#/$defs/releaseText" }] },
+      "reported_commit": { "$ref": "#/$defs/nullableCommit" },
+      "commit": { "$ref": "#/$defs/nullableCommit" },
+      "sender": { "$ref": "releases.schema.json#/$defs/releaseText" },
+      "auth_method": { "$ref": "releases.schema.json#/items/properties/auth_method" },
+      "received_at": { "$ref": "releases.schema.json#/items/properties/received_at" },
+      "state": { "enum": ["evidence", "no_evidence", "release_not_recorded"] },
+      "evidence": { "$ref": "releases.schema.json#/items/properties/evidence" }
+    },
+    "allOf": [
+      {
+        "oneOf": [
+          { "properties": { "version": { "type": "string" }, "reported_commit": { "type": "null" } } },
+          { "properties": { "version": { "type": "null" }, "reported_commit": { "type": "string" } } }
+        ]
+      },
+      {
+        "oneOf": [
+          { "properties": { "state": { "const": "evidence" }, "commit": { "type": "string" }, "evidence": { "type": "object" } } },
+          { "properties": { "state": { "const": "no_evidence" }, "commit": { "type": "string" }, "evidence": { "type": "null" } } },
+          { "properties": { "state": { "const": "release_not_recorded" }, "version": { "type": "string" }, "commit": { "type": "null" }, "evidence": { "type": "null" } } }
+        ]
+      }
+    ]
+  },
+  "$defs": {
+    "nullableCommit": {
+      "anyOf": [{ "type": "null" }, { "$ref": "releases.schema.json#/items/properties/commit" }]
+    }
+  }
+}

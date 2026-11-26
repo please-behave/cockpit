@@ -396,6 +396,53 @@ function releasePage(params, latestOnly) {
   }
 }
 
+const deployOwner = 'github.com/acme/infrastructure';
+const deploymentFixtures = [
+  { name: 'production', fact: latestReleases[0] },
+  { name: 'production', fact: latestReleases[1] },
+  { name: 'production', fact: latestReleases[2] },
+  { name: 'production', fact: latestReleases[3] },
+  { name: 'staging', fact: latestReleases[0], commitOnly: true },
+  { name: 'staging', fact: latestReleases[1], commitOnly: true },
+  { name: 'production', owner: 'github.com/acme/other-infrastructure', fact: latestReleases[0] },
+  { name: 'staging', fact: latestReleases[2], unrecorded: 'v3.0' },
+  { name: 'p'.repeat(64), owner: `github.com/${longOwner}/${longName}`, fact: latestReleases[5] },
+  { name: 'demo', owner: markup, fact: latestReleases[4] },
+  ...Array.from({ length: 105 }, (_, index) => ({
+    name: `test-${String(index + 1).padStart(3, '0')}`, fact: latestReleases[0],
+  })),
+];
+const currentDeployments = deploymentFixtures.map(({
+  name, owner = deployOwner, fact, commitOnly, unrecorded,
+}, index) => ({
+  id: String(deploymentFixtures.length - index),
+  target: { owner, name },
+  repository: fact.repository,
+  version: commitOnly ? null : unrecorded ?? fact.version,
+  reported_commit: commitOnly ? fact.commit : null,
+  commit: unrecorded ? null : fact.commit,
+  sender: owner,
+  auth_method: owner === markup ? 'api_key' : 'github_oidc',
+  received_at: new Date(now - index * 60_000).toISOString(),
+  state: unrecorded ? 'release_not_recorded' : fact.evidence ? 'evidence' : 'no_evidence',
+  evidence: unrecorded ? null : fact.evidence,
+}));
+
+function deploymentPage(params) {
+  const limit = limitFrom(params);
+  const repository = params.get('repository');
+  const before = params.get('before');
+  const allowed = ['limit', 'before', 'repository'];
+  if (limit === undefined || repository === '' || repository?.includes('\0') ||
+      [...params.keys()].some(key => !allowed.includes(key) || params.getAll(key).length !== 1)) {
+    return code(400, 'invalid_query');
+  }
+  const entries = currentDeployments.filter(entry => repository === null || entry.repository === repository);
+  const index = before === null ? -1 : entries.findIndex(entry => entry.id === before);
+  if (before !== null && index === -1) return code(400, 'invalid_query');
+  return json(200, entries.slice(index + 1, index + 1 + limit));
+}
+
 function registryList(params, summaries, scan) {
   const limit = limitFrom(params);
   if (limit === undefined) return code(400, 'invalid_query');
@@ -450,6 +497,7 @@ export function respond(target) {
     return releasePage(searchParams, pathname.endsWith('/latest'));
   }
   if (pathname === '/v0/releases/detail') return releaseDetail(searchParams);
+  if (pathname === '/v0/deployments') return deploymentPage(searchParams);
   if (pathname === '/v0/rules') return registryList(searchParams, ruleSummaries, scan);
   if (pathname === '/v0/rule-sets') return registryList(searchParams, setSummaries, setScan);
   if (pathname === '/v0/rule-sets/detail') {
@@ -474,6 +522,7 @@ export const fixtureTargets = {
   completedRuleSets: '/v0/repositories/completed-rule-sets',
   history: '/v0/attestations',
   releases: '/v0/releases/latest',
+  deployments: '/v0/deployments',
   releaseHistory: `/v0/releases?${new URLSearchParams({ repository: releaseRepository })}`,
   releaseDetails: releaseFacts.map(({ repository, version }) =>
     `/v0/releases/detail?${new URLSearchParams({ repository, version })}`),

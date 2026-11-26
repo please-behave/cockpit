@@ -4,6 +4,7 @@ export type Route =
   | { view: 'dashboard' }
   | { view: 'history' }
   | { view: 'releases' }
+  | { view: 'deployments' }
   | { view: 'repository'; repository: string }
   | { view: 'release'; repository: string; version: string }
   | { view: 'detail'; id: string }
@@ -47,6 +48,7 @@ export function routeFor(location: string): Route {
   if (path === '/') return { view: 'dashboard' };
   if (path === '/attestations') return { view: 'history' };
   if (path === '/releases') return { view: 'releases' };
+  if (path === '/deployments') return { view: 'deployments' };
   if (path === '/repositories/detail' || path === '/releases/repository') {
     const params = new URLSearchParams(search);
     const repository = params.get('repository');

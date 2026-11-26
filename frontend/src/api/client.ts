@@ -63,6 +63,22 @@ export interface ReleaseSummary {
   evidence: { overall: Overall; completed_rule_sets: CompletedRuleSet[] } | null;
 }
 
+export interface DeploymentTarget {
+  owner: string;
+  name: string;
+}
+
+export type Deployment = Pick<ReleaseSummary, 'repository' | 'sender' | 'auth_method' | 'received_at'> & {
+  id: string;
+  target: DeploymentTarget;
+} & (
+  | ({ version: string; reported_commit: null } | { version: null; reported_commit: string }) & (
+    | { state: 'evidence'; commit: string; evidence: NonNullable<ReleaseSummary['evidence']> }
+    | { state: 'no_evidence'; commit: string; evidence: null }
+  )
+  | { state: 'release_not_recorded'; version: string; reported_commit: null; commit: null; evidence: null }
+);
+
 export type AuthMethod = ReleaseSummary['auth_method'];
 
 export interface ReleaseEvidenceRuleSet extends CompletedRuleSet {
@@ -240,6 +256,27 @@ export async function releases(repository: string | null, signal: AbortSignal): 
 
     const last = page[page.length - 1];
     const cursor = JSON.stringify({ repository: last.repository, version: last.version });
+    if (cursors.has(cursor)) throw new ApiError('ledger_unavailable');
+    cursors.add(cursor);
+    query.set('before', cursor);
+  }
+}
+
+export async function deployments(signal: AbortSignal): Promise<Deployment[]> {
+  const pageSize = 100;
+  const query = new URLSearchParams({ limit: String(pageSize) });
+  const entries = new Map<string, Deployment>();
+  const cursors = new Set<string>();
+  for (;;) {
+    const page = await read<Deployment[]>(`/v0/deployments?${query}`, signal, 'invalid_query');
+    for (const entry of page) {
+      // Each page reflects the ledger's current events at the time it is read.
+      const key = JSON.stringify([entry.target.owner, entry.target.name, entry.repository]);
+      if (!entries.has(key)) entries.set(key, entry);
+    }
+    if (page.length < pageSize) return [...entries.values()];
+
+    const cursor = page[page.length - 1].id;
     if (cursors.has(cursor)) throw new ApiError('ledger_unavailable');
     cursors.add(cursor);
     query.set('before', cursor);

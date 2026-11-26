@@ -129,10 +129,10 @@ struct CompletedRuleSets {
     sets: Vec<RuleSetRegistration>,
 }
 
-// Release reads follow ledger:CON-0017, ledger:CON-0018 and ledger:CON-0019.
+// Release and deployment reads follow ledger:CON-0017 through ledger:CON-0019 and ledger:CON-0022.
 #[allow(
     dead_code,
-    reason = "release fields are used only for response validation"
+    reason = "release and deployment fields are used only for response validation"
 )]
 mod releases {
     use serde::{Deserialize, Deserializer};
@@ -162,6 +162,60 @@ mod releases {
     struct Evidence {
         overall: Overall,
         completed_rule_sets: Vec<RuleSetRegistration>,
+    }
+
+    #[derive(Deserialize)]
+    pub(super) struct Deployment {
+        id: String,
+        target: Target,
+        repository: String,
+        sender: String,
+        auth_method: AuthMethod,
+        received_at: String,
+        #[serde(flatten)]
+        state: DeploymentState,
+    }
+
+    #[derive(Deserialize)]
+    struct Target {
+        owner: String,
+        name: String,
+    }
+
+    #[derive(Deserialize)]
+    #[serde(tag = "state", rename_all = "snake_case")]
+    enum DeploymentState {
+        Evidence {
+            commit: String,
+            evidence: Evidence,
+            #[serde(flatten)]
+            reference: DeploymentReference,
+        },
+        NoEvidence {
+            commit: String,
+            evidence: (),
+            #[serde(flatten)]
+            reference: DeploymentReference,
+        },
+        ReleaseNotRecorded {
+            version: String,
+            reported_commit: (),
+            commit: (),
+            evidence: (),
+        },
+    }
+
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum DeploymentReference {
+        Version {
+            version: String,
+            reported_commit: (),
+        },
+        Commit {
+            version: (),
+            reported_commit: String,
+        },
     }
 
     #[derive(Deserialize)]
@@ -367,6 +421,7 @@ enum Endpoint<'a> {
     LatestReleases,
     ReleaseHistory,
     ReleaseDetail,
+    Deployments,
 }
 
 impl LedgerClient {
@@ -503,6 +558,16 @@ impl LedgerClient {
         Ok(body)
     }
 
+    pub(crate) async fn deployments_response(
+        &self,
+        query: Option<&str>,
+    ) -> Result<Bytes, ReadError> {
+        let (_, body) = self
+            .read::<Vec<releases::Deployment>>(Endpoint::Deployments, query)
+            .await?;
+        Ok(body)
+    }
+
     async fn version_history<T: DeserializeOwned>(
         &self,
         endpoint: Endpoint<'_>,
@@ -534,6 +599,7 @@ impl LedgerClient {
             Endpoint::LatestReleases => "/v0/releases/latest",
             Endpoint::ReleaseHistory => "/v0/releases",
             Endpoint::ReleaseDetail => "/v0/releases/detail",
+            Endpoint::Deployments => "/v0/deployments",
         });
         if let Endpoint::Attestation(id) = endpoint {
             url.path_segments_mut()
@@ -564,7 +630,8 @@ impl LedgerClient {
                 | Endpoint::RuleSetCompliance
                 | Endpoint::LatestReleases
                 | Endpoint::ReleaseHistory
-                | Endpoint::ReleaseDetail,
+                | Endpoint::ReleaseDetail
+                | Endpoint::Deployments,
             ) => Err(ReadError::InvalidQuery),
             (StatusCode::NOT_FOUND, Endpoint::ReleaseDetail) => Err(ReadError::ReleaseNotFound),
             (StatusCode::NOT_FOUND, Endpoint::Attestation(_)) => Err(ReadError::NotFound),

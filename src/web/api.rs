@@ -32,6 +32,7 @@ pub(super) fn router(ledger: LedgerClient, auth: &Auth) -> Router {
         .route("/v0/releases/latest", get(latest_releases))
         .route("/v0/releases", get(release_history))
         .route("/v0/releases/detail", get(release_detail))
+        .route("/v0/deployments", get(deployments))
         .method_not_allowed_fallback(|| async { ApiError::MethodNotAllowed })
         .with_state(ledger)
         .layer(middleware::from_fn_with_state(
@@ -153,6 +154,14 @@ async fn release_detail(
     RawQuery(query): RawQuery,
 ) -> Result<Response, ApiError> {
     let body = ledger.release_response(query.as_deref()).await?;
+    Ok(json_response(StatusCode::OK, body))
+}
+
+async fn deployments(
+    State(ledger): State<LedgerClient>,
+    RawQuery(query): RawQuery,
+) -> Result<Response, ApiError> {
+    let body = ledger.deployments_response(query.as_deref()).await?;
     Ok(json_response(StatusCode::OK, body))
 }
 

@@ -62,3 +62,8 @@ contracts:
     document: release-detail.md
     schema: release.schema.json
     requirements: [REQ-0012, REQ-0013, REQ-0031, REQ-0032]
+  - id: CON-0013
+    name: Current Deployments
+    document: deployments.md
+    schema: deployments.schema.json
+    requirements: [REQ-0012, REQ-0013, REQ-0034]

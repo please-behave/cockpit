@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import type {
-  Attestation, RegisteredRule, RegisteredRuleSet, RegisteredRuleSetVersion, RegisteredVersion, RepositoryRuleSets, RuleSetCompliance, ReleaseDetail, ReleaseSummary, Summary,
+  Attestation, Deployment, RegisteredRule, RegisteredRuleSet, RegisteredRuleSetVersion, RegisteredVersion, RepositoryRuleSets, RuleSetCompliance, ReleaseDetail, ReleaseSummary, Summary,
 } from '../../frontend/src/api/client';
 import { fixtureTargets, respond } from './fixtures.mjs';
 
@@ -318,4 +318,34 @@ test('filters the attestation history by exact repository before paging', () => 
   for (const query of ['repository=', 'repository=%00', `${filter}&${filter}`]) {
     expect(respond(`${fixtureTargets.history}?${query}`)?.status).toBe(400);
   }
+});
+
+test('serves all current deployment states and continues from the last event ID', () => {
+  const path = fixtureTargets.deployments;
+  const first = body<Deployment[]>(path);
+  const next = body<Deployment[]>(path + '?before=' + first.at(-1)!.id);
+  const entries = [...first, ...next];
+  expect(first).toHaveLength(100);
+  expect(next.length).toBeGreaterThan(0);
+  expect(new Set(entries.map(({ target, repository }) =>
+    JSON.stringify([target.owner, target.name, repository]))).size).toBe(entries.length);
+  expect(new Set(entries.map(entry => entry.state)))
+    .toEqual(new Set(['evidence', 'no_evidence', 'release_not_recorded']));
+  expect(new Set(entries.map(entry => entry.evidence?.overall))).toEqual(new Set([undefined, 'PASS', 'FAIL', 'ERROR']));
+  expect(entries.some(entry => entry.target.name.length === 64 && entry.target.owner.length > 100)).toBe(true);
+  for (const [index, entry] of entries.entries()) {
+    expect(entry.id).toMatch(/^[1-9][0-9]*$/);
+    if (index > 0) expect(Number(entry.id)).toBeLessThan(Number(entries[index - 1].id));
+    expect(entry.sender).toBe(entry.target.owner);
+    expect(Date.parse(entry.received_at)).not.toBeNaN();
+    expect(entry.version === null).toBe(entry.reported_commit !== null);
+    if (entry.reported_commit !== null) expect(entry.commit).toBe(entry.reported_commit);
+    if (entry.state === 'release_not_recorded') expect(entry.commit).toBeNull();
+    else expect(entry.commit).toMatch(/^[0-9a-f]{40}$/);
+    expect(entry.evidence !== null).toBe(entry.state === 'evidence');
+  }
+  const repository = entries[0].repository;
+  expect(body<Deployment[]>(path + '?' + new URLSearchParams({ repository, limit: '200' })))
+    .toEqual(entries.filter(entry => entry.repository === repository));
+  expect(respond(path + '?before=0')?.status).toBe(400);
 });

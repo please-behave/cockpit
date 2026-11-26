@@ -3,6 +3,7 @@ import { keyed } from 'lit/directives/keyed.js';
 import { routeFor, Router, type Origin, type Route } from '../views/router';
 import '../views/dashboard';
 import '../views/detail';
+import '../views/deployments';
 import '../views/history';
 import '../views/not-found';
 import '../views/release';
@@ -71,6 +72,7 @@ export class CockpitApp extends LitElement {
       case 'history': return this.restored ?? html`<pb-history></pb-history>`;
       case 'detail': return this.restored ?? html`<pb-attestation .attestationId=${route.id}
         .origin=${typeof this.origin === 'string' ? this.origin : undefined}></pb-attestation>`;
+      case 'deployments': return html`<pb-deployments></pb-deployments>`;
       case 'releases': return html`<pb-releases></pb-releases>`;
       case 'repository': return html`<pb-repository .repository=${route.repository}></pb-repository>`;
       case 'release': return html`<pb-release .repository=${route.repository} .version=${route.version}></pb-release>`;

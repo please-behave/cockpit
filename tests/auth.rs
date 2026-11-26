@@ -1353,3 +1353,90 @@ async fn browser_release_detail_preserves_the_ledger_response_and_maps_errors() 
         assert_api_error(response, status, code).await;
     }
 }
+
+// Verifies REQ-0012, REQ-0013 and REQ-0034.
+#[tokio::test]
+async fn browser_deployment_reads_require_session_and_preserve_ledger_pages() {
+    const QUERY: &str = "repository=github.com%2Facme%2Fapp&limit=5&before=50";
+    let mut with_evidence = json!({
+        "id": "49", "repository": "github.com/acme/app",
+        "target": { "owner": "github.com/acme/infra", "name": "production" },
+        "version": "1.0 <b>text</b>", "reported_commit": null, "commit": "a".repeat(40),
+        "sender": "github.com/acme/infra", "auth_method": "github_oidc",
+        "received_at": "2026-11-23T09:00:00Z", "state": "evidence",
+        "evidence": { "overall": "PASS", "completed_rule_sets": [] }
+    });
+    let mut commit_only = with_evidence.clone();
+    commit_only["id"] = json!("48");
+    commit_only["target"]["name"] = json!("staging");
+    commit_only["state"] = json!("no_evidence");
+    commit_only["version"] = Value::Null;
+    commit_only["reported_commit"] = commit_only["commit"].clone();
+    commit_only["evidence"] = Value::Null;
+    let mut unresolved = with_evidence.clone();
+    unresolved["id"] = json!("47");
+    unresolved["target"]["name"] = json!("canary");
+    unresolved["state"] = json!("release_not_recorded");
+    unresolved["commit"] = Value::Null;
+    unresolved["evidence"] = Value::Null;
+    let body = json!([with_evidence, commit_only, unresolved]).to_string();
+    let upstream = body.clone();
+
+    with_evidence["reported_commit"] = json!("b".repeat(40));
+    let malformed = json!([with_evidence]).to_string();
+    let site = TestSite::start_with_ledger(Router::new().route(
+        "/v0/deployments",
+        get(move |RawQuery(query): RawQuery| async move {
+            match query.as_deref() {
+                Some(QUERY) => (StatusCode::OK, upstream),
+                Some("before=47") => (StatusCode::OK, "[]".to_owned()),
+                Some("before=100") => (StatusCode::OK, malformed),
+                _ => (StatusCode::BAD_REQUEST, String::new()),
+            }
+        }),
+    ))
+    .await;
+    let session = cookie_header(&cookie(&site.sign_in("allowed").await, SESSION).unwrap());
+    let path = format!("/v0/deployments?{QUERY}");
+    assert_api_error(
+        site.get(&path).send().await.unwrap(),
+        StatusCode::UNAUTHORIZED,
+        "unauthorized",
+    )
+    .await;
+
+    for (path, expected) in [
+        (path.as_str(), body.as_str()),
+        ("/v0/deployments?before=47", "[]"),
+    ] {
+        let response = site
+            .get(path)
+            .header(header::COOKIE, &session)
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK, "{path}");
+        assert_api_headers(&response);
+        assert_eq!(response.text().await.unwrap(), expected);
+    }
+    for (path, status, code) in [
+        (
+            "/v0/deployments?before=invalid",
+            StatusCode::BAD_REQUEST,
+            "invalid_query",
+        ),
+        (
+            "/v0/deployments?before=100",
+            StatusCode::SERVICE_UNAVAILABLE,
+            "ledger_unavailable",
+        ),
+    ] {
+        let response = site
+            .get(path)
+            .header(header::COOKIE, &session)
+            .send()
+            .await
+            .unwrap();
+        assert_api_error(response, status, code).await;
+    }
+}
