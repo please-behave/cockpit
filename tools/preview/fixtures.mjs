@@ -194,14 +194,16 @@ const completedRuleSets = [{
   sets: [
     { source: ruleSource, path: 'sets/baseline', id: 'baseline', version: '1.0', name: 'Repository baseline' },
     { source: ruleSource, path: 'sets/security', id: 'security', version: '2.0', name: 'Security and release readiness for shared repositories with additional compliance requirements' },
+    { source: ruleSource, path: 'sets/licensing', id: 'licensing', version: '1.0', name: 'Licensing' },
   ],
 }];
 
-const [markupSet, baselineSet, securitySet] = completedRuleSets.flatMap(entry => entry.sets);
+const [markupSet, baselineSet, securitySet, licensingSet] = completedRuleSets.flatMap(entry => entry.sets);
 const sets = [
   { registration: markupSet, members: ['markup'] },
   { registration: baselineSet, members: ['license-file', 'design-review'], description: 'Common repository checks and reviews.' },
   { registration: securitySet, members: ['license-file', 'no-secrets'] },
+  { registration: licensingSet, members: ['license-file'] },
   { registration: { source: ruleSource, path: 'sets/unbound', id: 'unbound', version: '1.0', name: 'Unbound set' }, members: [] },
 ];
 const setScan = { through: Date.UTC(2026, 10, 25) * 1000, registrations: sets.length + 1 };
@@ -332,6 +334,7 @@ const releaseFacts = [
   release('github.com/acme/evidence-error', '1.0', 4, 'ERROR'),
   release(`github.com/${longOwner}/${longName}`, '1.0', 6, 'FAIL'),
   release(completedRuleSets[0].repository, `release-${markup}-${'v'.repeat(190)}`, 5, 'PASS', [markupSet], 'api_key'),
+  release('github.com/acme/gadget', '1.0', 7, 'PASS'),
   ...Array.from({ length: 103 }, (_, index) =>
     release(`github.com/acme/project-${String(index + 1).padStart(3, '0')}`, '1.0', 20 + index, 'PASS')),
 ].sort((a, b) => compare(b.received_at, a.received_at)
@@ -403,7 +406,7 @@ const deploymentFixtures = [
   { name: 'production', fact: latestReleases[2] },
   { name: 'production', fact: latestReleases[3] },
   { name: 'staging', fact: latestReleases[0], commitOnly: true },
-  { name: 'staging', fact: latestReleases[1], commitOnly: true },
+  { name: 'staging', fact: { repository: 'github.com/acme/pending', commit: sha('a'), evidence: null }, commitOnly: true },
   { name: 'production', owner: 'github.com/acme/other-infrastructure', fact: latestReleases[0] },
   { name: 'staging', fact: latestReleases[2], unrecorded: 'v3.0' },
   { name: 'p'.repeat(64), owner: `github.com/${longOwner}/${longName}`, fact: latestReleases[5] },
@@ -516,6 +519,8 @@ function repositoryEntry([repository, state, overall, step], index) {
     overall,
     received_at: report?.received_at ?? new Date(overviewNow - (minutesWaiting + 15) * 60_000).toISOString(),
   } : null;
+  const release = latestReleases.find(fact => fact.repository === repository);
+  const deployment = currentDeployments.find(fact => fact.repository === repository);
   return {
     repository, managed, platform: managed ? 'github' : null, state, heartbeat_completed_at,
     status_token: {
@@ -532,8 +537,8 @@ function repositoryEntry([repository, state, overall, step], index) {
     overdue_step: step ?? null, overdue_steps: step ? 4 : null,
     observed_heads_since_evidence: state === 'overdue' ? 2 : state === 'current' ? 0 : 1,
     last_evidence_at: check?.received_at ?? null,
-    latest_release: null,
-    latest_deployment: null,
+    latest_release: release ? { version: release.version, commit: release.commit, received_at: release.received_at } : null,
+    latest_deployment: deployment ? { ...deployment.target, received_at: deployment.received_at } : null,
   };
 }
 

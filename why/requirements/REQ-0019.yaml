@@ -25,6 +25,15 @@ description: >-
   status-warning on that line, independently of the stripe. Overdue names the
   reached step and total step count.
 
+  A tile uses at most five content rows and omits empty rows. The Rule Set
+  summary of REQ-0028 shares the owner row. When the ledger's overview
+  supplies the newest release or deployment, the tile shows them together
+  in a single summary row. The release version links to REQ-0032. A
+  deployment shows the target name and relative ledger receipt time with
+  an accessible exact time. The target name links to an existing view
+  when that view can address the deployment directly. Otherwise the target
+  name is plain text.
+
   The banner counts failed, warning, unknown and passed tiles as text with
   icons, using the highest severity for its stripe. It shows the oldest
   completion time of the covering syncs from the ledger, whether that time is

@@ -1,10 +1,12 @@
 import { css, html, LitElement } from 'lit';
+import { ifDefined } from 'lit/directives/if-defined.js';
 import './pb-tooltip';
 
 export class RuleSetChip extends LitElement {
   static override properties = {
     label: { type: String },
     href: { type: String },
+    description: { type: String },
     truncated: { state: true },
   };
 
@@ -46,6 +48,7 @@ export class RuleSetChip extends LitElement {
 
   declare label: string;
   declare href: string;
+  declare description?: string;
   protected declare truncated: boolean;
 
   private observer?: ResizeObserver;
@@ -80,9 +83,11 @@ export class RuleSetChip extends LitElement {
   }
 
   override render() {
-    const chip = html`<a class="chip" data-route href=${this.href}>${this.label}</a>`;
-    return this.truncated
-      ? html`<pb-tooltip external-trigger .description=${this.label}>${chip}</pb-tooltip>`
+    const chip = html`<a class="chip" data-route href=${this.href}
+      aria-description=${ifDefined(this.description)}>${this.label}</a>`;
+    const tooltip = this.description ?? (this.truncated ? this.label : undefined);
+    return tooltip
+      ? html`<pb-tooltip external-trigger .description=${tooltip}>${chip}</pb-tooltip>`
       : chip;
   }
 }

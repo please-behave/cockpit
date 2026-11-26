@@ -13,8 +13,10 @@ description: >-
   in an accessible tooltip. Both views show relative receipt times with the
   localized exact time in an accessible tooltip and explain when no release
   has been recorded. Evidence shows the reported status or “No evidence” as
-  text with an icon and uses the same completed Rule Set chips as REQ-0028,
-  using the completed sets of that release's evidence. Both views follow
+  text with an icon and shows a platinum-blue chip for each completed Rule
+  Set in that release's evidence. Each chip names the bound version, makes
+  the full name available through an accessible tooltip if truncated, and
+  links to the bound version on the Rule Set detail page of REQ-0029. Both views follow
   REQ-0004, REQ-0015 and REQ-0016.
 rationale: >-
   Viewers can find each repository's releases and see what evidence was

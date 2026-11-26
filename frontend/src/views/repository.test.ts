@@ -1,7 +1,7 @@
 // Verifies REQ-0030 and REQ-0033.
 import { afterEach, expect, test, vi } from 'vitest';
 import { respond } from '../../../tools/preview/fixtures.mjs';
-import type { Deployment, Summary } from '../api/client';
+import type { Deployment, RepositoryRuleSets, Summary } from '../api/client';
 import { CockpitApp } from '../components/app';
 import type { DataTable } from '../components/pb-data-table';
 import type { RelativeTime } from '../components/pb-relative-time';
@@ -42,7 +42,7 @@ test.each([repositoryPath(repository), '/releases/repository?repository=github.c
     expect(root.querySelector('h1')?.textContent).toBe('return-navigation');
     expect(root.querySelector('.canonical')?.textContent).toBe(repository);
     expect([...root.querySelectorAll('section > h2')].map(heading => heading.textContent))
-      .toEqual(['Releases', 'Deployments', 'Attestations']);
+      .toEqual(['Completed Rule Sets', 'Releases', 'Deployments', 'Attestations']);
     const versions = [...root.querySelectorAll('.release > a')];
     expect(versions.map(link => link.textContent)).toEqual(['2.0', '1.11', '1.9']);
     expect(versions[0].getAttribute('href')).toBe(releasePath(repository, '2.0'));
@@ -69,10 +69,20 @@ test.each([repositoryPath(repository), '/releases/repository?repository=github.c
       '/v0/attestations/latest',
       filteredHistory,
       '/v0/deployments?limit=100&repository=github.com%2Facme%2Freturn-navigation',
+      '/v0/repositories/completed-rule-sets',
       '/v0/deployments?limit=100&repository=github.com%2Facme%2Freturn-navigation&before=9',
     ]);
   },
 );
+
+test('lists only this repository’s completed sets with links to their bound versions', async () => {
+  const { root } = await open(repositoryPath(repository));
+  const chips = [...root.querySelectorAll<RuleSetChip>('[aria-labelledby="completed-rule-sets"] pb-rule-set-chip')];
+  const completed = respond('/v0/repositories/completed-rule-sets')!.body as RepositoryRuleSets[];
+  const sets = completed.find(entry => entry.repository === repository)!.sets;
+  expect(chips).toHaveLength(3);
+  expect(chips.map(chip => [chip.label, chip.href])).toEqual(sets.map(set => [set.name, ruleSetPath(set, set.version)]));
+});
 
 test('shows each current target with its release or commit and reported evidence', async () => {
   const { app, root } = await open(repositoryPath(repository));

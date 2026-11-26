@@ -203,7 +203,8 @@ test('serves Rule Sets, latest rule memberships and current repository complianc
   const sets = body<RegisteredRuleSet[]>(fixtureTargets.ruleSets);
   const rules = body<RegisteredRule[]>(`${fixtureTargets.rules}?limit=200`);
   expect(new Set(rules.filter(rule => rule.id === 'zsh').map(rule => rule.source)).size).toBe(2);
-  expect(rules.find(rule => rule.id === 'license-file')?.rule_sets?.map(set => set.id)).toEqual(['baseline', 'security']);
+  expect(rules.find(rule => rule.id === 'license-file')?.rule_sets?.map(set => set.id))
+    .toEqual(['baseline', 'licensing', 'security']);
   expect(rules.find(rule => rule.id === 'zsh')?.rule_sets).toEqual([]);
   for (const [index, set] of sets.entries()) {
     expect(set.scan.registrations).toBeGreaterThanOrEqual(sets.length);
@@ -363,6 +364,19 @@ test('serves repository health, evidence and covering syncs in the client shape'
   expect(repositories.find(entry => !entry.managed)).toMatchObject({ platform: null, state: 'unknown' });
   expect(repositories.find(entry => entry.state === 'never_integrated')?.latest_check).toBeNull();
   expect(repositories.map(entry => entry.repository)).not.toContain('github.com/acme/archived');
+  const byName = (name: string) => repositories.find(entry => entry.repository.endsWith(`/${name}`))!;
+  const both = byName('return-navigation');
+  const [release] = body<ReleaseSummary[]>(fixtureTargets.releaseHistory);
+  const [deployment] = body<Deployment[]>(fixtureTargets.deployments);
+  expect(both.latest_release).toEqual({
+    version: release.version, commit: release.commit, received_at: release.received_at,
+  });
+  expect(both.latest_deployment).toEqual({ ...deployment.target, received_at: deployment.received_at });
+  expect(byName('pending')).toMatchObject({ latest_release: null, latest_deployment: { name: 'staging' } });
+  expect(byName('gadget')).toMatchObject({ latest_release: { version: '1.0' }, latest_deployment: null });
+  expect(byName('no-records')).toMatchObject({ latest_release: null, latest_deployment: null });
+  const sets = body<RepositoryRuleSets[]>(fixtureTargets.completedRuleSets);
+  expect(sets.find(entry => entry.repository === both.repository)?.sets).toHaveLength(3);
   for (const entry of repositories) {
     expect(entry.observed_heads_since_evidence).toSatisfy(isCount);
     if (entry.state === 'pending' || entry.state === 'overdue') {

@@ -48,7 +48,7 @@ test('lists the latest releases across pages with attention first and escapes st
   const { shadowRoot: root } = await loaded(app);
   expect(root!.querySelector('h1.assistive')?.textContent).toBe('Releases');
   const rows = [...root!.querySelectorAll('.release')];
-  expect(rows).toHaveLength(109);
+  expect(rows).toHaveLength(110);
   const names = rows.map(row => row.querySelector('h2')!.textContent!.trim());
   expect(names.slice(0, 4)).toEqual([
     'github.com/acme/evidence-error', 'github.com/acme/failing-evidence', 'github.com/acme/missing-evidence',

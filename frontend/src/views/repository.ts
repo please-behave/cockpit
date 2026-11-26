@@ -1,17 +1,20 @@
 import { css, html, nothing, type CSSResult } from 'lit';
 import {
-  attestationPage, deployments, latestAttestations, releases, type Deployment, type ReleaseSummary, type Summary,
+  attestationPage, completedRuleSets, deployments, latestAttestations, releases,
+  type CompletedRuleSet, type Deployment, type ReleaseSummary, type Summary,
 } from '../api/client';
 import '../components/pb-commit-link';
 import type { DataTableColumn } from '../components/pb-data-table';
 import '../components/pb-data-table';
 import '../components/pb-empty-state';
+import '../components/pb-rule-set-chip';
 import { shortName } from '../components/pb-short-name';
 import '../components/pb-status-pill';
 import '../components/pb-time';
 import { CockpitView } from './cockpit-view';
 import { compareEvidence, deploymentList, deploymentListStyles, targetLabel } from './deployment-list';
 import { releaseList, releaseListStyles } from './releases';
+import { ruleSetPath } from './router';
 
 const historyLimit = 100;
 const attestationColumns: DataTableColumn[] = [
@@ -24,6 +27,7 @@ const attestationColumns: DataTableColumn[] = [
 interface RepositoryData {
   releases: ReleaseSummary[];
   deployments: Deployment[];
+  completedSets: CompletedRuleSet[];
   heads: Summary[];
   recent: Summary[];
 }
@@ -62,19 +66,28 @@ export class RepositoryView extends CockpitView<RepositoryData> {
 
   protected override async read(signal: AbortSignal): Promise<RepositoryData> {
     const repository = this.repository;
-    const [recorded, latest, recent, current] = await Promise.all([
+    const [recorded, latest, recent, current, completed] = await Promise.all([
       releases(repository, signal),
       latestAttestations(signal),
       attestationPage({ repository, limit: historyLimit }, signal),
       deployments(signal, repository),
+      completedRuleSets(signal),
     ]);
     current.sort((a, b) => compareEvidence(a, b) || targetLabel(a.target).localeCompare(targetLabel(b.target)));
-    return { releases: recorded, deployments: current, heads: latest.filter(summary => summary.repository === repository), recent };
+    return {
+      releases: recorded, deployments: current, recent,
+      heads: latest.filter(summary => summary.repository === repository),
+      completedSets: completed.find(entry => entry.repository === repository)?.sets ?? [],
+    };
   }
 
   protected override content(data?: RepositoryData) {
     return html`
       <p class="canonical">${this.repository}</p>
+      <section aria-labelledby="completed-rule-sets">
+        <h2 id="completed-rule-sets">Completed Rule Sets</h2>
+        ${data ? this.ruleSets(data.completedSets) : nothing}
+      </section>
       <section aria-labelledby="releases">
         <h2 id="releases">Releases</h2>
         <p><a data-route href="/releases">All releases</a></p>
@@ -90,6 +103,12 @@ export class RepositoryView extends CockpitView<RepositoryData> {
         ${data ? this.attestations(data) : nothing}
       </section>
     `;
+  }
+
+  private ruleSets(sets: CompletedRuleSet[]) {
+    return sets.length ? html`<ul class="sets" role="list">${sets.map(set => html`
+      <li><pb-rule-set-chip .label=${set.name} .href=${ruleSetPath(set, set.version)}></pb-rule-set-chip></li>
+    `)}</ul>` : html`<p>No completed Rule Sets.</p>`;
   }
 
   private currentDeployments(entries: Deployment[]) {

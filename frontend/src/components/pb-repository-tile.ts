@@ -1,10 +1,9 @@
 import { css, html, LitElement, nothing } from 'lit';
-import { repeat } from 'lit/directives/repeat.js';
 import type { CompletedRuleSet, RepositoryOverviewEntry } from '../api/client';
 import { linkStyles } from '../styles/links';
 import './pb-commit-link';
 import './pb-relative-time';
-import { repositoryPath, ruleSetPath } from '../views/router';
+import { releasePath, repositoryPath } from '../views/router';
 import './pb-rule-set-chip';
 import { ownerName } from './pb-short-name';
 import './pb-status-pill';
@@ -78,8 +77,15 @@ export class RepositoryTile extends LitElement {
         font-size: 0.875rem;
       }
 
-      .owner {
-        display: block;
+      .identifiers {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: var(--space-2);
+      }
+
+      .identifiers pb-rule-set-chip {
+        flex: none;
       }
 
       .repository {
@@ -103,23 +109,9 @@ export class RepositoryTile extends LitElement {
         outline-offset: var(--focus-offset);
       }
 
-      pb-commit-link, pb-relative-time, pb-rule-set-chip {
+      pb-commit-link, pb-relative-time, pb-rule-set-chip, .release-link {
         position: relative;
         z-index: 1;
-      }
-
-      .sets {
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--space-2);
-        margin: var(--space-1) 0 0;
-        padding: 0;
-        list-style: none;
-      }
-
-      .sets li {
-        min-inline-size: 0;
-        max-inline-size: 100%;
       }
     }
   `;
@@ -131,21 +123,31 @@ export class RepositoryTile extends LitElement {
     const { entry, completedSets } = this;
     if (!entry) return nothing;
 
-    const { repository, state, status_token, latest_check: check, head, pending_since: pendingSince } = entry;
+    const {
+      repository, state, status_token, latest_check: check, head, pending_since: pendingSince,
+      latest_release: release, latest_deployment: deployment,
+    } = entry;
     const owner = ownerName(repository);
+    const path = repositoryPath(repository);
+    const count = completedSets?.length ?? 0;
+    const managedLabel = entry.managed ? nothing : ' · Not managed';
 
     return html`
       <div class="tile ${repositoryHealth(entry)}">
-        ${owner ? html`<span class="owner">${owner}</span>` : nothing}
+        ${owner || count ? html`<div class="identifiers">
+          ${owner ? html`<span class="owner">${owner}</span>` : nothing}
+          ${completedSets?.length ? html`<pb-rule-set-chip
+            .label=${`${count} Rule ${count === 1 ? 'Set' : 'Sets'}`} .href=${path}
+            .description=${completedSets.map(set => set.name).join(', ')}></pb-rule-set-chip>` : nothing}
+        </div>` : nothing}
         <div class="title">
           <pb-tooltip external-trigger .description=${repository}>
-            <a class="repository" data-route href=${repositoryPath(repository)}>
+            <a class="repository" data-route href=${path}>
               <pb-short-name .value=${repository}></pb-short-name>
             </a>
           </pb-tooltip>
           <pb-status-pill .status=${check?.overall ?? 'No evidence'}></pb-status-pill>
         </div>
-        ${!entry.managed ? html`<span class="meta">Not managed</span>` : nothing}
         ${check ? html`<span class="meta">Reported <pb-commit-link .repository=${repository}
           .commit=${check.commit}></pb-commit-link> · <pb-relative-time .value=${check.received_at}></pb-relative-time></span>`
           : nothing}
@@ -154,15 +156,15 @@ export class RepositoryTile extends LitElement {
             ? html` (step ${entry.overdue_step} of ${entry.overdue_steps})` : nothing}
             · head <pb-commit-link .repository=${repository} .commit=${head.commit}></pb-commit-link>
             · awaiting evidence for <pb-relative-time duration .value=${pendingSince}></pb-relative-time>
-            · ${entry.observed_heads_since_evidence} observed ${entry.observed_heads_since_evidence === 1 ? 'head' : 'heads'} since evidence</span>`
-          : html`<span class="meta">${stateLabels[state]}</span>`}
-        ${completedSets?.length ? html`
-          <ul class="sets" role="list" aria-label="Completed Rule Sets">
-            ${repeat(completedSets, set => JSON.stringify([set.source, set.path, set.id, set.version]), set => html`
-              <li><pb-rule-set-chip .label=${set.name} .href=${ruleSetPath(set, set.version)}></pb-rule-set-chip></li>
-            `)}
-          </ul>
-        ` : nothing}
+            · ${entry.observed_heads_since_evidence} observed ${entry.observed_heads_since_evidence === 1 ? 'head' : 'heads'} since evidence${managedLabel}</span>`
+          : html`<span class="meta">${stateLabels[state]}${managedLabel}</span>`}
+        ${release || deployment ? html`<div class="meta facts">
+          ${release ? html`Release <a class="release-link" data-route
+            href=${releasePath(repository, release.version)}>${release.version}</a>` : nothing}
+          ${release && deployment ? ' · ' : nothing}
+          ${deployment ? html`${release ? nothing : 'Deployed to '}${deployment.name},
+            <pb-relative-time .value=${deployment.received_at}></pb-relative-time>` : nothing}
+        </div>` : nothing}
       </div>
     `;
   }

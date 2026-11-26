@@ -1,7 +1,7 @@
 import { afterEach, expect, test, vi } from 'vitest';
 import { fixtureTargets, respond } from '../../../tools/preview/fixtures.mjs';
 import type { RepositoryOverview, RepositoryOverviewEntry } from '../api/client';
-import { repositoryPath, Router } from '../views/router';
+import { releasePath, repositoryPath, Router } from '../views/router';
 import type { CommitLink } from './pb-commit-link';
 import type { RelativeTime } from './pb-relative-time';
 import { RepositoryTile } from './pb-repository-tile';
@@ -65,7 +65,7 @@ test('shows the owner, shortened name and exact reported time without the old ti
   expect(owner.textContent).toBe('acme');
   const repository = root.querySelector<HTMLAnchorElement>('a.repository')!;
   const nameTooltip = repository.parentElement as Tooltip;
-  expect(owner.nextElementSibling).toBe(root.querySelector('.title'));
+  expect(owner.parentElement!.nextElementSibling).toBe(root.querySelector('.title'));
   expect(nameTooltip.description).toBe(report.repository);
   expect(nameTooltip.hint).toBe(false);
   const name = repository.querySelector<ShortName>('pb-short-name')!;
@@ -99,6 +99,44 @@ test.each([
   const duration = line.querySelector<RelativeTime>('pb-relative-time')!;
   await duration.updateComplete;
   expect(duration.shadowRoot!.querySelector('time')?.textContent).toBe(elapsed);
+});
+
+// Verifies REQ-0019.
+test.each([
+  { name: 'both facts', entry: fixture('return-navigation'), version: '2.0', target: 'production' },
+  { name: 'deployment only', entry: fixture('pending'), version: null, target: 'staging' },
+  { name: 'release only', entry: fixture('gadget'), version: '1.0', target: null },
+  { name: 'neither fact', entry: fixture('no-records'), version: null, target: null },
+])('shows the applicable summary for $name', async ({ entry, version, target }) => {
+  const deployment = entry.latest_deployment;
+  if (deployment) {
+    vi.useFakeTimers({ toFake: ['Date'], now: Date.parse(deployment.received_at) + 300_000 });
+  }
+  const root = await mount(entry);
+  const facts = root.querySelector('.facts');
+  expect(root.querySelector('.tile')!.children.length).toBeLessThanOrEqual(5);
+  if (!version && !target) {
+    expect(facts).toBeNull();
+    return;
+  }
+  const link = facts!.querySelector('a');
+  if (version) {
+    expect(link?.textContent).toBe(version);
+    expect(link?.getAttribute('href')).toBe(releasePath(entry.repository, version));
+    expect(link?.hasAttribute('data-route')).toBe(true);
+  } else {
+    expect(link).toBeNull();
+  }
+  const time = facts!.querySelector<RelativeTime>('pb-relative-time');
+  if (target) {
+    expect(facts!.textContent).toContain(`${target},`);
+    expect(link?.textContent).not.toBe(target);
+    await time!.updateComplete;
+    expect(time!.shadowRoot!.querySelector('time')?.textContent).toBe('5 minutes ago');
+    expect(time!.shadowRoot!.querySelector('time')?.dateTime).toBe(deployment!.received_at);
+  } else {
+    expect(time).toBeNull();
+  }
 });
 
 test('routes the repository name through shadow DOM and leaves the commit link independent', async () => {
