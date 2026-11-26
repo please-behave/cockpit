@@ -50,7 +50,8 @@ test('shows a complete release with its commit, sender, evidence link and Rule S
   expect(facts.querySelector('pb-commit-link')).toHaveProperty('commit', expect.stringMatching(/^[0-9a-f]{40}$/));
   expect(facts.textContent).not.toContain('self-asserted');
   expect(pills(root)).toEqual(['PASS', 'Complete', 'Complete']);
-  expect(root.querySelector('a[href^="/attestations/"]')?.textContent).toBe('View attestation');
+  const link = root.querySelector('pb-widget.evidence')?.shadowRoot?.querySelector('a[href^="/attestations/"]');
+  expect(link?.textContent).toBe('View attestation');
   expect([...root.querySelectorAll<RuleSetChip>('pb-rule-set-chip')].map(chip => chip.label))
     .toEqual(['Repository baseline · 1.0', expect.stringContaining('Security and release readiness')]);
   expect(root.querySelector('.non-passing')).toBeNull();
@@ -68,7 +69,7 @@ test('states explicitly that a release has no evidence', async () => {
   const root = await open(releasePath('github.com/acme/missing-evidence', '1.0'));
   expect(pills(root)).toEqual(['No evidence']);
   expect(root.querySelector('pb-rule-set-chip')).toBeNull();
-  expect(root.querySelector('a[href^="/attestations/"]')).toBeNull();
+  expect(root.querySelector('pb-widget.evidence')!.shadowRoot!.querySelector('a')).toBeNull();
   expect(root.textContent).toContain('No attestation with results at check has been reported for this commit.');
 });
 

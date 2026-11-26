@@ -2,10 +2,10 @@ import { css, html, nothing, type CSSResult } from 'lit';
 import { getRelease, type AuthMethod, type ReleaseDetail } from '../api/client';
 import '../components/pb-commit-link';
 import '../components/pb-fact-strip';
-import '../components/pb-panel';
 import '../components/pb-rule-set-chip';
 import '../components/pb-status-pill';
 import '../components/pb-time';
+import '../components/pb-widget';
 import { CockpitView } from './cockpit-view';
 import { repositoryPath, rulePath, ruleSetPath } from './router';
 
@@ -25,12 +25,10 @@ function ruleSets({ rule_sets }: NonNullable<ReleaseDetail['evidence']>) {
   if (rule_sets.length === 0) return html`<p>No Rule Sets are bound at check in this attestation.</p>`;
   return html`<ul class="rule-sets" role="list">${rule_sets.map(set => html`
     <li>
-      <pb-panel>
-        <div class="binding">
-          <pb-rule-set-chip .label=${`${set.name || set.id} · ${set.version}`}
-            .href=${ruleSetPath(set, set.version)}></pb-rule-set-chip>
-          <pb-status-pill .status=${set.complete ? 'Complete' : 'Incomplete'}></pb-status-pill>
-        </div>
+      <pb-widget heading-level="3">
+        <pb-rule-set-chip slot="heading" .label=${`${set.name || set.id} · ${set.version}`}
+          .href=${ruleSetPath(set, set.version)}></pb-rule-set-chip>
+        <pb-status-pill slot="metadata" .status=${set.complete ? 'Complete' : 'Incomplete'}></pb-status-pill>
         ${set.registered ? nothing : html`<p>Version is unregistered.</p>`}
         ${!set.complete && set.non_passing_members.length ? html`<ul class="non-passing" aria-label="Non-passing rules">
           ${set.non_passing_members.map(member => html`<li>
@@ -38,25 +36,24 @@ function ruleSets({ rule_sets }: NonNullable<ReleaseDetail['evidence']>) {
             <pb-status-pill .status=${member.status}></pb-status-pill>
           </li>`)}
         </ul>` : nothing}
-      </pb-panel>
+      </pb-widget>
     </li>`)}</ul>`;
 }
 
 function evidence({ evidence }: ReleaseDetail) {
   return html`
-    <section aria-labelledby="evidence">
-      <h2 id="evidence">Evidence</h2>
+    <pb-widget class="evidence" heading="Evidence"
+      .link=${evidence ? { href: `/attestations/${encodeURIComponent(evidence.id)}`, label: 'View attestation' } : undefined}>
       ${evidence === null ? html`
         <p><pb-status-pill status="No evidence"></pb-status-pill></p>
         <p>No attestation with results at check has been reported for this commit.</p>
       ` : html`
         <p>
           <pb-status-pill .status=${evidence.overall}></pb-status-pill>
-          <a data-route href=${`/attestations/${encodeURIComponent(evidence.id)}`}>View attestation</a>
         </p>
         ${ruleSets(evidence)}
       `}
-    </section>`;
+    </pb-widget>`;
 }
 
 export class ReleaseView extends CockpitView<ReleaseDetail> {
@@ -65,8 +62,9 @@ export class ReleaseView extends CockpitView<ReleaseDetail> {
     @layer components {
       :host { overflow-wrap: anywhere; }
       pb-fact-strip { margin-block-end: var(--space-6); }
-      section { margin-block-start: var(--space-4); }
-      h2 { margin-block: 0 var(--space-2); }
+      .evidence > p { margin-block: 0; }
+      .evidence > p + p { margin-block-start: var(--space-2); }
+      .evidence > p + .rule-sets { margin-block-start: var(--space-2); }
       .rule-sets {
         list-style: none;
         padding: 0;
@@ -74,12 +72,6 @@ export class ReleaseView extends CockpitView<ReleaseDetail> {
         display: grid;
         grid-template-columns: minmax(0, 1fr);
         gap: var(--space-2);
-      }
-      .binding {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: baseline;
-        gap: var(--space-1) var(--space-3);
       }
       .non-passing { padding-inline-start: var(--space-4); margin-block-end: 0; }
       .non-passing li + li { margin-block-start: var(--space-2); }

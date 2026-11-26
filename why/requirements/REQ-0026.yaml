@@ -29,18 +29,18 @@ description: >-
   the selected rule version. With no memberships, it shows a repository chip
   linking to the rule's source when the source forms a valid HTTPS repository
   address. The chips follow REQ-0015. The detail shows one version in a
-  panel and defaults to the newest. When several versions exist, a native
+  widget and defaults to the newest. When several versions exist, a native
   keyboard-operable dropdown named Version lists them in descending numeric
   order with their registration times and marks the newest as Latest. The
   version query parameter selects the version on open. Changing the selection
   replaces the current history entry and preserves its origin. If the requested
   version is unavailable, the view shows a notice and displays the newest.
-  The newest version's panel has a Latest badge and an accent stripe. The
+  The newest version's widget has a Latest badge and an accent stripe. The
   selected version shows its kind as a toned text badge, its description and
   registration time, its owner, and, for a review, its effective blocking
-  value as a toned text badge. The Owner column and version panel render the
+  value as a toned text badge. The Owner column and version widget render the
   reported owner as escaped plain text that wraps without truncation. When
-  the owner is absent, the list shows a dash and the panel omits the field.
+  the owner is absent, the list shows a dash and the widget omits the field.
   A review prompt has
   its own block and preserves line breaks. The detail displays
   known knowledge fields including purpose, problem, value, conditions and

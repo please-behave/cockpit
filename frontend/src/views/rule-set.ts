@@ -3,9 +3,9 @@ import {
   registeredRuleSetVersions, ruleSetCompliance, type RegisteredRuleSetVersion, type RuleSetCompliance,
 } from '../api/client';
 import '../components/pb-badge';
-import '../components/pb-panel';
 import '../components/pb-status-pill';
 import '../components/pb-time';
+import '../components/pb-widget';
 import { CockpitView } from './cockpit-view';
 import { selectedVersion, versionSelector, versionSelectorStyles } from './registry-version';
 import { rulePath } from './router';
@@ -81,9 +81,8 @@ function repositoryList(repositories: RuleSetCompliance[]) {
       <h2 id="repositories">Repositories at check</h2>
       ${repositories.length ? html`<ul class="repositories" role="list">
         ${repositories.map(binding => html`<li>
-          <pb-panel>
-            <div class="binding">
-              <strong>${binding.repository}</strong>
+          <pb-widget .heading=${binding.repository} heading-level="3">
+            <div slot="metadata" class="binding">
               <span>Version ${binding.version}</span>
               <span>${binding.complete ? 'Complete' : 'Incomplete'}</span>
             </div>
@@ -94,7 +93,7 @@ function repositoryList(repositories: RuleSetCompliance[]) {
                 <pb-status-pill .status=${member.status}></pb-status-pill>
               </li>`)}
             </ul>` : nothing}
-          </pb-panel>
+          </pb-widget>
         </li>`)}
       </ul>` : html`<p>No repositories currently apply this Rule Set at check.</p>`}
     </section>`;
@@ -109,10 +108,11 @@ export class RuleSetView extends CockpitView<RuleSetDetail> {
     @layer components {
       .plain-text { white-space: pre-wrap; }
       :host { overflow-wrap: anywhere; }
-      pb-panel, section { margin-block-start: var(--space-4); }
+      pb-widget, section { margin-block-start: var(--space-4); }
       h2, h3 { margin-block: 0; }
       h3 { margin-block-start: var(--space-4); }
-      header, .binding {
+      article > h3:first-child { margin-block-start: 0; }
+      .binding {
         display: flex;
         flex-wrap: wrap;
         align-items: baseline;
@@ -169,17 +169,16 @@ export class RuleSetView extends CockpitView<RuleSetDetail> {
         ${this.requestedVersion !== null && selected.version !== this.requestedVersion
           ? html`<p>Version <code>${this.requestedVersion}</code> is unavailable.</p>` : nothing}
         ${versionSelector(this, data.versions, selected)}
-        <pb-panel ?accent=${latest}>
+        <pb-widget .heading=${`Version ${selected.version}`} ?accent=${latest}>
+          <div slot="metadata" class="binding">
+            ${latest ? html`<pb-badge>Latest</pb-badge>` : nothing}
+            <span class="registered">Registered <pb-time .value=${selected.registered_at}></pb-time></span>
+          </div>
           <article>
-            <header>
-              <h2>Version ${selected.version}</h2>
-              ${latest ? html`<pb-badge>Latest</pb-badge>` : nothing}
-              <span class="registered">Registered <pb-time .value=${selected.registered_at}></pb-time></span>
-            </header>
             ${knowledgeDocument(selected.knowledge)}
             ${memberList(selected)}
           </article>
-        </pb-panel>
+        </pb-widget>
         ${repositoryList(data.repositories)}
       ` : nothing}
     `;

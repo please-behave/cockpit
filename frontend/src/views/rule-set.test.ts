@@ -82,9 +82,10 @@ test('opens a Rule Set from Rules, escapes registered text, and shows exact memb
   const failing = view.querySelector('.non-passing')!;
   expect(failing.querySelector('a')!.getAttribute('href')).toBe(rulePath(member, '1.1'));
   expect(failing.querySelector('pb-status-pill')!.shadowRoot?.textContent).toContain('WARN');
-  expect(failing.closest('pb-panel')!.textContent).toContain(`github.com/team/failing-${markup}`);
-  expect(failing.closest('pb-panel')!.textContent).toContain('Version 1.2');
-  expect(failing.closest('pb-panel')!.textContent).toContain('Incomplete');
+  const binding = failing.closest('pb-widget')!;
+  expect(binding.shadowRoot?.querySelector('h3')?.textContent).toBe(`github.com/team/failing-${markup}`);
+  expect(binding.textContent).toContain('Version 1.2');
+  expect(binding.textContent).toContain('Incomplete');
   expect(view.querySelector('.repositories li')!.textContent).toContain('Complete');
 
   const select = view.querySelector('select')!;

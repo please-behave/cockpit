@@ -332,7 +332,7 @@ const releaseFacts = [
   release('github.com/acme/missing-evidence', '1.0', 2, null),
   release('github.com/acme/failing-evidence', '1.0', 3, 'FAIL'),
   release('github.com/acme/evidence-error', '1.0', 4, 'ERROR'),
-  release(`github.com/${longOwner}/${longName}`, '1.0', 6, 'FAIL'),
+  release(`github.com/${longOwner}/${longName}`, '1.0', 6, 'FAIL', [securitySet]),
   release(completedRuleSets[0].repository, `release-${markup}-${'v'.repeat(190)}`, 5, 'PASS', [markupSet], 'api_key'),
   release('github.com/acme/gadget', '1.0', 7, 'PASS'),
   ...Array.from({ length: 103 }, (_, index) =>

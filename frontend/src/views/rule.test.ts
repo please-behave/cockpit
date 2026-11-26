@@ -139,9 +139,10 @@ test('opens a registered rule and shows the newest version and switches to an ol
     `1.10 · ${optionTime.format(new Date(history[1].registered_at))} · Latest`,
     `1.2 · ${optionTime.format(new Date(history[0].registered_at))}`,
   ]);
-  expect(root.querySelector('h2')?.textContent).toBe('Version 1.10');
-  expect(root.querySelector('pb-panel')?.hasAttribute('accent')).toBe(true);
-  expect([...root.querySelectorAll('article pb-badge')].map(badge => [badge.textContent, badge.getAttribute('tone')]))
+  const widget = root.querySelector('pb-widget')!;
+  expect(widget.shadowRoot?.querySelector('h2')?.textContent).toBe('Version 1.10');
+  expect(widget.hasAttribute('accent')).toBe(true);
+  expect([...widget.querySelectorAll('pb-badge')].map(badge => [badge.textContent, badge.getAttribute('tone')]))
     .toEqual([['Latest', null], ['review', 'review'], ['Non-blocking', 'neutral']]);
   const fields = () => Object.fromEntries([...root.querySelectorAll('article dt')].map(term =>
     [term.textContent, term.nextElementSibling?.textContent?.trim()]));
@@ -167,9 +168,9 @@ test('opens a registered rule and shows the newest version and switches to an ol
   expect(root.querySelector('h1')?.textContent).toBe('Original check');
   expect(document.title).toBe('Original check | Please Behave');
   expect(root.querySelectorAll('article')).toHaveLength(1);
-  expect(root.querySelector('h2')?.textContent).toBe('Version 1.2');
-  expect(root.querySelector('pb-panel')?.hasAttribute('accent')).toBe(false);
-  expect([...root.querySelectorAll('article pb-badge')].map(badge => badge.textContent)).toEqual(['check']);
+  expect(widget.shadowRoot?.querySelector('h2')?.textContent).toBe('Version 1.2');
+  expect(widget.hasAttribute('accent')).toBe(false);
+  expect([...widget.querySelectorAll('pb-badge')].map(badge => badge.textContent)).toEqual(['check']);
   expect([...facts.querySelectorAll('dt')].map(term => term.textContent)).toEqual(['Kind', 'Registered']);
   const first = fields();
   expect(first).toMatchObject({
@@ -212,7 +213,7 @@ test('deep links to the selected version without changing the ledger query', asy
     const app = open(`/rules/detail?${query}`);
     await app.updateComplete;
     const root = app.shadowRoot!.querySelector<RuleView>('pb-rule')!.shadowRoot!;
-    await vi.waitFor(() => expect(root.activeElement?.textContent).toBe('Version 1.2'));
+    await vi.waitFor(() => expect(root.activeElement?.shadowRoot?.activeElement?.textContent).toBe('Version 1.2'));
     expect(scrollIntoView).toHaveBeenCalledOnce();
     expect(root.querySelector('h1')?.textContent).toBe('Original check');
     expect(root.querySelectorAll('article')).toHaveLength(1);

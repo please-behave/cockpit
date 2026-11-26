@@ -6,10 +6,11 @@ import './pb-error-state';
 import './pb-fact-strip';
 import './pb-status-pill';
 import './pb-time';
+import './pb-widget';
 
 afterEach(() => document.body.replaceChildren());
 
-// Verifies REQ-0004 and REQ-0016.
+// Verifies REQ-0004, REQ-0015 and REQ-0016.
 test('renders the component catalog and keeps long, markup-like values inert', async () => {
   const longValue = 'x'.repeat(400) + '<img src="/fake-image" onerror="alert(1)">';
   const time = '2026-11-22T19:23:07Z';
@@ -37,10 +38,15 @@ test('renders the component catalog and keeps long, markup-like values inert', a
     <pb-error-state .heading=${longValue} .message=${longValue} retryable></pb-error-state>
     <pb-time .value=${time}></pb-time>
     <pb-time .value=${longValue}></pb-time>
+    <pb-widget .heading=${longValue} heading-level="3" count="0" accent
+      .link=${{ href: '/rules', label: longValue }}>
+      <a href="/rules/detail">View rule</a>
+    </pb-widget>
+    <pb-widget heading="Overview"></pb-widget>
   `, document.body);
 
   const components = document.body.querySelectorAll<LitElement>('pb-status-pill, pb-data-table, '
-    + 'pb-fact-strip, pb-empty-state, pb-error-state, pb-time');
+    + 'pb-fact-strip, pb-empty-state, pb-error-state, pb-time, pb-widget');
   await Promise.all([...components].map(component => component.updateComplete));
 
   const roots = (tag: string) => [...document.body.querySelectorAll(tag)].map(element => element.shadowRoot!);
@@ -72,6 +78,21 @@ test('renders the component catalog and keeps long, markup-like values inert', a
   const [validTime, invalidTime] = roots('pb-time');
   expect(validTime.querySelector('time')?.dateTime).toBe(time);
   expect(invalidTime.querySelector('span')?.textContent).toBe(longValue);
+
+  const [widget, minimalWidget] = roots('pb-widget');
+  const region = widget.querySelector('section')!;
+  const heading = widget.querySelector('h3')!;
+  expect(region.getAttribute('aria-labelledby')).toBe(heading.id);
+  expect(heading.textContent).toBe(longValue);
+  expect(widget.querySelector('.count')?.textContent).toBe('0');
+  expect(widget.querySelector('header a')?.getAttribute('href')).toBe('/rules');
+  expect(widget.querySelector('header a')?.textContent).toBe(longValue);
+  expect(widget.querySelector<HTMLSlotElement>('slot:not([name])')?.assignedElements()[0]?.textContent)
+    .toBe('View rule');
+  expect(widget.host.hasAttribute('accent')).toBe(true);
+  expect(minimalWidget.querySelector('h2')?.textContent).toBe('Overview');
+  expect(minimalWidget.querySelector('.count, header a')).toBeNull();
+  expect(minimalWidget.host.hasAttribute('accent')).toBe(false);
 
   for (const component of components) {
     expect(component.shadowRoot!.querySelector('img, [onerror]')).toBeNull();

@@ -28,7 +28,10 @@ description: >-
   and muted text contrast with hover, badge, and panel surfaces. Badge borders
   and control boundaries contrast with their own surface and adjacent surfaces.
   Decorative panel edges and dividers use the shared subtle border where
-  backgrounds, spacing, or labels already identify the content. Tables and
+  backgrounds, spacing, or labels already identify the content. Each widget
+  frame is a region named by its heading. Its heading level follows the view
+  hierarchy. An optional header link and any interactive content in the
+  widget are keyboard accessible and retain visible focus. Tables and
   widget views use a wider measure than detail views, and prose has a bounded
   line length. Fine pointers use compact density and coarse pointers use
   comfortable density. Metadata is at least 0.75rem. Controls and standalone

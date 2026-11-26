@@ -3,11 +3,12 @@ import { registeredVersions, type RegisteredVersion } from '../api/client';
 import { repositoryUrl } from '../commit-link';
 import '../components/pb-badge';
 import '../components/pb-fact-strip';
-import '../components/pb-panel';
 import '../components/pb-rule-set-chip';
 import { shortName } from '../components/pb-short-name';
 import '../components/pb-time';
 import '../components/pb-tooltip';
+import '../components/pb-widget';
+import type { Widget } from '../components/pb-widget';
 import { CockpitView } from './cockpit-view';
 import { followHistoryBack, ruleSetPath, type AttestationOrigin } from './router';
 import { selectedVersion, versionSelector, versionSelectorStyles } from './registry-version';
@@ -62,19 +63,9 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
   };
   static override styles = [CockpitView.styles as CSSResult, versionSelectorStyles, css`
     @layer components {
-      pb-panel {
-        margin-block: var(--space-4);
-        overflow-wrap: anywhere;
-      }
-
-      header {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: var(--space-2) var(--space-3);
-      }
-
-      h2, h3 { margin-block: 0; }
+      pb-widget { margin-block: var(--space-4); }
+      h3 { margin-block: 0; }
+      article > dl:first-child { margin-block-start: 0; }
       dl { margin-block: var(--space-4); }
       dl:last-child { margin-block-end: 0; }
       dl > div + div { margin-block-start: var(--space-3); }
@@ -156,16 +147,12 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
   protected override updated() {
     super.updated();
     if (this.positioned) return;
-    const target = this.renderRoot.querySelector<HTMLElement>('article h2');
+    const target = this.renderRoot.querySelector<Widget>('pb-widget');
     if (!target) return;
     this.positioned = true;
     if (!target.hasAttribute('data-requested-version')) return;
     // The view's initial heading focus runs when the update completes.
-    void this.updateComplete.then(() => {
-      if (!target.isConnected) return;
-      target.focus({ preventScroll: true });
-      target.scrollIntoView();
-    });
+    void this.updateComplete.then(() => target.focusHeading());
   }
 
   protected override content(versions?: RegisteredVersion[]) {
@@ -231,12 +218,10 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
 
   private version(version: RegisteredVersion, requested: string | null, latest: boolean) {
     return html`
-      <pb-panel ?accent=${latest}>
+      <pb-widget .heading=${`Version ${version.version}`} ?accent=${latest}
+        ?data-requested-version=${version.version === requested}>
+        ${latest ? html`<pb-badge slot="metadata">Latest</pb-badge>` : nothing}
         <article>
-          <header>
-            <h2 tabindex="-1" ?data-requested-version=${version.version === requested}>Version ${version.version}</h2>
-            ${latest ? html`<pb-badge>Latest</pb-badge>` : nothing}
-          </header>
           <dl>
             ${version.name ? html`<div><dt>Name</dt><dd class="plain-text">${version.name}</dd></div>` : nothing}
             <div><dt>Kind</dt><dd><pb-badge tone=${version.kind}>${version.kind}</pb-badge></dd></div>
@@ -250,7 +235,7 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
           </dl>
           ${knowledgeDocument(version.knowledge)}
         </article>
-      </pb-panel>
+      </pb-widget>
     `;
   }
 }
