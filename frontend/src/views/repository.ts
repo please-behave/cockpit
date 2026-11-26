@@ -24,30 +24,15 @@ const attestationColumns: DataTableColumn[] = [
 interface RepositoryData {
   releases: ReleaseSummary[];
   deployments: Deployment[];
-  heads: Map<string | null, Summary>;
+  heads: Summary[];
   recent: Summary[];
 }
 
-function latestByPoint(summaries: Summary[], repository: string) {
-  const heads = new Map<string | null, Summary>();
-  for (const summary of summaries) {
-    if (summary.repository !== repository) continue;
-    const points = summary.execution_points.length ? summary.execution_points : [null];
-    for (const point of points) {
-      const previous = heads.get(point);
-      // The ledger emits fixed-precision UTC timestamps and breaks ties by identifier.
-      if (!previous || summary.received_at > previous.received_at ||
-          (summary.received_at === previous.received_at && summary.id > previous.id)) heads.set(point, summary);
-    }
-  }
-  return heads;
-}
-
-function attestationRow(summary: Summary, key: string, points: string) {
+function attestationRow(summary: Summary) {
   return {
-    key,
+    key: summary.id,
     cells: [
-      points,
+      summary.execution_points.join(', ') || 'No execution points',
       html`<a data-route href=${`/attestations/${encodeURIComponent(summary.id)}`}>
         <pb-time .value=${summary.received_at}></pb-time></a>`,
       html`<pb-commit-link .repository=${summary.repository} .commit=${summary.commit}></pb-commit-link>`,
@@ -84,7 +69,7 @@ export class RepositoryView extends CockpitView<RepositoryData> {
       deployments(signal, repository),
     ]);
     current.sort((a, b) => compareEvidence(a, b) || targetLabel(a.target).localeCompare(targetLabel(b.target)));
-    return { releases: recorded, deployments: current, heads: latestByPoint(latest, repository), recent };
+    return { releases: recorded, deployments: current, heads: latest.filter(summary => summary.repository === repository), recent };
   }
 
   protected override content(data?: RepositoryData) {
@@ -114,16 +99,14 @@ export class RepositoryView extends CockpitView<RepositoryData> {
   }
 
   private attestations({ heads, recent }: RepositoryData) {
-    if (heads.size === 0 && recent.length === 0) {
+    if (heads.length === 0 && recent.length === 0) {
       return html`<pb-empty-state heading="No attestations"
         message="No attestations have been reported for this repository."></pb-empty-state>`;
     }
-    const latestRows = [...heads].map(([point, summary]) =>
-      attestationRow(summary, JSON.stringify(point), point ?? 'No execution points'));
-    const recentRows = recent.map(summary =>
-      attestationRow(summary, summary.id, summary.execution_points.join(', ') || 'No execution points'));
+    const latestRows = heads.map(attestationRow);
+    const recentRows = recent.map(attestationRow);
     return html`
-      ${latestRows.length ? html`<pb-data-table label="Latest by execution point"
+      ${latestRows.length ? html`<pb-data-table label="Latest by execution-point combination"
         .columns=${attestationColumns} .rows=${latestRows} row-header-column="0"></pb-data-table>` : nothing}
       ${recentRows.length ? html`<pb-data-table label="Recent attestations"
         .columns=${attestationColumns} .rows=${recentRows}></pb-data-table>` : nothing}

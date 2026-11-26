@@ -12,7 +12,7 @@ description: >-
   time, reported evidence status and linked Rule Set chips of REQ-0034.
   Rows needing attention appear first. The section links to the Deployments tab.
   The Attestations section uses CON-0001 for the newest attestation of each
-  execution point in that repository, including a row for attestations without
+  execution-point combination in that repository, including a row for attestations without
   execution points when present. It shows up to 100 recent attestations through
   CON-0003, filtered by the exact canonical name and in ledger order. The rows
   show execution points, the reported time, commit and overall status, and the

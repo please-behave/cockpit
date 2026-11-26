@@ -4,20 +4,20 @@ import './pb-tooltip';
 
 const tick = 30_000;
 
-export function relativeTime(then: Date, now: Date): string {
+export function relativeTime(then: Date, now: Date, duration = false): string {
   const seconds = Math.max(0, Math.floor((now.getTime() - then.getTime()) / 1000));
   const units = [[86_400, 'day'], [3_600, 'hour'], [60, 'minute']] as const;
   for (const [size, unit] of units) {
     if (seconds >= size) {
       const count = Math.floor(seconds / size);
-      return `${count} ${unit}${count === 1 ? '' : 's'} ago`;
+      return `${count} ${unit}${count === 1 ? '' : 's'}${duration ? '' : ' ago'}`;
     }
   }
-  return 'just now';
+  return duration ? 'less than a minute' : 'just now';
 }
 
 export class RelativeTime extends LitElement {
-  static override properties = { value: { type: String } };
+  static override properties = { value: { type: String }, duration: { type: Boolean } };
 
   static override styles = css`
     @layer components {
@@ -28,11 +28,13 @@ export class RelativeTime extends LitElement {
   `;
 
   declare value: string;
+  declare duration: boolean;
   private timer?: number;
 
   constructor() {
     super();
     this.value = '';
+    this.duration = false;
   }
 
   override connectedCallback() {
@@ -50,7 +52,7 @@ export class RelativeTime extends LitElement {
     if (Number.isNaN(date.getTime())) return html`<span>${this.value}</span>`;
 
     return html`<pb-tooltip .description=${formatTime(date)}><time
-      datetime=${this.value}>${relativeTime(date, new Date())}</time></pb-tooltip>`;
+      datetime=${this.value}>${relativeTime(date, new Date(), this.duration)}</time></pb-tooltip>`;
   }
 }
 

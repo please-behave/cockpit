@@ -118,6 +118,123 @@ pub enum ReportedStatus {
     Warn,
 }
 
+// ledger:CON-0024. Validate the response before forwarding the original bytes.
+#[allow(
+    dead_code,
+    reason = "overview fields are used only for response validation"
+)]
+mod repository_overview {
+    use serde::{Deserialize, Deserializer};
+
+    use super::Overall;
+
+    // The schema requires nullable fields to be present even when they are null.
+    fn nullable<'de, D: Deserializer<'de>, T: Deserialize<'de>>(
+        value: D,
+    ) -> Result<Option<T>, D::Error> {
+        Option::deserialize(value)
+    }
+
+    #[derive(Deserialize)]
+    pub(super) struct Overview {
+        heartbeat: Heartbeat,
+        repositories: Vec<Repository>,
+    }
+
+    #[derive(Deserialize)]
+    struct Heartbeat {
+        #[serde(deserialize_with = "nullable")]
+        completed_at: Option<String>,
+        stale: bool,
+    }
+
+    #[derive(Deserialize)]
+    struct Repository {
+        repository: String,
+        #[serde(deserialize_with = "nullable")]
+        platform: Option<String>,
+        managed: bool,
+        state: State,
+        status_token: StatusToken,
+        #[serde(deserialize_with = "nullable")]
+        heartbeat_completed_at: Option<String>,
+        #[serde(deserialize_with = "nullable")]
+        latest_check: Option<Check>,
+        #[serde(deserialize_with = "nullable")]
+        head: Option<Head>,
+        #[serde(deserialize_with = "nullable")]
+        pending_since: Option<String>,
+        #[serde(deserialize_with = "nullable")]
+        pending_age_seconds: Option<u64>,
+        #[serde(deserialize_with = "nullable")]
+        overdue_step: Option<u64>,
+        #[serde(deserialize_with = "nullable")]
+        overdue_steps: Option<u64>,
+        observed_heads_since_evidence: u64,
+        #[serde(deserialize_with = "nullable")]
+        last_evidence_at: Option<String>,
+        #[serde(deserialize_with = "nullable")]
+        latest_release: Option<Release>,
+        #[serde(deserialize_with = "nullable")]
+        latest_deployment: Option<Deployment>,
+    }
+
+    #[derive(Deserialize)]
+    #[serde(rename_all = "snake_case")]
+    enum State {
+        Unknown,
+        NeverIntegrated,
+        Current,
+        Pending,
+        Overdue,
+    }
+
+    #[derive(Deserialize)]
+    enum StatusToken {
+        #[serde(rename = "status-not-run")]
+        NotRun,
+        #[serde(rename = "status-failed")]
+        Failed,
+        #[serde(rename = "status-passed")]
+        Passed,
+        #[serde(rename = "status-allowed")]
+        Allowed,
+        #[serde(rename = "status-warning")]
+        Warning,
+    }
+
+    #[derive(Deserialize)]
+    struct Check {
+        id: String,
+        commit: String,
+        overall: Overall,
+        received_at: String,
+    }
+
+    #[derive(Deserialize)]
+    struct Head {
+        branch: String,
+        commit: String,
+        committed_at: String,
+        observed_at: String,
+        direct_evidence: bool,
+    }
+
+    #[derive(Deserialize)]
+    struct Release {
+        version: String,
+        commit: String,
+        received_at: String,
+    }
+
+    #[derive(Deserialize)]
+    struct Deployment {
+        owner: String,
+        name: String,
+        received_at: String,
+    }
+}
+
 // Deserialize to validate the compliance response before forwarding the original bytes.
 #[allow(
     dead_code,
@@ -410,6 +527,7 @@ mod registry {
 #[derive(Clone, Copy)]
 enum Endpoint<'a> {
     Latest,
+    RepositoryOverview,
     CompletedRuleSets,
     List,
     Attestation(&'a str),
@@ -461,6 +579,13 @@ impl LedgerClient {
 
     pub(crate) async fn latest_response(&self) -> Result<(Vec<Summary>, Bytes), ReadError> {
         self.read(Endpoint::Latest, None).await
+    }
+
+    pub(crate) async fn repository_overview_response(&self) -> Result<Bytes, ReadError> {
+        let (_, body) = self
+            .read::<repository_overview::Overview>(Endpoint::RepositoryOverview, None)
+            .await?;
+        Ok(body)
     }
 
     pub(crate) async fn completed_rule_sets_response(&self) -> Result<Bytes, ReadError> {
@@ -589,6 +714,7 @@ impl LedgerClient {
         let mut url = self.base_url.clone();
         url.set_path(match endpoint {
             Endpoint::Latest => "/v0/attestations/latest",
+            Endpoint::RepositoryOverview => "/v0/repositories/overview",
             Endpoint::CompletedRuleSets => "/v0/repositories/completed-rule-sets",
             Endpoint::List | Endpoint::Attestation(_) => "/v0/attestations",
             Endpoint::Rules => "/v0/rules",

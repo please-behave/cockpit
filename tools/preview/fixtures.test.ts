@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import type {
-  Attestation, Deployment, RegisteredRule, RegisteredRuleSet, RegisteredRuleSetVersion, RegisteredVersion, RepositoryRuleSets, RuleSetCompliance, ReleaseDetail, ReleaseSummary, Summary,
+  Attestation, Deployment, RegisteredRule, RegisteredRuleSet, RegisteredRuleSetVersion, RegisteredVersion, RepositoryOverview, RepositoryRuleSets, RuleSetCompliance, ReleaseDetail, ReleaseSummary, Summary,
 } from '../../frontend/src/api/client';
 import { fixtureTargets, respond } from './fixtures.mjs';
 
@@ -40,7 +40,7 @@ test('serves latest summaries in the client shape', () => {
   expect([...points.values()].some(tiles => tiles.length > 1)).toBe(true);
 });
 
-test.each([fixtureTargets.latest, fixtureTargets.history])('delays %s for refresh review', target => {
+test.each([fixtureTargets.repositoryOverview, fixtureTargets.latest, fixtureTargets.history])('delays %s for refresh review', target => {
   expect(respond(`${target}?preview=slow-refresh`)).toEqual({ ...respond(target), delay: 750 });
 });
 
@@ -348,4 +348,28 @@ test('serves all current deployment states and continues from the last event ID'
   expect(body<Deployment[]>(path + '?' + new URLSearchParams({ repository, limit: '200' })))
     .toEqual(entries.filter(entry => entry.repository === repository));
   expect(respond(path + '?before=0')?.status).toBe(400);
+});
+
+test('serves repository health, evidence and covering syncs in the client shape', () => {
+  const { heartbeat, repositories } = body<RepositoryOverview>(fixtureTargets.repositoryOverview);
+  expect(heartbeat.completed_at).toBe(repositories.flatMap(entry => entry.heartbeat_completed_at ?? []).sort()[0]);
+  expect(heartbeat.stale).toBe(true);
+  expect(new Set(repositories.map(entry => entry.state)))
+    .toEqual(new Set(['current', 'pending', 'overdue', 'never_integrated', 'unknown']));
+  expect(new Set(repositories.flatMap(entry => entry.latest_check?.overall ?? [])))
+    .toEqual(new Set(['PASS', 'FAIL', 'ERROR']));
+  expect(repositories.some(entry => entry.state === 'unknown' && !entry.heartbeat_completed_at)).toBe(true);
+  expect(repositories.some(entry => entry.state === 'unknown' && entry.heartbeat_completed_at)).toBe(true);
+  expect(repositories.find(entry => !entry.managed)).toMatchObject({ platform: null, state: 'unknown' });
+  expect(repositories.find(entry => entry.state === 'never_integrated')?.latest_check).toBeNull();
+  expect(repositories.map(entry => entry.repository)).not.toContain('github.com/acme/archived');
+  for (const entry of repositories) {
+    expect(entry.observed_heads_since_evidence).toSatisfy(isCount);
+    if (entry.state === 'pending' || entry.state === 'overdue') {
+      expect(entry.head?.direct_evidence).toBe(false);
+      expect(entry.head?.commit).toMatch(/^[0-9a-f]{40}$/);
+      expect(entry.pending_age_seconds).toSatisfy(isCount);
+      expect(Date.parse(entry.pending_since!)).not.toBeNaN();
+    }
+  }
 });

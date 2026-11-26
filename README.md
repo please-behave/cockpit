@@ -45,7 +45,7 @@ mise run preview
 
 The task builds the frontend and serves it at `http://127.0.0.1:8090/` (set
 `PREVIEW_PORT` to change the port). `tools/preview/` answers the read API with
-fixtures for every view, including all outcomes, several execution points,
+fixtures for every view, including repository health states, several execution points,
 verified and unverified results, rule versions, very long texts and markup.
 The preview is a developer tool and is not part of the executable.
 
@@ -84,21 +84,9 @@ Set `COCKPIT_BIND_ADDR` to an IP address and port to override
 `127.0.0.1:8080`. For a container accepting
 connections from outside its network namespace, set it to `0.0.0.0:8080`.
 
-Open `/sign-in` to sign in with GitHub. Sessions expire after eight hours,
-and **Sign out** clears the session from the current browser. The dashboard
-shows one tile for the latest reported attestation of each repository and
-execution-point combination, with a header counting the tiles that pass and
-those that do not. Sort the tiles by last attestation or by name, ignoring case. The sort
-choice is the `sort` query parameter. The dashboard and the **Attestations** page
-read again every 5 minutes while the tab is visible. The refresh button next
-to the age of the data below the header reads again on demand. Select a repository to see the rules and outcomes
-for that attestation; its back link returns to the dashboard or the
-**Attestations** page, wherever you came from. The **Attestations** page lists
-every attestation, newest first, and loads older ones in pages of 100 while you
-scroll. Going back from a detail page to the **Attestations** page returns to
-the same scroll position without loading again; the page is kept in memory only
-and **Attestations** in the menu always loads fresh data. If the ledger is unavailable, the view shows an error with a retry
-action.
+Open `/sign-in` to sign in with GitHub. See the
+[Cockpit guide](https://github.com/please-behave/docs/blob/main/src/cockpit.md)
+for the dashboard and evidence views.
 
 Browser clients can use the [session-protected JSON read API](why/contracts/browser/latest.md).
 

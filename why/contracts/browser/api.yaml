@@ -67,3 +67,8 @@ contracts:
     document: deployments.md
     schema: deployments.schema.json
     requirements: [REQ-0012, REQ-0013, REQ-0033, REQ-0034]
+  - id: CON-0014
+    name: Repository Overview
+    document: repository-overview.md
+    schema: repository-overview.schema.json
+    requirements: [REQ-0012, REQ-0013, REQ-0019, REQ-0020]

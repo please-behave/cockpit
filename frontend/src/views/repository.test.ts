@@ -57,7 +57,7 @@ test.each([repositoryPath(repository), '/releases/repository?repository=github.c
     expect(root.querySelector('a[href="/releases"]')).not.toBeNull();
 
     const [latest, history] = [...root.querySelectorAll<DataTable>('pb-data-table')];
-    expect(latest.label).toBe('Latest by execution point');
+    expect(latest.label).toBe('Latest by execution-point combination');
     expect(latest.rows.map(row => row.cells[0])).toEqual(['check']);
     expect(history.label).toBe('Recent attestations');
     const filteredHistory = '/v0/attestations?limit=100&repository=github.com%2Facme%2Freturn-navigation';
@@ -126,7 +126,7 @@ test('links an empty Deployments section to the Deployments tab', async () => {
   expect(app.shadowRoot!.querySelector('pb-deployments')).not.toBeNull();
 });
 
-test('selects each execution point independently from overlapping combinations', async () => {
+test('shows every overlapping execution-point combination separately', async () => {
   const { root } = await open(repositoryPath('github.com/acme/widget'));
   const latest = root.querySelector<DataTable>('pb-data-table')!;
   const links = [...latest.shadowRoot!.querySelectorAll('tbody tr')].map(row =>
@@ -134,7 +134,7 @@ test('selects each execution point independently from overlapping combinations',
   expect(links).toEqual([
     ['deploy', '/attestations/00000000-0000-4000-8000-000000000082'],
     ['build', '/attestations/00000000-0000-4000-8000-000000000081'],
-    ['release', '/attestations/00000000-0000-4000-8000-000000000080'],
+    ['release, deploy', '/attestations/00000000-0000-4000-8000-000000000080'],
   ]);
   expect(root.querySelector('pb-empty-state')).toHaveProperty('heading', 'No releases');
 });

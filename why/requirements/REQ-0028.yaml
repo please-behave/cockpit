@@ -2,7 +2,7 @@ id: REQ-0028
 name: Completed Rule Sets on the Dashboard
 description: >-
   On each dashboard load and refresh, the Cockpit reads completed shared Rule
-  Sets by repository through CON-0006 alongside the latest attestations.
+  Sets by repository through CON-0006 alongside the repository overview.
   Each tile shows one chip per completed set for its repository, using the
   bound version's display name as plain text. Tiles for repositories without
   completed sets show no chips. A chip links to the bound version on the

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import { attestationPage, getAttestation, latestAttestations } from '../api/client';
+import { attestationPage, getAttestation, repositoryOverview, type RepositoryOverview } from '../api/client';
 import { CockpitApp } from './app';
 import type { DetailView } from '../views/detail';
 import type { DashboardView } from '../views/dashboard';
@@ -9,7 +9,7 @@ import type { NavTab } from './pb-nav-tab';
 
 vi.mock(import('../api/client'), async original => ({
   ...await original(),
-  latestAttestations: vi.fn(async () => []),
+  repositoryOverview: vi.fn(async () => ({ heartbeat: { completed_at: null, stale: true }, repositories: [] })),
   completedRuleSets: vi.fn(async () => []),
   registeredRuleSets: vi.fn(async () => []),
   registeredRules: vi.fn(async () => []),
@@ -127,7 +127,7 @@ test('mounts a deep link, disposes it on history navigation and focuses the next
   const dashboard = app.shadowRoot!.querySelector<DashboardView>('pb-dashboard')!;
   await dashboard.updateComplete;
   expect(window.location.pathname).toBe('/');
-  expect(latestAttestations).toHaveBeenCalled();
+  expect(repositoryOverview).toHaveBeenCalled();
   expect(dashboard.shadowRoot!.activeElement?.textContent).toBe('Dashboard');
 });
 
@@ -259,11 +259,17 @@ const status = (shell: CockpitAppShell) => shell.shadowRoot!.querySelector('pb-r
 
 // Verifies REQ-0020.
 test.each([
-  ['/', latestAttestations],
+  ['/', repositoryOverview],
   ['/attestations', attestationPage],
 ] as const)('reserves a line below the header on %s before data arrives', async (path, read) => {
-  let complete!: (value: []) => void;
-  vi.mocked(read).mockReturnValueOnce(new Promise(resolve => { complete = resolve; }));
+  let complete!: () => void;
+  if (read === repositoryOverview) {
+    vi.mocked(read).mockReturnValueOnce(new Promise(resolve => {
+      complete = () => resolve({ heartbeat: { completed_at: null, stale: true }, repositories: [] });
+    }));
+  } else {
+    vi.mocked(attestationPage).mockReturnValueOnce(new Promise(resolve => { complete = () => resolve([]); }));
+  }
   const { shell } = await mountAt(path);
   await shell.updateComplete;
 
@@ -272,7 +278,7 @@ test.each([
   expect(line.nextElementSibling).toBe(root.querySelector('main'));
   expect(status(shell)).toBeNull();
 
-  complete([]);
+  complete();
   await vi.waitFor(() => expect(status(shell)?.parentElement).toBe(line));
   expect(status(shell)!.shadowRoot!.querySelector('button')?.getAttribute('aria-label')).toBe('Refresh');
 });
@@ -293,16 +299,16 @@ test('ages the text without a request and reads once per 5 minutes while visible
   await vi.waitFor(() => expect(status(shell)).not.toBeNull());
   const text = () => status(shell)!.shadowRoot!.querySelector('time')!.textContent;
   expect(text()).toBe('Updated a few seconds ago');
-  expect(latestAttestations).toHaveBeenCalledTimes(1);
+  expect(repositoryOverview).toHaveBeenCalledTimes(1);
 
   await vi.advanceTimersByTimeAsync(60_000);
   await vi.waitFor(() => expect(text()).toBe('Updated 1 minute ago'));
-  expect(latestAttestations).toHaveBeenCalledTimes(1);
+  expect(repositoryOverview).toHaveBeenCalledTimes(1);
 
   await vi.advanceTimersByTimeAsync(240_000);
-  expect(latestAttestations).toHaveBeenCalledTimes(2);
+  expect(repositoryOverview).toHaveBeenCalledTimes(2);
   await vi.advanceTimersByTimeAsync(300_000);
-  expect(latestAttestations).toHaveBeenCalledTimes(3);
+  expect(repositoryOverview).toHaveBeenCalledTimes(3);
 });
 
 // Verifies REQ-0020.
@@ -312,23 +318,23 @@ test('the button reads at once, is busy meanwhile and restarts the interval', as
   await vi.waitFor(() => expect(status(shell)).not.toBeNull());
   await vi.advanceTimersByTimeAsync(200_000);
 
-  let complete!: (value: []) => void;
-  vi.mocked(latestAttestations).mockReturnValueOnce(new Promise(resolve => { complete = resolve; }));
+  let complete!: (value: RepositoryOverview) => void;
+  vi.mocked(repositoryOverview).mockReturnValueOnce(new Promise(resolve => { complete = resolve; }));
   const button = status(shell)!.shadowRoot!.querySelector('button')!;
   button.focus();
   button.click();
-  expect(latestAttestations).toHaveBeenCalledTimes(2);
+  expect(repositoryOverview).toHaveBeenCalledTimes(2);
   await vi.waitFor(() => expect(button.getAttribute('aria-disabled')).toBe('true'));
   button.click();
-  expect(latestAttestations).toHaveBeenCalledTimes(2);
+  expect(repositoryOverview).toHaveBeenCalledTimes(2);
 
-  complete([]);
+  complete({ heartbeat: { completed_at: null, stale: true }, repositories: [] });
   await vi.waitFor(() => expect(button.getAttribute('aria-disabled')).toBe('false'));
   expect(status(shell)!.shadowRoot!.activeElement).toBe(button);
   expect(status(shell)!.shadowRoot!.querySelector('time')!.textContent).toBe('Updated a few seconds ago');
 
   await vi.advanceTimersByTimeAsync(299_000);
-  expect(latestAttestations).toHaveBeenCalledTimes(2);
+  expect(repositoryOverview).toHaveBeenCalledTimes(2);
   await vi.advanceTimersByTimeAsync(1_000);
-  expect(latestAttestations).toHaveBeenCalledTimes(3);
+  expect(repositoryOverview).toHaveBeenCalledTimes(3);
 });

@@ -1,8 +1,8 @@
 id: REQ-0020
 name: Dashboard and History Refresh
 description: >-
-  While the browser tab is visible, the dashboard and the attestation history
-  read their latest data again every 5 minutes and when the tab becomes visible
+  While the browser tab is visible, the dashboard reads CON-0014 and the
+  attestation history reads CON-0003 every 5 minutes and when the tab becomes visible
   after it was hidden for longer than that. They do nothing while the tab is
   hidden. The registered rules, the rule detail and the attestation detail do
   not refresh. Only refreshable views reserve a status line directly below the
@@ -18,7 +18,7 @@ description: >-
   content in place and keeps the keyboard focus, the scroll position and the
   dashboard's sort choice.
   A failed refresh keeps the data and shows a notice. Tiles are identified by
-  repository and execution points.
+  repository key and platform from CON-0014.
 rationale: >-
   The views stay current without a reload and without interrupting the viewer,
   who can see how old the data is and read again on demand.

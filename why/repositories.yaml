@@ -6,3 +6,5 @@ linked:
     source: github:please-behave/why
   - alias: ledger
     source: github:please-behave/ledger
+  - alias: docs
+    source: github:please-behave/docs

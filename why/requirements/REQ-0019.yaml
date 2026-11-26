@@ -1,30 +1,47 @@
 id: REQ-0019
 name: Repository Dashboard
 description: >-
-  The landing page is a dashboard that loads the latest attestation summaries
-  through CON-0001. A summary banner above the tiles states how many tiles pass and how many do
-  not (FAIL or ERROR), as text with an icon, in the page heading size and with
-  a stripe in the status color, and does not rely on color alone. The sort
-  control is inside the banner, aligned to the end and wrapped below the status
-  counts on narrow widths. The dashboard shows one tile
-  for each repository and execution-point combination that
-  ledger:CON-0002 returns, with the status, the repository owner above the
-  shortened repository name, the first seven characters of the commit, the
-  ledger receipt time labeled "Reported" and shown relative to now with the
-  localized exact time in a tooltip and accessible description, followed in
-  the same line by the rule count. A tooltip and assistive technology
-  expose the full value of a shortened commit. The tile shows no counts of
-  warnings or rules not run.
-  The shortened name links to the attestation, and the tile follows that link
-  outside its other controls. Each tile has a separate "View repository" link
-  to the repository page of REQ-0033. Execution points are shown only for a
-  repository with more than one tile. An empty ledger has an explicit empty state.
+  The dashboard reads CON-0014 and shows one tile per repository identity
+  returned by the ledger, including repositories without attestations.
+  It labels unmanaged repositories "Not managed". The ledger excludes archived
+  repositories. A tile's owner appears above the shortened repository name,
+  which links to the repository page of REQ-0033. The name and verdict pill
+  share the title row, and the tile follows the name link outside its other
+  controls. The pill shows PASS, FAIL, ERROR or "No evidence" for the newest
+  attestation containing check. When present, that evidence shows the commit
+  shortened to seven characters, with its full value available in a tooltip
+  and accessible description, and the relative ledger receipt time labeled
+  "Reported", with the localized exact time available in a tooltip and
+  accessible description. The tile shows no execution points or rule counts.
+
+  The top stripe shows unknown with status-not-run when the ledger state is
+  unknown. Otherwise it uses status-failed for FAIL or ERROR verdicts and
+  never integrated repositories. For the remaining tiles it uses status-passed
+  for current and pending, status-warning for overdue before the last
+  configured step and status-failed at the last step. Each tile names the
+  repository state. A pending or overdue head has one line with its shortened
+  commit, the time waiting for evidence and the count of observed heads since
+  evidence as information. Pending uses status-allowed and overdue uses
+  status-warning on that line, independently of the stripe. Overdue names the
+  reached step and total step count.
+
+  The banner counts failed, warning, unknown and passed tiles as text with
+  icons, using the highest severity for its stripe. It shows the oldest
+  completion time of the covering syncs from the ledger, whether that time is
+  stale or whether no covering sync has completed. The sort control sits
+  inside the banner and wraps on narrow widths. Sort by severity by default in
+  that order, then by name for ties. Name and last attestation sorts stay
+  available under DEC-0012. The empty overview has an explicit empty state.
+  The dashboard follows REQ-0015 in both themes and forced colors, with every
+  status conveyed in text.
 rationale: >-
-  Viewers see at a glance whether every repository passes and can reach the
-  evidence of each head attestation.
+  Viewers can identify missing or stale evidence and see the reported check
+  verdict for each repository.
 decisions:
   - DEC-0001
   - DEC-0002
-  - DEC-0010
   - DEC-0011
   - DEC-0012
+  - DEC-0016
+  - why:DEC-0024
+  - why:DEC-0025

@@ -1,18 +1,21 @@
-import { css, html, nothing, type CSSResult } from 'lit';
+import { css, html, nothing, type CSSResult, type PropertyValues } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
-import { completedRuleSets, latestAttestations, type CompletedRuleSet, type Summary } from '../api/client';
+import {
+  completedRuleSets, repositoryOverview, type CompletedRuleSet, type RepositoryOverview, type RepositoryOverviewEntry,
+} from '../api/client';
 import '../components/pb-empty-state';
-import '../components/pb-repository-tile';
+import { repositoryHealth, type RepositoryHealth } from '../components/pb-repository-tile';
+import '../components/pb-time';
 import { CockpitView } from './cockpit-view';
 
-type Sort = 'time' | 'name';
+type Sort = 'severity' | 'time' | 'name';
 
-interface DashboardData {
-  summaries: Summary[];
+interface DashboardData extends RepositoryOverview {
   setsByRepository: ReadonlyMap<string, CompletedRuleSet[]>;
 }
 
 const sortOptions: readonly { value: Sort; label: string }[] = [
+  { value: 'severity', label: 'Severity' },
   { value: 'time', label: 'Last attestation' },
   { value: 'name', label: 'Name' },
 ];
@@ -32,37 +35,43 @@ function compareText(left: string, right: string): number {
   return compareCodePoints(left.toLowerCase(), right.toLowerCase()) || compareCodePoints(left, right);
 }
 
-function compareByName(left: Summary, right: Summary): number {
-  const primary = compareText(left.repository, right.repository);
-  if (primary) return primary;
+const healthStatuses = {
+  failed: { label: 'failed', icon: '×', rank: 0 },
+  warning: { label: 'warning', icon: '▲', rank: 1 },
+  'not-run': { label: 'unknown', icon: '○', rank: 2 },
+  passed: { label: 'passed', icon: '✓', rank: 3 },
+} satisfies Record<RepositoryHealth, { label: string; icon: string; rank: number }>;
 
-  const leftPoints = left.execution_points;
-  const rightPoints = right.execution_points;
-  for (let index = 0; index < Math.min(leftPoints.length, rightPoints.length); index++) {
-    const difference = compareText(leftPoints[index], rightPoints[index]);
-    if (difference) return difference;
-  }
-  return leftPoints.length - rightPoints.length;
+function compareByName(left: RepositoryOverviewEntry, right: RepositoryOverviewEntry): number {
+  return compareText(left.repository, right.repository) || compareText(left.platform ?? '', right.platform ?? '');
 }
 
-function receivedAt(summary: Summary): number {
-  const time = Date.parse(summary.received_at);
+function compareBySeverity(left: RepositoryOverviewEntry, right: RepositoryOverviewEntry): number {
+  return healthStatuses[repositoryHealth(left)].rank - healthStatuses[repositoryHealth(right)].rank ||
+    compareByName(left, right);
+}
+
+function receivedAt(entry: RepositoryOverviewEntry): number {
+  const time = Date.parse(entry.latest_check?.received_at ?? '');
   return Number.isNaN(time) ? -Infinity : time;
 }
 
-function compareByTime(left: Summary, right: Summary): number {
+function compareByTime(left: RepositoryOverviewEntry, right: RepositoryOverviewEntry): number {
   const leftTime = receivedAt(left);
   const rightTime = receivedAt(right);
   if (leftTime === rightTime) return compareByName(left, right);
   return leftTime < rightTime ? 1 : -1;
 }
 
+const comparators = { severity: compareBySeverity, time: compareByTime, name: compareByName };
+
 function sortFromLocation(): Sort {
-  return new URLSearchParams(window.location.search).get('sort') === 'name' ? 'name' : 'time';
+  const sort = new URLSearchParams(window.location.search).get('sort');
+  return sort === 'name' || sort === 'time' ? sort : 'severity';
 }
 
-function tileKey(summary: Summary) {
-  return JSON.stringify([summary.repository, ...summary.execution_points]);
+function tileKey(entry: RepositoryOverviewEntry) {
+  return JSON.stringify([entry.repository, entry.platform]);
 }
 
 export class DashboardView extends CockpitView<DashboardData> {
@@ -85,33 +94,32 @@ export class DashboardView extends CockpitView<DashboardData> {
 
       .banner.passed { border-inline-start-color: var(--status-passed); }
       .banner.failed { border-inline-start-color: var(--status-failed); }
+      .banner.warning { border-inline-start-color: var(--status-warning); }
+      .banner.not-run { border-inline-start-color: var(--status-not-run); }
 
-      .status {
+      .counts {
         display: flex;
-        align-items: center;
-        gap: var(--space-4);
-        min-inline-size: 0;
-      }
-
-      .passed .status { color: var(--status-passed); }
-      .failed .status { color: var(--status-failed); }
-
-      .banner .icon {
-        font-size: var(--type-heading);
-        line-height: var(--line-heading);
-      }
-
-      .banner h2 {
-        margin-block: 0;
-        font-size: var(--type-heading);
-        line-height: var(--line-heading);
-        overflow-wrap: anywhere;
-      }
-
-      .tiles {
+        flex-wrap: wrap;
+        column-gap: var(--space-4);
+        row-gap: var(--space-1);
         margin: 0;
         padding: 0;
         list-style: none;
+        font-size: var(--type-heading);
+        line-height: var(--line-heading);
+        font-weight: var(--weight-semibold);
+      }
+
+      .counts .passed { color: var(--status-passed); }
+      .counts .failed { color: var(--status-failed); }
+      .counts .warning { color: var(--status-warning); }
+      .counts .not-run { color: var(--status-not-run); }
+
+      .sync {
+        flex-basis: 100%;
+        margin: 0;
+        color: var(--text-muted);
+        overflow-wrap: anywhere;
       }
 
       .sort {
@@ -146,6 +154,9 @@ export class DashboardView extends CockpitView<DashboardData> {
       }
 
       .tiles {
+        margin: 0;
+        padding: 0;
+        list-style: none;
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
         gap: var(--space-4);
@@ -165,12 +176,12 @@ export class DashboardView extends CockpitView<DashboardData> {
   }
 
   protected override async read(signal: AbortSignal): Promise<DashboardData> {
-    const [summaries, completed] = await Promise.all([
-      latestAttestations(signal),
+    const [overview, completed] = await Promise.all([
+      repositoryOverview(signal),
       completedRuleSets(signal),
     ]);
     const setsByRepository = new Map(completed.map(({ repository, sets }) => [repository, sets]));
-    return { summaries, setsByRepository };
+    return { ...overview, setsByRepository };
   }
 
   protected override heading() {
@@ -184,47 +195,56 @@ export class DashboardView extends CockpitView<DashboardData> {
     return html`${data === undefined ? nothing : this.results(data)}`;
   }
 
-  private changeSort(event: Event) {
-    this.sort = (event.target as HTMLInputElement).value === 'name' ? 'name' : 'time';
-    const url = new URL(window.location.href);
-    if (this.sort === 'time') url.searchParams.delete('sort');
-    else url.searchParams.set('sort', this.sort);
-    window.history.replaceState(null, '', url);
+  protected override update(changed: PropertyValues) {
+    // Lit can move a tile when its health changes. Keep focus on the same control.
+    let focused = this.shadowRoot?.activeElement;
+    while (focused?.shadowRoot?.activeElement) focused = focused.shadowRoot.activeElement;
+    super.update(changed);
+    if (focused instanceof HTMLElement && focused.isConnected && !this.shadowRoot?.activeElement) {
+      focused.focus({ preventScroll: true });
+    }
   }
 
-  private results({ summaries, setsByRepository }: DashboardData) {
-    if (summaries.length === 0) {
-      return html`<pb-empty-state heading="No attestations"
-        message="No attestations have been reported yet."></pb-empty-state>`;
+  private changeSort(event: Event) {
+    this.sort = (event.target as HTMLInputElement).value as Sort;
+    const url = new URL(window.location.href);
+    if (this.sort === 'severity') url.searchParams.delete('sort');
+    else url.searchParams.set('sort', this.sort);
+    window.history.replaceState(window.history.state, '', url);
+  }
+
+  private results({ heartbeat, repositories, setsByRepository }: DashboardData) {
+    if (repositories.length === 0) {
+      return html`<pb-empty-state heading="No repositories"
+        message="The ledger has no repositories to show."></pb-empty-state>`;
     }
 
-    const passing = summaries.filter(summary => summary.overall === 'PASS').length;
-    const failing = summaries.length - passing;
-    const passed = failing === 0;
-    const headline = passed ? `All ${summaries.length} passing` : `${failing} not passing, ${passing} passing`;
-    const tilesPerRepository = new Map<string, number>();
-    for (const { repository } of summaries) {
-      tilesPerRepository.set(repository, (tilesPerRepository.get(repository) ?? 0) + 1);
-    }
-    const sorted = [...summaries].sort(this.sort === 'name' ? compareByName : compareByTime);
+    const counts: Record<RepositoryHealth, number> = { failed: 0, warning: 0, 'not-run': 0, passed: 0 };
+    for (const entry of repositories) counts[repositoryHealth(entry)]++;
+    const healthEntries = Object.entries(healthStatuses) as [RepositoryHealth, typeof healthStatuses[RepositoryHealth]][];
+    const severity = healthEntries.find(([health]) => counts[health] > 0)?.[0];
+    const sorted = [...repositories].sort(comparators[this.sort]);
 
     return html`
-      <div class="banner ${passed ? 'passed' : 'failed'}">
-        <div class="status">
-          <span class="icon" aria-hidden="true">${passed ? '✓' : '×'}</span>
-          <h2>${headline}</h2>
-        </div>
+      <div class="banner ${severity}">
+        <ul class="counts" aria-label="Repository health" role="list">
+          ${healthEntries.map(([health, { icon, label }]) => html`<li class=${health}>
+            <span aria-hidden="true">${icon}</span> ${counts[health]} ${label}
+          </li>`)}
+        </ul>
         <fieldset class="sort">
           <legend>Sort by</legend>
           ${sortOptions.map(option => html`<label><input type="radio" name="sort" .value=${option.value}
             ?checked=${this.sort === option.value} @change=${this.changeSort}> ${option.label}</label>`)}
         </fieldset>
+        <p class="sync">${heartbeat.completed_at
+          ? html`Oldest covering sync <pb-time .value=${heartbeat.completed_at}></pb-time>${heartbeat.stale ? ' (stale)' : ''}`
+          : 'No covering sync has completed.'}</p>
       </div>
-      <ul class="tiles" aria-label="Repositories">
-        ${repeat(sorted, tileKey, summary => html`
-          <li><pb-repository-tile .summary=${summary}
-            .completedSets=${setsByRepository.get(summary.repository)}
-            .showExecutionPoints=${tilesPerRepository.get(summary.repository)! > 1}></pb-repository-tile></li>
+      <ul class="tiles" aria-label="Repositories" role="list">
+        ${repeat(sorted, tileKey, entry => html`
+          <li><pb-repository-tile .entry=${entry}
+            .completedSets=${setsByRepository.get(entry.repository)}></pb-repository-tile></li>
         `)}
       </ul>
     `;

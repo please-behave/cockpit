@@ -1,16 +1,17 @@
 id: DEC-0012
 name: Keep the Dashboard Sort Order in the URL
 context: >-
-  Viewers choose between the newest attestation first and the repository name.
+  Viewers choose among severity, newest check attestation first and repository name.
   The choice must survive a reload and be shareable, and browser storage is
   not used.
 decision: >-
-  The sort choice is the query parameter sort. The default order, newest
-  attestation first, omits it. Changing it replaces the current history entry
-  instead of adding one. The name order compares repositories and then
-  execution points without regard to case, using lower-cased code points and
-  never the browser locale. Names that differ only in case are ordered by
-  their original code points.
+  The sort choice is the query parameter sort. The default severity order
+  omits it. The newest check attestation first uses sort=time, with missing
+  evidence last, and the name order uses sort=name. Changing the sort replaces
+  the current history entry. Name order compares repository names and then
+  platforms without regard to case, using lower-cased code points rather than
+  the browser locale. Values that differ only in case are ordered by their
+  original code points. Name order breaks ties in the other orders.
 rationale: >-
   The address carries the view state without storage and without cluttering
   the browser history.

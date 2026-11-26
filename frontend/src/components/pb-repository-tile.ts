@@ -1,6 +1,6 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
-import type { CompletedRuleSet, Summary } from '../api/client';
+import type { CompletedRuleSet, RepositoryOverviewEntry } from '../api/client';
 import { linkStyles } from '../styles/links';
 import './pb-commit-link';
 import './pb-relative-time';
@@ -10,11 +10,30 @@ import { ownerName } from './pb-short-name';
 import './pb-status-pill';
 import './pb-tooltip';
 
+export type RepositoryHealth = 'passed' | 'warning' | 'failed' | 'not-run';
+
+export function repositoryHealth(entry: RepositoryOverviewEntry): RepositoryHealth {
+  if (entry.state === 'unknown') return 'not-run';
+  if (entry.state === 'never_integrated' || entry.latest_check?.overall === 'FAIL' ||
+      entry.latest_check?.overall === 'ERROR') return 'failed';
+  if (entry.state === 'overdue') {
+    return entry.overdue_step === entry.overdue_steps ? 'failed' : 'warning';
+  }
+  return 'passed';
+}
+
+const stateLabels = {
+  current: 'Current',
+  pending: 'Pending',
+  overdue: 'Overdue',
+  never_integrated: 'Never integrated',
+  unknown: 'Unknown',
+};
+
 export class RepositoryTile extends LitElement {
   static override properties = {
-    summary: { attribute: false },
-      completedSets: { attribute: false },
-    showExecutionPoints: { type: Boolean },
+    entry: { attribute: false },
+    completedSets: { attribute: false },
   };
 
   static override styles = css`
@@ -42,11 +61,16 @@ export class RepositoryTile extends LitElement {
 
       .tile.passed { border-block-start-color: var(--status-passed); }
       .tile.failed { border-block-start-color: var(--status-failed); }
-      .tile.error { border-block-start-color: var(--status-error); }
+      .tile.warning { border-block-start-color: var(--status-warning); }
+      .tile.not-run { border-block-start-color: var(--status-not-run); }
+      .meta.status-allowed { color: var(--status-allowed); }
+      .meta.status-warning { color: var(--status-warning); }
 
-      .tile pb-status-pill {
-        align-self: flex-start;
-        font-size: var(--type-brand);
+      .title {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: start;
+        gap: var(--space-1) var(--space-2);
       }
 
       .owner, .meta {
@@ -79,12 +103,10 @@ export class RepositoryTile extends LitElement {
         outline-offset: var(--focus-offset);
       }
 
-      pb-commit-link, pb-relative-time, pb-rule-set-chip, .repository-page {
+      pb-commit-link, pb-relative-time, pb-rule-set-chip {
         position: relative;
         z-index: 1;
       }
-
-      .repository-page { align-self: flex-start; }
 
       .sets {
         display: flex;
@@ -102,41 +124,38 @@ export class RepositoryTile extends LitElement {
     }
   `;
 
-  declare summary?: Summary;
+  declare entry?: RepositoryOverviewEntry;
   declare completedSets?: readonly CompletedRuleSet[];
-  declare showExecutionPoints: boolean;
-
-  constructor() {
-    super();
-    this.showExecutionPoints = false;
-  }
 
   override render() {
-      const { summary, showExecutionPoints, completedSets } = this;
-    if (!summary) return nothing;
+    const { entry, completedSets } = this;
+    if (!entry) return nothing;
 
-    const owner = ownerName(summary.repository);
-    const style = { PASS: 'passed', FAIL: 'failed', ERROR: 'error' }[summary.overall] ?? '';
+    const { repository, state, status_token, latest_check: check, head, pending_since: pendingSince } = entry;
+    const owner = ownerName(repository);
 
     return html`
-      <div class="tile ${style}">
-        <pb-status-pill .status=${summary.overall}></pb-status-pill>
-        <div>
-          ${owner ? html`<span class="owner">${owner}</span>` : nothing}
-          <pb-tooltip external-trigger .description=${summary.repository}>
-            <a class="repository" data-route href=${`/attestations/${encodeURIComponent(summary.id)}`}>
-              <pb-short-name .value=${summary.repository}></pb-short-name>
+      <div class="tile ${repositoryHealth(entry)}">
+        ${owner ? html`<span class="owner">${owner}</span>` : nothing}
+        <div class="title">
+          <pb-tooltip external-trigger .description=${repository}>
+            <a class="repository" data-route href=${repositoryPath(repository)}>
+              <pb-short-name .value=${repository}></pb-short-name>
             </a>
           </pb-tooltip>
+          <pb-status-pill .status=${check?.overall ?? 'No evidence'}></pb-status-pill>
         </div>
-        ${showExecutionPoints
-          ? html`<span class="meta">${summary.execution_points.join(', ') || 'no execution points'}</span>`
+        ${!entry.managed ? html`<span class="meta">Not managed</span>` : nothing}
+        ${check ? html`<span class="meta">Reported <pb-commit-link .repository=${repository}
+          .commit=${check.commit}></pb-commit-link> · <pb-relative-time .value=${check.received_at}></pb-relative-time></span>`
           : nothing}
-        <span class="meta"><pb-commit-link .repository=${summary.repository}
-          .commit=${summary.commit}></pb-commit-link></span>
-        <span class="meta">Reported <pb-relative-time .value=${summary.received_at}></pb-relative-time> · ${summary.result_count} ${summary.result_count === 1 ? 'rule' : 'rules'}</span>
-        <a class="repository-page" data-route href=${repositoryPath(summary.repository)}
-          aria-label=${`View repository ${summary.repository}`}>View repository</a>
+        ${head && !head.direct_evidence && pendingSince && (state === 'pending' || state === 'overdue') ? html`
+          <span class="meta ${status_token}">${stateLabels[state]}${state === 'overdue'
+            ? html` (step ${entry.overdue_step} of ${entry.overdue_steps})` : nothing}
+            · head <pb-commit-link .repository=${repository} .commit=${head.commit}></pb-commit-link>
+            · awaiting evidence for <pb-relative-time duration .value=${pendingSince}></pb-relative-time>
+            · ${entry.observed_heads_since_evidence} observed ${entry.observed_heads_since_evidence === 1 ? 'head' : 'heads'} since evidence</span>`
+          : html`<span class="meta">${stateLabels[state]}</span>`}
         ${completedSets?.length ? html`
           <ul class="sets" role="list" aria-label="Completed Rule Sets">
             ${repeat(completedSets, set => JSON.stringify([set.source, set.path, set.id, set.version]), set => html`

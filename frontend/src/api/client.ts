@@ -1,6 +1,30 @@
 // Browser Read v0: why/contracts/browser/.
 export type Overall = 'PASS' | 'FAIL' | 'ERROR';
 
+export interface RepositoryOverview {
+  heartbeat: { completed_at: string | null; stale: boolean };
+  repositories: RepositoryOverviewEntry[];
+}
+
+export interface RepositoryOverviewEntry {
+  repository: string;
+  platform: string | null;
+  managed: boolean;
+  state: 'unknown' | 'never_integrated' | 'current' | 'pending' | 'overdue';
+  status_token: 'status-not-run' | 'status-failed' | 'status-passed' | 'status-allowed' | 'status-warning';
+  heartbeat_completed_at: string | null;
+  latest_check: { id: string; commit: string; overall: Overall; received_at: string } | null;
+  head: { branch: string; commit: string; committed_at: string; observed_at: string; direct_evidence: boolean } | null;
+  pending_since: string | null;
+  pending_age_seconds: number | null;
+  overdue_step: number | null;
+  overdue_steps: number | null;
+  observed_heads_since_evidence: number;
+  last_evidence_at: string | null;
+  latest_release: { version: string; commit: string; received_at: string } | null;
+  latest_deployment: { owner: string; name: string; received_at: string } | null;
+}
+
 export interface Summary {
   id: string;
   received_at: string;
@@ -212,6 +236,10 @@ async function read<T>(
 
 export function latestAttestations(signal: AbortSignal): Promise<Summary[]> {
   return read('/v0/attestations/latest', signal);
+}
+
+export function repositoryOverview(signal: AbortSignal): Promise<RepositoryOverview> {
+  return read('/v0/repositories/overview', signal);
 }
 
 export function completedRuleSets(signal: AbortSignal): Promise<RepositoryRuleSets[]> {

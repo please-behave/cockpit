@@ -1440,3 +1440,63 @@ async fn browser_deployment_reads_require_session_and_preserve_ledger_pages() {
         assert_api_error(response, status, code).await;
     }
 }
+
+// Verifies REQ-0012, REQ-0013 and CON-0014.
+#[tokio::test]
+async fn browser_repository_overview_requires_session_and_preserves_the_ledger_response() {
+    const PATH: &str = "/v0/repositories/overview";
+    let body = json!({
+        "heartbeat": { "completed_at": "2026-11-23T09:00:00Z", "stale": false },
+        "repositories": [{
+            "repository": "github.com/acme/widget",
+            "platform": "github", "managed": true, "state": "never_integrated",
+            "status_token": "status-failed", "heartbeat_completed_at": "2026-11-23T09:00:00Z",
+            "latest_check": null, "head": null, "pending_since": null,
+            "pending_age_seconds": null, "overdue_step": null, "overdue_steps": null,
+            "observed_heads_since_evidence": 0, "last_evidence_at": null,
+            "latest_release": null, "latest_deployment": null
+        }]
+    });
+    let response_body = serde_json::to_string_pretty(&body).unwrap();
+    let upstream = response_body.clone();
+    let site =
+        TestSite::start_with_ledger(Router::new().route(PATH, get(move || async { upstream })))
+            .await;
+    assert_api_error(
+        site.get(PATH).send().await.unwrap(),
+        StatusCode::UNAUTHORIZED,
+        "unauthorized",
+    )
+    .await;
+    let session = cookie_header(&cookie(&site.sign_in("allowed").await, SESSION).unwrap());
+    let response = site
+        .get(PATH)
+        .header(header::COOKIE, &session)
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_api_headers(&response);
+    assert_eq!(response.text().await.unwrap(), response_body);
+
+    let mut malformed = body;
+    malformed["repositories"][0]
+        .as_object_mut()
+        .unwrap()
+        .remove("latest_check");
+    let upstream = malformed.to_string();
+    let site =
+        TestSite::start_with_ledger(Router::new().route(PATH, get(move || async { upstream })))
+            .await;
+    let session = cookie_header(&cookie(&site.sign_in("allowed").await, SESSION).unwrap());
+    assert_api_error(
+        site.get(PATH)
+            .header(header::COOKIE, session)
+            .send()
+            .await
+            .unwrap(),
+        StatusCode::SERVICE_UNAVAILABLE,
+        "ledger_unavailable",
+    )
+    .await;
+}

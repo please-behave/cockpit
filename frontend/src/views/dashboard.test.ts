@@ -1,33 +1,31 @@
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
-import { ApiError, completedRuleSets, latestAttestations, type Summary } from '../api/client';
+import { ApiError, completedRuleSets, repositoryOverview, type RepositoryOverview, type RepositoryOverviewEntry } from '../api/client';
 import type { ErrorState } from '../components/pb-error-state';
 import type { RepositoryTile } from '../components/pb-repository-tile';
+import type { CockpitTime } from '../components/pb-time';
+import { fixtureTargets, respond } from '../../../tools/preview/fixtures.mjs';
 import type { RuleSetChip } from '../components/pb-rule-set-chip';
 import type { Tooltip } from '../components/pb-tooltip';
 import { DashboardView } from './dashboard';
 
 vi.mock(import('../api/client'), async original => ({
   ...await original(),
-  latestAttestations: vi.fn(),
+  repositoryOverview: vi.fn(),
   completedRuleSets: vi.fn(),
 }));
 
-const latest = vi.mocked(latestAttestations);
+const overview = vi.mocked(repositoryOverview);
 const completed = vi.mocked(completedRuleSets);
+const fixtures = respond(fixtureTargets.repositoryOverview)!.body as RepositoryOverview;
 
-const summary = (id: string, overall: Summary['overall'], repository: string,
-  execution_points = ['check'], received_at = '2026-11-22T11:18:19Z'): Summary => ({
-  id,
-  overall,
-  repository,
-  execution_points,
-  received_at,
-  sender: 'sender',
-  commit: '0123456789abcdef',
-  warn_count: 2,
-  not_run_count: 3,
-  result_count: 7,
-});
+function entry(repository: string, received_at = '2026-11-22T11:18:19Z'): RepositoryOverviewEntry {
+  const current = fixtures.repositories.find(item => item.state === 'current' && item.latest_check?.overall === 'PASS')!;
+  return { ...current, repository, latest_check: { ...current.latest_check!, received_at } };
+}
+
+function repositories(...entries: RepositoryOverviewEntry[]): RepositoryOverview {
+  return { heartbeat: { completed_at: null, stale: true }, repositories: entries };
+}
 
 beforeEach(() => {
   window.history.replaceState(null, '', '/');
@@ -51,18 +49,13 @@ async function mount() {
 
 const tiles = (view: DashboardView) =>
   [...view.shadowRoot!.querySelectorAll<RepositoryTile>('ul.tiles > li > pb-repository-tile')];
-const hrefs = (view: DashboardView) =>
-  tiles(view).map(tile => tile.shadowRoot!.querySelector('a.repository')!.getAttribute('href'));
+const names = (view: DashboardView) => tiles(view).map(tile => tile.entry!.repository);
 
 // Verifies REQ-0004, REQ-0015 and REQ-0028.
 test('shows only the completed sets for each repository and escapes the full name', async () => {
   const name = '<img src=x onerror=alert(1)> Shared security rules';
   const set = { source: 'github.com/acme/rules', path: 'sets/security', id: 'security', version: '1.0', name };
-  latest.mockResolvedValue([
-    summary('1', 'PASS', 'a/one', ['check']),
-    summary('2', 'PASS', 'a/one', ['deploy']),
-    summary('3', 'PASS', 'a/two'),
-  ]);
+  overview.mockResolvedValue(repositories(entry('a/one'), entry('a/two')));
   completed.mockResolvedValue([{ repository: 'a/one', sets: [
     set, { ...set, id: 'licensing', name: 'Licensing' },
   ] }]);
@@ -73,7 +66,7 @@ test('shows only the completed sets for each repository and escapes the full nam
   const view = await mount();
   for (const tile of tiles(view)) {
     const chips = [...tile.shadowRoot!.querySelectorAll<RuleSetChip>('pb-rule-set-chip')];
-    expect(chips.map(chip => chip.label)).toEqual(tile.summary!.repository === 'a/one'
+    expect(chips.map(chip => chip.label)).toEqual(tile.entry!.repository === 'a/one'
       ? [name, 'Licensing'] : []);
     if (!chips.length) {
       expect(tile.shadowRoot!.querySelector('.sets')).toBeNull();
@@ -102,8 +95,8 @@ test('shows only the completed sets for each repository and escapes the full nam
 
 // Verifies REQ-0019.
 test('has a loading state, then an explicit empty state without header and tiles', async () => {
-  let complete!: (summaries: Summary[]) => void;
-  latest.mockReturnValue(new Promise<Summary[]>(resolve => { complete = resolve; }));
+  let complete!: (data: RepositoryOverview) => void;
+  overview.mockReturnValue(new Promise<RepositoryOverview>(resolve => { complete = resolve; }));
   const view = new DashboardView();
   document.body.append(view);
   await view.updateComplete;
@@ -112,107 +105,90 @@ test('has a loading state, then an explicit empty state without header and tiles
   expect(root.activeElement).toBe(root.querySelector('h1'));
   expect(document.title).toBe('Dashboard | Please Behave');
 
-  complete([]);
+  complete(repositories());
   await vi.waitFor(() => expect(root.querySelector('pb-empty-state')).not.toBeNull());
   expect(root.querySelector('pb-empty-state')!.getAttribute('message'))
-    .toBe('No attestations have been reported yet.');
+    .toBe('The ledger has no repositories to show.');
   expect(root.querySelector('[role=status], .tiles, .summary, fieldset')).toBeNull();
 });
 
-test('states the overall state in a banner with text and icon for passing and failing tiles', async () => {
-  latest.mockResolvedValue([
-    summary('1', 'PASS', 'a/one'), summary('2', 'FAIL', 'a/two'),
-    summary('3', 'ERROR', 'a/three'), summary('4', 'PASS', 'a/four'),
-  ]);
+test('shows each overview repository once and counts all health categories', async () => {
+  overview.mockResolvedValue(fixtures);
+  completed.mockResolvedValue([{
+    repository: 'github.com/acme/archived',
+    sets: [{ source: 'source', path: '', id: 'archived', version: '1.0', name: 'Archived' }],
+  }]);
   const view = await mount();
   const root = view.shadowRoot!;
   const banner = root.querySelector('.banner')!;
-  expect(banner.querySelector('fieldset legend')?.textContent).toBe('Sort by');
-  expect(banner.querySelector('h2')!.textContent).toBe('2 not passing, 2 passing');
   expect(banner.classList.contains('failed')).toBe(true);
-  expect(banner.querySelector('.icon')!.textContent).toBe('×');
-  expect(banner.querySelector('.icon')!.getAttribute('aria-hidden')).toBe('true');
-  expect(root.querySelector('.figure')).toBeNull();
+  expect(banner.querySelector('fieldset legend')?.textContent).toBe('Sort by');
+  const counts = [...banner.querySelectorAll('.counts li')];
+  expect(counts.map(count => count.textContent?.trim().replace(/\s+/g, ' ')))
+    .toEqual(['× 4 failed', '▲ 1 warning', '○ 3 unknown', '✓ 3 passed']);
+  expect(counts.every(count => count.querySelector('[aria-hidden=true]'))).toBe(true);
+  expect(banner.querySelector<CockpitTime>('.sync pb-time')?.value).toBe(fixtures.heartbeat.completed_at);
+  expect(banner.querySelector('.sync')?.textContent).toContain('(stale)');
 
-  latest.mockResolvedValue([summary('1', 'PASS', 'a/one'), summary('2', 'PASS', 'a/two')]);
-  await view.load();
-  await vi.waitFor(() => expect(root.querySelector('h2')!.textContent).toBe('All 2 passing'));
-  expect(root.querySelector('.banner')!.classList.contains('passed')).toBe(true);
-  expect(root.querySelector('.banner .icon')!.textContent).toBe('✓');
+  expect(names(view).filter(name => name === 'github.com/acme/widget')).toHaveLength(1);
+  expect(names(view)).toHaveLength(new Set(names(view)).size);
+  expect(names(view)).not.toContain('github.com/acme/archived');
+  expect(root.querySelector('.tiles')?.getAttribute('aria-label')).toBe('Repositories');
 });
 
-test('arranges one tile per combination and shows execution points only for repeated repositories', async () => {
-  const reports = [
-    summary('first', 'FAIL', 'github.com/acme/widget', ['deploy'], '2026-11-22T12:00:00Z'),
-    summary('other', 'PASS', 'github.com/acme/widget', ['check']),
-    summary('solo', 'PASS', 'github.com/acme/solo'),
-  ];
-  latest.mockResolvedValue(reports);
+test('sorts by severity by default, with time and name available through the URL', async () => {
+  overview.mockResolvedValue(repositories(
+    { ...entry('a/zeta', '2026-11-20T00:00:00Z'), state: 'never_integrated', latest_check: null },
+    entry('a/beta', '2026-11-22T00:00:00Z'),
+    entry('a/alpha', '2026-11-21T00:00:00Z'),
+  ));
   const view = await mount();
-  expect(tiles(view).map(tile => [tile.summary, tile.showExecutionPoints])).toEqual([
-    [reports[0], true], [reports[2], false], [reports[1], true],
-  ]);
-  expect(view.shadowRoot!.textContent).not.toContain('shown as reported');
-});
-
-test('sorts by last attestation by default and by name through the URL', async () => {
-  latest.mockResolvedValue([
-    summary('old', 'PASS', 'a/zeta', ['x'], '2026-11-20T00:00:00Z'),
-    summary('new', 'PASS', 'a/beta', ['x'], '2026-11-22T00:00:00Z'),
-    summary('mid-b', 'PASS', 'a/alpha', ['y'], '2026-11-21T00:00:00Z'),
-    summary('mid-a', 'PASS', 'a/alpha', ['x'], '2026-11-21T00:00:00Z'),
-  ]);
-  const view = await mount();
-  expect(hrefs(view)).toEqual(['/attestations/new', '/attestations/mid-a', '/attestations/mid-b', '/attestations/old']);
+  expect(names(view)).toEqual(['a/zeta', 'a/alpha', 'a/beta']);
+  expect(view.shadowRoot!.querySelector('.sync')?.textContent?.trim()).toBe('No covering sync has completed.');
   const radios = [...view.shadowRoot!.querySelectorAll<HTMLInputElement>('input[type=radio]')];
-  expect(radios.map(radio => radio.checked)).toEqual([true, false]);
-  expect(view.shadowRoot!.querySelector('legend')!.textContent).toBe('Sort by');
+  expect(radios.map(radio => radio.checked)).toEqual([true, false, false]);
 
   const entries = window.history.length;
   radios[1].click();
   await view.updateComplete;
+  expect(window.location.search).toBe('?sort=time');
+  expect(names(view)).toEqual(['a/beta', 'a/alpha', 'a/zeta']);
+  radios[2].click();
+  await view.updateComplete;
   expect(window.location.search).toBe('?sort=name');
   expect(window.history.length).toBe(entries);
-  expect(hrefs(view)).toEqual(['/attestations/mid-a', '/attestations/mid-b', '/attestations/new', '/attestations/old']);
+  expect(names(view)).toEqual(['a/alpha', 'a/beta', 'a/zeta']);
 
   radios[0].click();
   await view.updateComplete;
   expect(window.location.search).toBe('');
-  expect(hrefs(view)[0]).toBe('/attestations/new');
+  expect(names(view)[0]).toBe('a/zeta');
 
   view.remove();
   window.history.replaceState(null, '', '/?sort=name');
   const reloaded = await mount();
-  expect(hrefs(reloaded)[0]).toBe('/attestations/mid-a');
+  expect(names(reloaded)[0]).toBe('a/alpha');
   expect([...reloaded.shadowRoot!.querySelectorAll<HTMLInputElement>('input[type=radio]')].map(radio => radio.checked))
-    .toEqual([false, true]);
+    .toEqual([false, false, true]);
 
   reloaded.remove();
   window.history.replaceState(null, '', '/?sort=bogus');
-  const fallback = await mount();
-  expect(hrefs(fallback)[0]).toBe('/attestations/new');
+  expect(names(await mount())[0]).toBe('a/zeta');
 });
 
 test('compares names ignoring case, with code points as tie-break', async () => {
   window.history.replaceState(null, '', '/?sort=name');
-  latest.mockResolvedValue([
-    summary('lower', 'PASS', 'a/b'), summary('upper', 'PASS', 'a/B'), summary('short', 'PASS', 'a/'),
-    summary('zed', 'PASS', 'Zed'), summary('alpha', 'PASS', 'alpha'), summary('beta', 'PASS', 'Beta'),
-    summary('foo-lower', 'PASS', 'foo'), summary('foo-upper', 'PASS', 'Foo'),
-    summary('umlaut', 'PASS', 'zz-\u00e4'), summary('ascii', 'PASS', 'zz-z'),
-    summary('astral', 'PASS', 'zz-\u{1F600}'),
-  ]);
-  expect(hrefs(await mount())).toEqual([
-    '/attestations/short', '/attestations/upper', '/attestations/lower',
-    '/attestations/alpha', '/attestations/beta',
-    '/attestations/foo-upper', '/attestations/foo-lower',
-    '/attestations/zed', '/attestations/ascii', '/attestations/umlaut', '/attestations/astral',
+  overview.mockResolvedValue(repositories(...[
+    'a/b', 'a/B', 'a/', 'Zed', 'alpha', 'Beta', 'foo', 'Foo', 'zz-ä', 'zz-z', 'zz-😀',
+  ].map(name => entry(name))));
+  expect(names(await mount())).toEqual([
+    'a/', 'a/B', 'a/b', 'alpha', 'Beta', 'Foo', 'foo', 'Zed', 'zz-z', 'zz-ä', 'zz-😀',
   ]);
 });
 
 // Verifies REQ-0003.
 test('shows a ledger error without upstream details and retries', async () => {
-  latest.mockRejectedValueOnce(new ApiError('ledger_unavailable')).mockResolvedValueOnce([]);
+  overview.mockRejectedValueOnce(new ApiError('ledger_unavailable')).mockResolvedValueOnce(repositories());
   const view = await mount();
   const error = view.shadowRoot!.querySelector<ErrorState>('pb-error-state')!;
   await error.updateComplete;
@@ -221,7 +197,7 @@ test('shows a ledger error without upstream details and retries', async () => {
 
   error.shadowRoot!.querySelector('button')!.click();
   await vi.waitFor(() => expect(view.shadowRoot!.querySelector('pb-empty-state')).not.toBeNull());
-  expect(latest).toHaveBeenCalledTimes(2);
+  expect(overview).toHaveBeenCalledTimes(2);
   expect(view.shadowRoot!.activeElement).toBe(view.shadowRoot!.querySelector('h1'));
 });
 
@@ -233,26 +209,27 @@ function setVisibility(state: 'visible' | 'hidden') {
 // Verifies REQ-0020.
 test('refreshes every 5 minutes while visible, keeps focus, sort and tiles, and keys tiles', async () => {
   vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] });
-  window.history.replaceState(null, '', '/?sort=name');
-  const reports = [summary('a', 'PASS', 'a/one'), summary('b', 'PASS', 'a/two')];
-  latest.mockResolvedValue(reports);
+  const reports = [entry('a/one'), entry('a/two')];
+  overview.mockResolvedValue(repositories(...reports));
   const view = await mount();
   const [firstTile] = tiles(view);
   const link = firstTile.shadowRoot!.querySelector<HTMLAnchorElement>('a.repository')!;
   link.focus();
-  expect(latest).toHaveBeenCalledTimes(1);
+  expect(overview).toHaveBeenCalledTimes(1);
 
-  latest.mockResolvedValue(reports.map(report => ({ ...report, id: `${report.id}2`, result_count: 9 })));
+  overview.mockResolvedValue(repositories(reports[0], {
+    ...reports[1], latest_check: { ...reports[1].latest_check!, id: 'new', overall: 'FAIL' },
+  }));
   await vi.advanceTimersByTimeAsync(300_000);
-  await vi.waitFor(() => expect(tiles(view)[0].shadowRoot!.textContent).toContain('9 rules'));
-  expect(latest).toHaveBeenCalledTimes(2);
-  expect(tiles(view)[0]).toBe(firstTile);
+  await vi.waitFor(() => expect(names(view)).toEqual(['a/two', 'a/one']));
+  expect(overview).toHaveBeenCalledTimes(2);
+  expect(tiles(view)[1]).toBe(firstTile);
   expect(view.shadowRoot!.activeElement).toBe(firstTile);
   expect(firstTile.shadowRoot!.activeElement).toBe(link);
-  expect(window.location.search).toBe('?sort=name');
+  expect(window.location.search).toBe('');
   expect(view.shadowRoot!.querySelector('[role=status]')).toBeNull();
 
-  latest.mockRejectedValue(new ApiError('ledger_unavailable'));
+  overview.mockRejectedValue(new ApiError('ledger_unavailable'));
   await vi.advanceTimersByTimeAsync(300_000);
   await vi.waitFor(() => expect(view.shadowRoot!.querySelector('[role=status]')?.textContent).toContain('could not be refreshed'));
   expect(tiles(view)).toHaveLength(2);
@@ -260,30 +237,30 @@ test('refreshes every 5 minutes while visible, keeps focus, sort and tiles, and 
   expect(view.shadowRoot!.activeElement).toBe(firstTile);
   expect(firstTile.shadowRoot!.activeElement).toBe(link);
 
-  latest.mockResolvedValue(reports);
+  overview.mockResolvedValue(repositories(...reports));
   await vi.advanceTimersByTimeAsync(300_000);
   await vi.waitFor(() => expect(view.shadowRoot!.querySelector('[role=status]')).toBeNull());
 
   view.remove();
-  const calls = latest.mock.calls.length;
+  const calls = overview.mock.calls.length;
   await vi.advanceTimersByTimeAsync(600_000);
-  expect(latest).toHaveBeenCalledTimes(calls);
+  expect(overview).toHaveBeenCalledTimes(calls);
 });
 
 test('does nothing while hidden and refreshes when shown after more than 5 minutes', async () => {
   vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] });
-  latest.mockResolvedValue([summary('a', 'PASS', 'a/one')]);
+  overview.mockResolvedValue(repositories(entry('a/one')));
   await mount();
 
   setVisibility('hidden');
   await vi.advanceTimersByTimeAsync(600_000);
-  expect(latest).toHaveBeenCalledTimes(1);
+  expect(overview).toHaveBeenCalledTimes(1);
 
   setVisibility('visible');
-  await vi.waitFor(() => expect(latest).toHaveBeenCalledTimes(2));
+  await vi.waitFor(() => expect(overview).toHaveBeenCalledTimes(2));
 
   setVisibility('hidden');
   await vi.advanceTimersByTimeAsync(60_000);
   setVisibility('visible');
-  expect(latest).toHaveBeenCalledTimes(2);
+  expect(overview).toHaveBeenCalledTimes(2);
 });

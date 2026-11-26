@@ -480,6 +480,72 @@ function setCompliance(params) {
   return json(200, bindings.sort((a, b) => compare(a.repository, b.repository)));
 }
 
+const overviewNow = Date.now();
+const syncTime = new Date(overviewNow - 5 * 60_000).toISOString();
+const oldestSync = new Date(overviewNow - 25 * 60_000).toISOString();
+const archivedRepository = 'github.com/acme/archived';
+const repositoryFixtures = [
+  ['github.com/acme/return-navigation', 'current', 'PASS'],
+  ['github.com/acme/widget', 'overdue', 'PASS', 1],
+  ['github.com/acme/overdue-final', 'overdue', 'PASS', 4],
+  ['github.com/acme/pending', 'pending', 'PASS'],
+  ['github.com/acme/no-records', 'never_integrated'],
+  ['github.com/acme/never-synced', 'unknown'],
+  ['github.com/acme/stale-sync', 'unknown', 'PASS'],
+  ['gitlab.com/acme/elsewhere', 'unknown', 'PASS'],
+  ['github.com/acme/gadget', 'current', 'ERROR'],
+  [latest.find(summary => summary.repository.startsWith('github.com/' + longOwner)).repository, 'current', 'FAIL'],
+  [completedRuleSets[0].repository, 'current', 'PASS'],
+  [archivedRepository, 'current', 'PASS'],
+];
+
+function repositoryEntry([repository, state, overall, step], index) {
+  const managed = !repository.startsWith('gitlab.com/');
+  const heartbeat_completed_at = repository.endsWith('/stale-sync')
+    ? new Date(overviewNow - 2 * 86_400_000).toISOString()
+    : repository.endsWith('/never-synced') || !managed ? null
+    : state === 'pending' ? oldestSync : syncTime;
+  const waiting = state === 'pending' || state === 'overdue';
+  const minutesWaiting = state === 'pending' ? 10 : step === 4 ? 8 * 24 * 60 : 150;
+  const observedAt = new Date(overviewNow - minutesWaiting * 60_000).toISOString();
+  const report = latest.find(summary => summary.repository === repository &&
+    summary.execution_points.includes('check'));
+  const check = overall ? {
+    id: report?.id ?? uuid(total + index + 1),
+    commit: report?.commit ?? sha('f'),
+    overall,
+    received_at: report?.received_at ?? new Date(overviewNow - (minutesWaiting + 15) * 60_000).toISOString(),
+  } : null;
+  return {
+    repository, managed, platform: managed ? 'github' : null, state, heartbeat_completed_at,
+    status_token: {
+      current: 'status-passed', pending: 'status-allowed', overdue: 'status-warning',
+      never_integrated: 'status-failed', unknown: 'status-not-run',
+    }[state],
+    latest_check: check,
+    head: heartbeat_completed_at ? {
+      branch: 'main', commit: waiting ? sha('a') : check?.commit ?? sha('b'),
+      observed_at: observedAt, committed_at: observedAt, direct_evidence: !!check && !waiting,
+    } : null,
+    pending_since: waiting ? observedAt : null,
+    pending_age_seconds: waiting ? minutesWaiting * 60 : null,
+    overdue_step: step ?? null, overdue_steps: step ? 4 : null,
+    observed_heads_since_evidence: state === 'overdue' ? 2 : state === 'current' ? 0 : 1,
+    last_evidence_at: check?.received_at ?? null,
+    latest_release: null,
+    latest_deployment: null,
+  };
+}
+
+const repositoryOverview = {
+  heartbeat: {
+    completed_at: new Date(overviewNow - 2 * 86_400_000).toISOString(),
+    stale: true,
+  },
+  repositories: repositoryFixtures.map(repositoryEntry).filter(entry => entry.repository !== archivedRepository)
+    .sort((a, b) => a.repository < b.repository ? -1 : 1),
+};
+
 function ruleDetail(params) {
   const [source, path, id] = ['source', 'path', 'id'].map(name => params.get(name));
   if (source === null || path === null || id === null) return code(400, 'invalid_rule_identity');
@@ -491,6 +557,10 @@ function ruleDetail(params) {
 export function respond(target) {
   const url = new URL(target, 'http://preview.invalid');
   const { pathname, searchParams } = url;
+  if (pathname === '/v0/repositories/overview') {
+    const response = json(200, repositoryOverview);
+    return searchParams.get('preview') === 'slow-refresh' ? { ...response, delay: 750 } : response;
+  }
   if (pathname === '/v0/attestations/latest' || pathname === '/v0/attestations') {
     const response = pathname.endsWith('/latest') ? json(200, latest) : attestations(searchParams);
     // Keep the initial loading and busy refresh states visible for browser review.
@@ -522,6 +592,7 @@ export function respond(target) {
 
 export const fixtureTargets = {
   latest: '/v0/attestations/latest',
+  repositoryOverview: '/v0/repositories/overview',
   completedRuleSets: '/v0/repositories/completed-rule-sets',
   history: '/v0/attestations',
   releases: '/v0/releases/latest',

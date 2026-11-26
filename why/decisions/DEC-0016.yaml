@@ -1,0 +1,17 @@
+id: DEC-0016
+name: One Dashboard Tile per Repository
+context: >-
+  The ledger's repository overview includes repositories before they report
+  evidence, and compares evidence with the observed default-branch head.
+  One repository can still report several execution-point combinations.
+decision: >-
+  Use ledger:CON-0024 to render one dashboard tile per repository identity.
+  The verdict is the overall status of the newest attestation containing
+  check. Apply the ledger's repository state and overdue step to the health
+  stripe as described in REQ-0019. The repository page keeps each attestation
+  combination separate. The default dashboard order is health severity.
+rationale: >-
+  Viewers can see repositories with missing evidence and distinguish the
+  freshness of evidence from the results of the most recent check.
+supersedes:
+  - DEC-0010

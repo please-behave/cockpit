@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from 'vitest';
-import { attestationPage, getAttestation, latestAttestations } from './client';
+import { attestationPage, getAttestation, latestAttestations, repositoryOverview } from './client';
 
 afterEach(() => {
   vi.useRealTimers();
@@ -8,12 +8,15 @@ afterEach(() => {
 
 test('reads the same-origin contracts and encodes the detail segment', async () => {
   const body = { id: 'reported' };
+  const overview = { heartbeat: { completed_at: null, stale: true }, repositories: [] };
   const fetch = vi.fn()
+    .mockResolvedValueOnce(Response.json(overview))
     .mockResolvedValueOnce(Response.json([body]))
     .mockResolvedValueOnce(Response.json(body));
   vi.stubGlobal('fetch', fetch);
   const { signal } = new AbortController();
 
+  await expect(repositoryOverview(signal)).resolves.toEqual(overview);
   await expect(latestAttestations(signal)).resolves.toEqual([body]);
   await expect(getAttestation('a/b?#', signal)).resolves.toEqual(body);
   const options = expect.objectContaining({
@@ -22,8 +25,9 @@ test('reads the same-origin contracts and encodes the detail segment', async () 
     redirect: 'error',
     signal: expect.any(AbortSignal),
   });
-  expect(fetch).toHaveBeenNthCalledWith(1, '/v0/attestations/latest', options);
-  expect(fetch).toHaveBeenNthCalledWith(2, '/v0/attestations/a%2Fb%3F%23', options);
+  expect(fetch).toHaveBeenNthCalledWith(1, '/v0/repositories/overview', options);
+  expect(fetch).toHaveBeenNthCalledWith(2, '/v0/attestations/latest', options);
+  expect(fetch).toHaveBeenNthCalledWith(3, '/v0/attestations/a%2Fb%3F%23', options);
 });
 
 test.each([
