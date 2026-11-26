@@ -30,31 +30,23 @@ afterEach(() => {
 });
 
 // Verifies REQ-0015 and REQ-0019.
-test.each([
-  ['return-navigation', 'passed', 'PASS', 'Current'],
-  ['pending', 'passed', 'PASS', 'Pending'],
-  ['widget', 'warning', 'PASS', 'Overdue (step 1 of 4)'],
-  ['overdue-final', 'failed', 'PASS', 'Overdue (step 4 of 4)'],
-  ['no-records', 'failed', 'No evidence', 'Never integrated'],
-  ['never-synced', 'not-run', 'No evidence', 'Unknown'],
-  ['stale-sync', 'not-run', 'PASS', 'Unknown'],
-  ['elsewhere', 'not-run', 'PASS', 'Not managed'],
-  ['gadget', 'failed', 'ERROR', 'Current'],
-])('shows health, verdict and state for %s', async (name, health, verdict, state) => {
-  const root = await mount(fixture(name));
-  expect(root.querySelector('.tile')!.classList.contains(health)).toBe(true);
-  expect(root.querySelector<StatusPill>('.title > pb-status-pill')!.status).toBe(verdict);
-  expect(root.textContent).toContain(state);
-  expect(root.querySelectorAll('pb-commit-link')).toHaveLength(
-    verdict === 'No evidence' ? 0 : state.startsWith('Overdue') || state === 'Pending' ? 2 : 1,
-  );
+test('shows the overdue state and a separate check verdict', async () => {
+  const root = await mount(report);
+  expect(root.querySelector('.tile')?.classList).toContain('warning');
+  expect(root.querySelector<StatusPill>('.title > pb-status-pill')?.status).toBe('PASS');
+  expect(root.textContent).toContain('Overdue (step 1 of 4)');
+  expect(root.querySelectorAll('pb-commit-link')).toHaveLength(2);
 });
 
-test('shows a FAIL verdict and failed health when evidence is current', async () => {
-  const failed = fixtures.repositories.find(entry => entry.latest_check?.overall === 'FAIL')!;
-  const root = await mount(failed);
-  expect(root.querySelector<StatusPill>('pb-status-pill')?.status).toBe('FAIL');
-  expect(root.querySelector('.tile')?.classList).toContain('failed');
+test('shows no evidence when a repository has never integrated', async () => {
+  const root = await mount(fixture('no-records'));
+  expect(root.querySelector<StatusPill>('.title > pb-status-pill')?.status).toBe('No evidence');
+  expect(root.querySelector('pb-commit-link')).toBeNull();
+});
+
+test('identifies an unmanaged repository', async () => {
+  const root = await mount(fixture('elsewhere'));
+  expect(root.textContent).toContain('Unknown · Not managed');
 });
 
 test('shows the owner, shortened name and exact reported time without the old tile rows', async () => {

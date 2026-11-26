@@ -1,5 +1,6 @@
 import { css, html, LitElement, nothing } from 'lit';
 import type { CompletedRuleSet, RepositoryOverviewEntry } from '../api/client';
+import { repositoryHealth, stateLabels } from '../repository-health';
 import { linkStyles } from '../styles/links';
 import './pb-commit-link';
 import './pb-relative-time';
@@ -8,26 +9,6 @@ import './pb-rule-set-chip';
 import { ownerName } from './pb-short-name';
 import './pb-status-pill';
 import './pb-tooltip';
-
-export type RepositoryHealth = 'passed' | 'warning' | 'failed' | 'not-run';
-
-export function repositoryHealth(entry: RepositoryOverviewEntry): RepositoryHealth {
-  if (entry.state === 'unknown') return 'not-run';
-  if (entry.state === 'never_integrated' || entry.latest_check?.overall === 'FAIL' ||
-      entry.latest_check?.overall === 'ERROR') return 'failed';
-  if (entry.state === 'overdue') {
-    return entry.overdue_step === entry.overdue_steps ? 'failed' : 'warning';
-  }
-  return 'passed';
-}
-
-const stateLabels = {
-  current: 'Current',
-  pending: 'Pending',
-  overdue: 'Overdue',
-  never_integrated: 'Never integrated',
-  unknown: 'Unknown',
-};
 
 export class RepositoryTile extends LitElement {
   static override properties = {

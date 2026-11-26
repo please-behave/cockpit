@@ -4,8 +4,9 @@ import {
   completedRuleSets, repositoryOverview, type CompletedRuleSet, type RepositoryOverview, type RepositoryOverviewEntry,
 } from '../api/client';
 import '../components/pb-empty-state';
-import { repositoryHealth, type RepositoryHealth } from '../components/pb-repository-tile';
+import '../components/pb-repository-tile';
 import '../components/pb-time';
+import { healthStatuses, repositoryHealth, type RepositoryHealth } from '../repository-health';
 import { CockpitView } from './cockpit-view';
 
 type Sort = 'severity' | 'time' | 'name';
@@ -34,13 +35,6 @@ function compareText(left: string, right: string): number {
   // Lower-case code points ignore case without a locale, so ordering stays deterministic across browsers.
   return compareCodePoints(left.toLowerCase(), right.toLowerCase()) || compareCodePoints(left, right);
 }
-
-const healthStatuses = {
-  failed: { label: 'failed', icon: '×', rank: 0 },
-  warning: { label: 'warning', icon: '▲', rank: 1 },
-  'not-run': { label: 'unknown', icon: '○', rank: 2 },
-  passed: { label: 'passed', icon: '✓', rank: 3 },
-} satisfies Record<RepositoryHealth, { label: string; icon: string; rank: number }>;
 
 function compareByName(left: RepositoryOverviewEntry, right: RepositoryOverviewEntry): number {
   return compareText(left.repository, right.repository) || compareText(left.platform ?? '', right.platform ?? '');
