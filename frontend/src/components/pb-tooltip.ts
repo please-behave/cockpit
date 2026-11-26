@@ -24,6 +24,8 @@ export class Tooltip extends LitElement {
 
       button {
         display: inline-block;
+        min-inline-size: var(--target-min-size);
+        min-block-size: var(--target-min-size);
         max-inline-size: 100%;
         padding: 0;
         border: 0;
@@ -58,7 +60,7 @@ export class Tooltip extends LitElement {
         overflow: visible;
         background: var(--surface-transparent);
         color: var(--text);
-        font: var(--type-body) / var(--line-body) var(--font-family);
+        font: var(--type-data) / var(--line-data) var(--font-family);
         white-space: normal;
         overflow-wrap: anywhere;
       }

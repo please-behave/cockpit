@@ -1,4 +1,5 @@
 import { css, html, LitElement, type TemplateResult } from 'lit';
+import { linkStyles } from '../styles/links';
 
 export interface Fact {
   term: string;
@@ -9,6 +10,8 @@ export class FactStrip extends LitElement {
   static override properties = { items: { attribute: false } };
 
   static override styles = css`
+    ${linkStyles}
+
     @layer components {
       :host {
         display: block;
@@ -29,7 +32,8 @@ export class FactStrip extends LitElement {
 
       dt {
         color: var(--text-muted);
-        font-size: 0.875rem;
+        font-size: var(--type-meta);
+        line-height: var(--line-meta);
         font-weight: var(--weight-semibold);
       }
 

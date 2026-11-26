@@ -7,16 +7,21 @@ export const statePanelStyles = css`
     }
 
     .panel {
-      padding: var(--space-4);
-      border: 1px solid var(--border);
+      padding: var(--panel-padding);
+      border: 1px solid var(--panel-border);
       border-radius: var(--radius-panel);
-      background: var(--surface-raised);
+      background: var(--panel-surface);
       color: var(--text);
       overflow-wrap: anywhere;
     }
 
     h2, p {
       margin: 0;
+    }
+
+    h2 {
+      font-size: var(--type-section);
+      line-height: var(--line-heading);
     }
 
     p {

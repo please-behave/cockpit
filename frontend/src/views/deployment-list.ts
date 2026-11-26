@@ -68,8 +68,8 @@ export const deploymentListStyles = css`
   @layer components {
     .deployment {
       overflow-wrap: anywhere;
-      padding: var(--space-3) var(--space-4);
-      border: 1px solid var(--border);
+      padding: var(--panel-padding);
+      border: 1px solid var(--panel-border);
       border-radius: var(--radius-panel);
       background: var(--surface-raised);
     }

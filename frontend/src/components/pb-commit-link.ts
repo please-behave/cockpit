@@ -18,11 +18,6 @@ export class CommitLink extends LitElement {
         white-space: nowrap;
       }
 
-      a:focus-visible {
-        outline: var(--focus-ring);
-        outline-offset: var(--focus-offset);
-      }
-
       .assistive {
         position: absolute;
         inline-size: 1px;

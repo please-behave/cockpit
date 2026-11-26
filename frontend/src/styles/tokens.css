@@ -10,6 +10,7 @@
     --surface-raised: light-dark(#F5F4F7, #23202C);
     --surface-transparent: transparent;
     --border: light-dark(#77717F, #888291);
+    --border-subtle: light-dark(#C2BEC8, #4B4655);
     --text-muted: light-dark(#605B69, #B1AAB9);
     --text: light-dark(#201D27, #F7F5F9);
 
@@ -21,7 +22,7 @@
     --badge-surface: light-dark(#E5DDF6, #3B304F);
     --badge-border: var(--border);
     --panel-surface: var(--surface-raised);
-    --panel-border: var(--border);
+    --panel-border: var(--border-subtle);
 
     --chip-check-surface: light-dark(#DCF3F0, #12312F);
     --chip-check-text: light-dark(#0A4A45, #A4E6DD);
@@ -49,30 +50,58 @@
 
     --space-1: 0.25rem;
     --space-2: 0.5rem;
+    --space-2-5: 0.625rem;
     --space-3: 0.75rem;
+    --space-3-5: 0.875rem;
     --space-4: 1rem;
     --space-6: 1.5rem;
     --space-8: 2rem;
     --space-12: 3rem;
 
     --font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    --type-body: 1rem;
+    --type-data: 0.875rem;
+    --type-meta: 0.75rem;
     --type-brand: 1.125rem;
-    --type-heading: clamp(1.5rem, 1.25rem + 1vw, 2rem);
-    --line-body: 1.5;
+    --type-heading: clamp(1.375rem, 1.125rem + 1vw, 1.75rem);
+    --type-section: 1.125rem;
+    --type-subsection: 1rem;
+    --line-data: 1.4;
+    --line-meta: 1.35;
     --line-heading: 1.2;
     --weight-semibold: 600;
 
-    --radius-control: 0.5rem;
-    --radius-panel: 1rem;
+    --radius-control: 0.25rem;
+    --radius-panel: 0.5rem;
+    --radius-pill: 999px;
     --elevation-panel: 0 0.5rem 1.5rem color-mix(in srgb, var(--text) 8%, transparent);
 
     --logo-light-display: block;
     --logo-dark-display: none;
 
-    --content-width: 75rem;
+    --content-width-wide: 88rem;
+    --content-width-detail: 64rem;
+    --measure-prose: 70ch;
+
+    --cell-padding-block: var(--space-1);
+    --control-padding-block: var(--space-1);
+    --control-padding-inline: var(--space-2-5);
+    --panel-padding: var(--space-3-5);
+    --target-min-size: max(24px, 1.5rem);
+
     --focus-ring: 0.125rem solid var(--text);
     --focus-offset: 0.1875rem;
+  }
+
+  @media (pointer: coarse) {
+    :root {
+      --type-data: 0.9375rem;
+      --type-meta: 0.8125rem;
+      --cell-padding-block: var(--space-2);
+      --control-padding-block: var(--space-2);
+      --control-padding-inline: var(--space-3-5);
+      --panel-padding: var(--space-4);
+      --target-min-size: max(24px, 2rem);
+    }
   }
 
   @media (prefers-color-scheme: dark) {
@@ -96,6 +125,8 @@
   @media (forced-colors: active) {
     :root {
       --link: LinkText;
+      --border: CanvasText;
+      --border-subtle: CanvasText;
       --surface-hover: Canvas;
       --badge-surface: Canvas;
       --badge-border: CanvasText;
@@ -115,7 +146,6 @@
       --rule-set-surface: Canvas;
       --rule-set-text: CanvasText;
       --panel-surface: Canvas;
-      --panel-border: CanvasText;
       --focus-ring: 0.125rem solid Highlight;
     }
   }

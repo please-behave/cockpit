@@ -77,6 +77,8 @@ export class RefreshStatus extends LitElement {
       }
 
       time {
+        font-size: var(--type-meta);
+        line-height: var(--line-meta);
         color: var(--text-muted);
         white-space: nowrap;
       }

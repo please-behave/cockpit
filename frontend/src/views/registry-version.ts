@@ -19,9 +19,9 @@ export const versionSelectorStyles = css`
 
     .version-field select {
       max-inline-size: 100%;
-      min-block-size: 2.75rem;
-      padding: var(--space-1) var(--space-2);
-      border: 1px solid var(--panel-border);
+      min-block-size: var(--target-min-size);
+      padding: var(--control-padding-block) var(--control-padding-inline);
+      border: 1px solid var(--border);
       border-radius: var(--radius-control);
       background: var(--surface);
       color: var(--text);

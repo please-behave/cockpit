@@ -14,7 +14,8 @@ export class ErrorState extends LitElement {
       @layer components {
         button {
           margin-block-start: var(--space-3);
-          padding: var(--space-2) var(--space-3);
+          min-block-size: var(--target-min-size);
+          padding: var(--control-padding-block) var(--control-padding-inline);
           border: 1px solid var(--border);
           border-radius: var(--radius-control);
           background: var(--surface);

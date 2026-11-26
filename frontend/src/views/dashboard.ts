@@ -79,9 +79,9 @@ export class DashboardView extends CockpitView<DashboardData> {
         align-items: center;
         gap: var(--space-4);
         margin-block-end: var(--space-6);
-        padding: var(--space-4) var(--space-6);
+        padding: var(--panel-padding) var(--space-6);
         border: 1px solid var(--panel-border);
-        border-inline-start: 0.5rem solid var(--panel-border);
+        border-inline-start: 0.5rem solid var(--border);
         border-radius: var(--radius-panel);
         background: var(--panel-surface);
       }
@@ -133,6 +133,8 @@ export class DashboardView extends CockpitView<DashboardData> {
 
       .sort label {
         display: inline-block;
+        min-inline-size: var(--target-min-size);
+        line-height: max(var(--target-min-size), 1em * var(--line-data));
       }
 
       .sort label + label {

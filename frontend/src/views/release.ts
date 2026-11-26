@@ -67,7 +67,14 @@ export class ReleaseView extends CockpitView<ReleaseDetail> {
       pb-fact-strip { margin-block-end: var(--space-6); }
       section { margin-block-start: var(--space-4); }
       h2 { margin-block: 0 var(--space-2); }
-      .rule-sets { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--space-2); }
+      .rule-sets {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--space-2);
+      }
       .binding {
         display: flex;
         flex-wrap: wrap;

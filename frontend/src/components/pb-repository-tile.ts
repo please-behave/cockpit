@@ -31,7 +31,7 @@ export class RepositoryTile extends LitElement {
         display: flex;
         flex-direction: column;
         gap: var(--space-2);
-        padding: var(--space-4);
+        padding: var(--panel-padding);
         border: 1px solid var(--border);
         border-block-start: 0.25rem solid var(--border);
         border-radius: var(--radius-panel);
@@ -55,7 +55,8 @@ export class RepositoryTile extends LitElement {
 
       .owner, .meta {
         color: var(--text-muted);
-        font-size: 0.875rem;
+        font-size: var(--type-meta);
+        line-height: var(--line-meta);
       }
 
       .identifiers {
@@ -70,7 +71,7 @@ export class RepositoryTile extends LitElement {
       }
 
       .repository {
-        font-size: var(--type-brand);
+        font-size: var(--type-section);
         font-weight: var(--weight-semibold);
       }
 

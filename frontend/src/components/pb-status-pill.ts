@@ -22,6 +22,8 @@ export class StatusPill extends LitElement {
     @layer components {
       .pill {
         display: inline-flex;
+        font-size: var(--type-meta);
+        line-height: var(--line-meta);
         max-inline-size: 100%;
         box-sizing: border-box;
         align-items: baseline;

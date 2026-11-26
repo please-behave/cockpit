@@ -118,7 +118,11 @@ export class RuleSetView extends CockpitView<RuleSetDetail> {
         align-items: baseline;
         gap: var(--space-1) var(--space-3);
       }
-      .muted, .registered { color: var(--text-muted); }
+      .muted, .registered {
+        color: var(--text-muted);
+        font-size: var(--type-meta);
+        line-height: var(--line-meta);
+      }
       .knowledge { margin-block: var(--space-2) 0; }
       .knowledge > div + div { margin-block-start: var(--space-2); }
       .knowledge dt { font-weight: var(--weight-semibold); }

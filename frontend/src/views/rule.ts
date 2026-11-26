@@ -83,7 +83,8 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
       ul { margin-block: 0; padding-inline-start: var(--space-4); }
       .knowledge dt {
         color: var(--text-muted);
-        font-size: 0.875rem;
+        font-size: var(--type-meta);
+        line-height: var(--line-meta);
       }
 
       @media (min-width: 40rem) {
@@ -111,7 +112,8 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
         flex-wrap: wrap;
         gap: var(--space-3) var(--space-6);
         color: var(--text-muted);
-        font-size: 0.875rem;
+        font-size: var(--type-meta);
+        line-height: var(--line-meta);
         overflow-wrap: anywhere;
       }
 

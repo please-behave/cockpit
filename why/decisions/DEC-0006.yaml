@@ -4,10 +4,12 @@ context: >-
   The application shell and static pages need a common styling foundation that
   follows the [shared identity](https://github.com/please-behave/why/blob/main/why/decisions/DEC-0009.yaml).
 decision: >-
-  Keep semantic colors and shared spacing, typography, radius, and elevation
-  values in CSS custom properties. Order styles in the tokens, base,
-  components, and utilities cascade layers. Declare literal colors only in
-  the tokens layer and use the system font stack and browser color scheme.
+  Keep semantic colors, including the shared subtle divider, and shared spacing,
+  type sizes and line heights, radii, elevation, and content measures in CSS
+  custom properties. Density tokens adapt type, spacing and target sizes for
+  coarse pointers. Order styles in the tokens, base, components, and utilities
+  cascade layers. Declare literal colors only in the tokens layer and use the
+  system font stack and browser color scheme.
   Build the common stylesheet with Vite and use adopted stylesheets in
   Shadow DOM components.
 rationale: >-

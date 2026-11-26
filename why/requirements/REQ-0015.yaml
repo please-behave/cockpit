@@ -22,11 +22,16 @@ description: >-
   separate actions at the end of the header.
   Text links in content and tables are underlined. In both themes, link text
   contrasts with the page, raised, hover, badge, and panel surfaces. Primary
-  and muted text contrast with hover, badge, and panel surfaces. Badge and
-  panel borders contrast with their own surface and the surrounding page and
-  raised surfaces. Badges for the kinds `check` and `review`, for Blocking and
-  for Non-blocking each have a tone of their own: a tinted surface with text and
-  border of the same hue. Their text contrasts with the badge surface and with
+  and muted text contrast with hover, badge, and panel surfaces. Badge borders
+  and control boundaries contrast with their own surface and adjacent surfaces.
+  Decorative panel edges and dividers use the shared subtle border where
+  backgrounds, spacing, or labels already identify the content. Tables and
+  widget views use a wider measure than detail views, and prose has a bounded
+  line length. Fine pointers use compact density and coarse pointers use
+  comfortable density. Metadata is at least 0.75rem. Controls and standalone
+  links provide targets at least 24 by 24 CSS pixels. Badges for the kinds
+  `check` and `review`, for Blocking and for Non-blocking each have a tone of
+  their own: a tinted surface with text and border of the same hue. Their text contrasts with the badge surface and with
   the page and raised surfaces, and their borders contrast with the badge
   surface and with those surfaces. The tones are teal for `check`, indigo for
   `review`, a strong slate for Blocking and a light neutral gray for

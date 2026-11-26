@@ -60,8 +60,8 @@ export class RulesView extends CockpitView<Registry> {
         display: grid;
         grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr));
         gap: var(--space-3);
-        padding: var(--space-4);
-        border: 1px solid var(--border);
+        padding: var(--panel-padding);
+        border: 1px solid var(--panel-border);
         border-radius: var(--radius-panel);
         background: var(--surface-raised);
       }
@@ -77,7 +77,8 @@ export class RulesView extends CockpitView<Registry> {
         box-sizing: border-box;
         min-inline-size: 0;
         max-inline-size: 100%;
-        padding: var(--space-2) var(--space-3);
+        min-block-size: var(--target-min-size);
+        padding: var(--control-padding-block) var(--control-padding-inline);
         border: 1px solid var(--border);
         border-radius: var(--radius-control);
         background: var(--surface);

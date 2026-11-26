@@ -31,8 +31,8 @@ export class DeploymentsView extends CockpitView<Deployment[]> {
       :host { overflow-wrap: anywhere; }
 
       .controls {
-        padding: var(--space-3) var(--space-4);
-        border: 1px solid var(--border);
+        padding: var(--panel-padding);
+        border: 1px solid var(--panel-border);
         border-radius: var(--radius-panel);
         background: var(--surface-raised);
       }
@@ -51,7 +51,8 @@ export class DeploymentsView extends CockpitView<Deployment[]> {
 
       select {
         min-inline-size: 0;
-        padding: var(--space-2);
+        min-block-size: var(--target-min-size);
+        padding: var(--control-padding-block) var(--control-padding-inline);
         border: 1px solid var(--border);
         border-radius: var(--radius-control);
         background: var(--surface);

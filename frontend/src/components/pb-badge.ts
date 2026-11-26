@@ -22,9 +22,9 @@ export class Badge extends LitElement {
         border-radius: var(--radius-control);
         background: var(--badge-surface);
         color: var(--text);
-        font-size: 0.875rem;
+        font-size: var(--type-meta);
         font-weight: var(--weight-semibold);
-        line-height: var(--line-heading);
+        line-height: var(--line-meta);
         overflow-wrap: anywhere;
       }
 

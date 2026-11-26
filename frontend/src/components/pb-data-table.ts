@@ -49,11 +49,6 @@ export class DataTable extends LitElement {
         overflow-x: auto;
       }
 
-      a:focus-visible {
-        outline: var(--focus-ring);
-        outline-offset: var(--focus-offset);
-      }
-
       td, th {
         overflow-wrap: anywhere;
       }
@@ -65,10 +60,17 @@ export class DataTable extends LitElement {
 
       .fill {
         inline-size: 100%;
+        min-inline-size: var(--target-min-size);
         max-inline-size: 0;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+      }
+
+      .fill a {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: top;
       }
 
       .scroll:focus-visible {
@@ -84,7 +86,7 @@ export class DataTable extends LitElement {
       }
 
       caption, th, td {
-        padding: var(--space-2) var(--space-3);
+        padding: var(--cell-padding-block) var(--control-padding-inline);
         text-align: start;
         vertical-align: top;
       }
@@ -95,7 +97,7 @@ export class DataTable extends LitElement {
       }
 
       th, td {
-        border-block-end: 1px solid var(--border);
+        border-block-end: 1px solid var(--border-subtle);
       }
 
       thead, th[scope='rowgroup'] {

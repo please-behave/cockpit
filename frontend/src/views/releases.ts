@@ -33,8 +33,8 @@ export const releaseListStyles = css`
       grid-template-columns: minmax(0, 2fr) minmax(0, 5fr);
       align-items: start;
       gap: var(--space-2) var(--space-4);
-      padding: var(--space-3) var(--space-4);
-      border: 1px solid var(--border);
+      padding: var(--panel-padding);
+      border: 1px solid var(--panel-border);
       border-radius: var(--radius-panel);
       background: var(--surface-raised);
     }

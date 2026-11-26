@@ -22,13 +22,16 @@ export class RuleSetChip extends LitElement {
       .chip {
         display: block;
         box-sizing: border-box;
+        min-block-size: var(--target-min-size);
+        min-inline-size: var(--target-min-size);
         padding: var(--space-1) var(--space-2);
         overflow: hidden;
         border: 1px solid var(--rule-set);
-        border-radius: 999px;
+        border-radius: var(--radius-pill);
         background: var(--rule-set-surface);
         color: var(--rule-set-text);
-        font-size: 0.875rem;
+        font-size: var(--type-meta);
+        line-height: var(--line-meta);
         text-decoration: underline;
         text-underline-offset: 0.15em;
         text-overflow: ellipsis;

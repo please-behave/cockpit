@@ -25,7 +25,7 @@ export class CockpitAppShell extends LitElement {
       }
 
       header {
-        border-block-end: 1px solid var(--border);
+        border-block-end: 1px solid var(--border-subtle);
         background: var(--surface-raised);
       }
 
@@ -100,9 +100,13 @@ export class CockpitAppShell extends LitElement {
 
       .refresh-line, main {
         box-sizing: border-box;
-        max-inline-size: var(--content-width);
+        max-inline-size: var(--content-width-detail);
         margin-inline: auto;
         padding-inline: var(--space-4);
+      }
+
+      .refresh-line, main.wide {
+        max-inline-size: var(--content-width-wide);
       }
 
       .refresh-line {
@@ -191,6 +195,7 @@ export class CockpitAppShell extends LitElement {
   }
 
   override render() {
+    const wide = ['dashboard', 'history', 'releases', 'deployments', 'rules'].includes(this.currentView);
     return html`
       <a class="skip-link" href="#main-content" @click=${this.skipToMain}>Skip to content</a>
       <header>
@@ -221,7 +226,7 @@ export class CockpitAppShell extends LitElement {
         </div>
       </header>
       ${this.refreshStatus()}
-      <main id="main-content" tabindex="-1"><slot></slot></main>
+      <main id="main-content" class=${wide ? 'wide' : nothing} tabindex="-1"><slot></slot></main>
     `;
   }
 }

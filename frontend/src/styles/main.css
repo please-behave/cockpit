@@ -10,7 +10,7 @@
     margin: 0;
     background: var(--surface);
     color: var(--text);
-    font: var(--type-body) / var(--line-body) var(--font-family);
+    font: var(--type-data) / var(--line-data) var(--font-family);
   }
 
   h1 {
@@ -56,16 +56,17 @@
     gap: var(--space-4);
     inline-size: min(100%, 28rem);
     padding: clamp(var(--space-6), 6vw, var(--space-12));
-    border: 1px solid var(--border);
+    border: 1px solid var(--panel-border);
     border-radius: var(--radius-panel);
-    background: var(--surface-raised);
+    background: var(--panel-surface);
     box-shadow: var(--elevation-panel);
   }
 
   .sign-in-link {
     display: inline-block;
     margin-block-start: var(--space-3);
-    padding: var(--space-3) var(--space-4);
+    min-block-size: var(--target-min-size);
+    padding: var(--control-padding-block) var(--control-padding-inline);
     border: 1px solid var(--border);
     border-radius: var(--radius-control);
     background: var(--brand-primary);
@@ -82,7 +83,7 @@
 @layer utilities {
   .brand-mark {
     display: block;
-    padding: 0.5rem;
+    padding: var(--space-2);
   }
 
   .brand-mark img {

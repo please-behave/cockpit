@@ -62,10 +62,18 @@ test('declared token pairings meet the shared contrast minimums in both themes a
   const light = new Map();
   const dark = new Map();
   const forcedColors = new Map();
+  const densityTokens = new Set([
+    '--type-data', '--type-meta', '--cell-padding-block', '--control-padding-block',
+    '--control-padding-inline', '--panel-padding', '--target-min-size',
+  ]);
   stylesheet.walkDecls(/^--/, ({ prop, value, parent }) => {
     const scope = parent.parent;
     if (parent.selector === ':root' && scope.name === 'media' && scope.params === '(forced-colors: active)') {
       forcedColors.set(prop, value);
+      return;
+    }
+    if (parent.selector === ':root' && scope.name === 'media' && scope.params === '(pointer: coarse)') {
+      assert.ok(densityTokens.has(prop), `${prop} is not a density token`);
       return;
     }
     if (prop === '--logo-light-display' || prop === '--logo-dark-display') return;
@@ -101,7 +109,6 @@ test('declared token pairings meet the shared contrast minimums in both themes a
       for (const text of textTokens) assertContrast(text, surface, 4.5);
       assertContrast('border', surface, 3);
       assertContrast('badge-border', surface, 3);
-      assertContrast('panel-border', surface, 3);
       if (theme === 'dark') assertContrast('brand-light', surface, 3);
     }
     for (const surface of ['surface-hover', 'badge-surface', 'panel-surface']) {
@@ -116,7 +123,8 @@ test('declared token pairings meet the shared contrast minimums in both themes a
         assertContrast(`chip-${tone}-text`, surface, 4.5);
       }
     }
-    assertContrast('panel-border', 'panel-surface', 3);
+    assert.equal(tokens.get('--panel-border'), 'var(--border-subtle)');
+    assert.equal(token('border-subtle'), theme === 'light' ? '#C2BEC8' : '#4B4655');
     assertContrast('nav-current-text', 'surface', 4.5);
     for (const [foreground, surface, hover] of [
       ['link', 'surface-raised', 'nav-hover-surface'],
@@ -138,7 +146,8 @@ test('declared token pairings meet the shared contrast minimums in both themes a
     ['badge-surface', 'Canvas'],
     ['badge-border', 'CanvasText'],
     ['panel-surface', 'Canvas'],
-    ['panel-border', 'CanvasText'],
+    ['border', 'CanvasText'],
+    ['border-subtle', 'CanvasText'],
     ...['check', 'review', 'blocking', 'neutral'].flatMap(tone => [
       [`chip-${tone}-surface`, 'Canvas'],
       [`chip-${tone}-text`, 'CanvasText'],

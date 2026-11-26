@@ -19,6 +19,12 @@ export abstract class CockpitView<T = never> extends LitElement {
         line-height: var(--line-heading);
       }
 
+      h2, h3 { line-height: var(--line-heading); }
+      h2 { font-size: var(--type-section); }
+      h3 { font-size: var(--type-subsection); }
+
+      p, .plain-text { max-inline-size: var(--measure-prose); }
+
       :focus-visible {
         outline: var(--focus-ring);
         outline-offset: var(--focus-offset);

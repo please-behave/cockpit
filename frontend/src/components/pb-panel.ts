@@ -5,7 +5,7 @@ export class Panel extends LitElement {
     @layer components {
       :host {
         display: block;
-        padding: var(--space-4);
+        padding: var(--panel-padding);
         border: 1px solid var(--panel-border);
         border-radius: var(--radius-panel);
         background: var(--panel-surface);
