@@ -1,12 +1,14 @@
 // Verifies REQ-0030 and REQ-0033.
 import { afterEach, expect, test, vi } from 'vitest';
 import { respond } from '../../../tools/preview/fixtures.mjs';
-import type { Summary } from '../api/client';
+import type { Deployment, Summary } from '../api/client';
 import { CockpitApp } from '../components/app';
 import type { DataTable } from '../components/pb-data-table';
+import type { RelativeTime } from '../components/pb-relative-time';
+import type { RuleSetChip } from '../components/pb-rule-set-chip';
 import type { StatusPill } from '../components/pb-status-pill';
 import type { Tooltip } from '../components/pb-tooltip';
-import { releasePath, repositoryPath, routeFor } from './router';
+import { releasePath, repositoryPath, routeFor, ruleSetPath } from './router';
 
 const repository = 'github.com/acme/return-navigation';
 
@@ -14,9 +16,11 @@ afterEach(() => {
   document.body.replaceChildren();
   window.history.replaceState(null, '', '/');
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 async function open(path: string) {
+  vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
   const fetch = vi.fn(async (target: string) => {
     const fixture = respond(target)!;
     return Response.json(fixture.body, { status: fixture.status });
@@ -28,7 +32,7 @@ async function open(path: string) {
   await app.updateComplete;
   const view = app.shadowRoot!.querySelector('pb-repository')!;
   await vi.waitFor(() => expect(view.shadowRoot!.querySelector('.releases, pb-empty-state')).not.toBeNull());
-  return { root: view.shadowRoot!, fetch };
+  return { app, root: view.shadowRoot!, fetch };
 }
 
 test.each([repositoryPath(repository), '/releases/repository?repository=github.com%2Facme%2Freturn-navigation'])(
@@ -38,7 +42,7 @@ test.each([repositoryPath(repository), '/releases/repository?repository=github.c
     expect(root.querySelector('h1')?.textContent).toBe('return-navigation');
     expect(root.querySelector('.canonical')?.textContent).toBe(repository);
     expect([...root.querySelectorAll('section > h2')].map(heading => heading.textContent))
-      .toEqual(['Releases', 'Attestations']);
+      .toEqual(['Releases', 'Deployments', 'Attestations']);
     const versions = [...root.querySelectorAll('.release > a')];
     expect(versions.map(link => link.textContent)).toEqual(['2.0', '1.11', '1.9']);
     expect(versions[0].getAttribute('href')).toBe(releasePath(repository, '2.0'));
@@ -64,9 +68,63 @@ test.each([repositoryPath(repository), '/releases/repository?repository=github.c
       '/v0/releases?limit=100&repository=github.com%2Facme%2Freturn-navigation',
       '/v0/attestations/latest',
       filteredHistory,
+      '/v0/deployments?limit=100&repository=github.com%2Facme%2Freturn-navigation',
+      '/v0/deployments?limit=100&repository=github.com%2Facme%2Freturn-navigation&before=9',
     ]);
   },
 );
+
+test('shows each current target with its release or commit and reported evidence', async () => {
+  const { app, root } = await open(repositoryPath(repository));
+  const section = root.querySelector('section[aria-labelledby="deployments"]')!;
+  const rows = [...section.querySelectorAll('.deployment')];
+  expect(rows).toHaveLength(108);
+  const headings = rows.map(row => row.querySelector('h3')?.textContent);
+  expect(new Set(headings).size).toBe(rows.length);
+  expect(headings).toContain('github.com/acme/infrastructure · production');
+  expect(headings).toContain('github.com/acme/other-infrastructure · production');
+  expect(headings).toContain('github.com/acme/infrastructure · test-102');
+  expect(headings.some(heading => heading!.length > 100)).toBe(true);
+  expect(new Set(rows.map(row => row.querySelector<StatusPill>('pb-status-pill')?.status)))
+    .toEqual(new Set(['ERROR', 'release not recorded', 'No evidence', 'PASS']));
+  expect(rows[0].querySelector('h3')?.textContent).toBe('github.com/acme/infrastructure · rollback');
+
+  const missingRelease = rows[1];
+  expect(missingRelease.querySelector('dd')?.textContent).toBe('3.0');
+  expect(missingRelease.querySelector('a, pb-rule-set-chip')).toBeNull();
+  const missingEvidence = rows[2];
+  const commit = missingEvidence.querySelector<Tooltip>('pb-tooltip')!;
+  expect(commit.description).toBe('9'.repeat(40));
+  expect(commit.querySelector('code')?.textContent).toBe('9999999');
+  expect(missingEvidence.querySelector('a, pb-rule-set-chip')).toBeNull();
+
+  const production = rows[headings.indexOf('github.com/acme/infrastructure · production')];
+  const version = production.querySelector('a')!;
+  expect(version.textContent).toBe('2.0');
+  expect(version.getAttribute('href')).toBe(releasePath(repository, '2.0'));
+  const time = production.querySelector<RelativeTime>('pb-relative-time')!;
+  expect(time.shadowRoot?.querySelector('time')?.dateTime).toBe(time.value);
+  const chips = [...production.querySelectorAll<RuleSetChip>('pb-rule-set-chip')];
+  expect(chips.map(chip => chip.label))
+    .toEqual(['Repository baseline', expect.stringContaining('Security and release readiness')]);
+  const entries = respond('/v0/deployments')!.body as Deployment[];
+  expect(chips.map(chip => chip.href))
+    .toEqual(entries[0].evidence!.completed_rule_sets.map(set => ruleSetPath(set, set.version)));
+  version.click();
+  await app.updateComplete;
+  expect(app.shadowRoot!.querySelector('pb-release')).not.toBeNull();
+});
+
+test('links an empty Deployments section to the Deployments tab', async () => {
+  const { app, root } = await open(repositoryPath('github.com/acme/widget'));
+  const section = root.querySelector('section[aria-labelledby="deployments"]')!;
+  expect(section.querySelector('pb-empty-state')?.getAttribute('heading')).toBe('No deployments');
+  const link = section.querySelector('a')!;
+  expect(link.getAttribute('href')).toBe('/deployments');
+  link.click();
+  await app.updateComplete;
+  expect(app.shadowRoot!.querySelector('pb-deployments')).not.toBeNull();
+});
 
 test('selects each execution point independently from overlapping combinations', async () => {
   const { root } = await open(repositoryPath('github.com/acme/widget'));
@@ -88,7 +146,7 @@ test('shows the latest attestation without execution points', async () => {
 
 test.each([
   ['github.com/acme/missing-evidence', ['No attestations']],
-  ['github.com/acme/no-records', ['No releases', 'No attestations']],
+  ['github.com/acme/no-records', ['No releases', 'No deployments', 'No attestations']],
 ])('shows the applicable empty states for %s', async (name, emptySections) => {
   const { root } = await open(repositoryPath(name));
   expect([...root.querySelectorAll('pb-empty-state')].map(panel => panel.getAttribute('heading')))

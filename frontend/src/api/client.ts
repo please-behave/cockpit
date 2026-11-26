@@ -262,9 +262,10 @@ export async function releases(repository: string | null, signal: AbortSignal): 
   }
 }
 
-export async function deployments(signal: AbortSignal): Promise<Deployment[]> {
+export async function deployments(signal: AbortSignal, repository?: string): Promise<Deployment[]> {
   const pageSize = 100;
   const query = new URLSearchParams({ limit: String(pageSize) });
+  if (repository !== undefined) query.set('repository', repository);
   const entries = new Map<string, Deployment>();
   const cursors = new Set<string>();
   for (;;) {

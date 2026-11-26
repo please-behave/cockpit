@@ -66,4 +66,4 @@ contracts:
     name: Current Deployments
     document: deployments.md
     schema: deployments.schema.json
-    requirements: [REQ-0012, REQ-0013, REQ-0034]
+    requirements: [REQ-0012, REQ-0013, REQ-0033, REQ-0034]

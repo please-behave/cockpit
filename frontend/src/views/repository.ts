@@ -1,5 +1,7 @@
 import { css, html, nothing, type CSSResult } from 'lit';
-import { attestationPage, latestAttestations, releases, type ReleaseSummary, type Summary } from '../api/client';
+import {
+  attestationPage, deployments, latestAttestations, releases, type Deployment, type ReleaseSummary, type Summary,
+} from '../api/client';
 import '../components/pb-commit-link';
 import type { DataTableColumn } from '../components/pb-data-table';
 import '../components/pb-data-table';
@@ -8,6 +10,7 @@ import { shortName } from '../components/pb-short-name';
 import '../components/pb-status-pill';
 import '../components/pb-time';
 import { CockpitView } from './cockpit-view';
+import { compareEvidence, deploymentList, deploymentListStyles, targetLabel } from './deployment-list';
 import { releaseList, releaseListStyles } from './releases';
 
 const historyLimit = 100;
@@ -20,6 +23,7 @@ const attestationColumns: DataTableColumn[] = [
 
 interface RepositoryData {
   releases: ReleaseSummary[];
+  deployments: Deployment[];
   heads: Map<string | null, Summary>;
   recent: Summary[];
 }
@@ -55,7 +59,7 @@ function attestationRow(summary: Summary, key: string, points: string) {
 export class RepositoryView extends CockpitView<RepositoryData> {
   static override properties = { repository: { attribute: false } };
 
-  static override styles = [CockpitView.styles as CSSResult, releaseListStyles, css`
+  static override styles = [CockpitView.styles as CSSResult, releaseListStyles, deploymentListStyles, css`
     @layer components {
       .canonical { margin-block: var(--space-2) 0; color: var(--text-muted); }
       section { margin-block-start: var(--space-6); }
@@ -73,12 +77,14 @@ export class RepositoryView extends CockpitView<RepositoryData> {
 
   protected override async read(signal: AbortSignal): Promise<RepositoryData> {
     const repository = this.repository;
-    const [recorded, latest, recent] = await Promise.all([
+    const [recorded, latest, recent, current] = await Promise.all([
       releases(repository, signal),
       latestAttestations(signal),
       attestationPage({ repository, limit: historyLimit }, signal),
+      deployments(signal, repository),
     ]);
-    return { releases: recorded, heads: latestByPoint(latest, repository), recent };
+    current.sort((a, b) => compareEvidence(a, b) || targetLabel(a.target).localeCompare(targetLabel(b.target)));
+    return { releases: recorded, deployments: current, heads: latestByPoint(latest, repository), recent };
   }
 
   protected override content(data?: RepositoryData) {
@@ -89,11 +95,22 @@ export class RepositoryView extends CockpitView<RepositoryData> {
         <p><a data-route href="/releases">All releases</a></p>
         ${data ? releaseList(data.releases, false) : nothing}
       </section>
+      <section aria-labelledby="deployments">
+        <h2 id="deployments">Deployments</h2>
+        <p><a data-route href="/deployments">All deployments</a></p>
+        ${data ? this.currentDeployments(data.deployments) : nothing}
+      </section>
       <section aria-labelledby="attestations">
         <h2 id="attestations">Attestations</h2>
         ${data ? this.attestations(data) : nothing}
       </section>
     `;
+  }
+
+  private currentDeployments(entries: Deployment[]) {
+    return entries.length ? deploymentList(entries, 'target') : html`
+      <pb-empty-state heading="No deployments"
+        message="No deployments have been recorded for this repository."></pb-empty-state>`;
   }
 
   private attestations({ heads, recent }: RepositoryData) {

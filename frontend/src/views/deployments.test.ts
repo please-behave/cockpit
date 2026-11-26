@@ -79,8 +79,8 @@ test('shows all pages grouped by target with the worst evidence first', async ()
 
   const commit = root.querySelector<Tooltip>('.deployment pb-tooltip')!;
   expect(commit.querySelector('code')?.textContent).toBe(commit.description.slice(0, 7));
-  const missing = rows.find(row => statuses(row)[0] === 'release not recorded')!;
-  expect(missing.querySelector('dd')?.textContent).toBe('v3.0');
+  const missing = rows.find(row => row.querySelector('dd')?.textContent === 'v3.0')!;
+  expect(statuses(missing)).toEqual(['release not recorded']);
   expect(missing.querySelector('dl a, pb-rule-set-chip')).toBeNull();
   for (const status of ['ERROR', 'FAIL', 'release not recorded', 'No evidence', 'PASS']) {
     const pill = [...root.querySelectorAll<StatusPill>('.deployment pb-status-pill')].find(pill => pill.status === status)!;
@@ -124,7 +124,7 @@ test('changes grouping and combines labelled filters without losing focus', asyn
   expect(root.querySelector('header pb-status-pill')).toHaveProperty('status', 'No evidence');
   await change(selects[1], '');
   await change(selects[3], 'release not recorded');
-  expect(statuses(root)).toEqual(['release not recorded']);
+  expect(statuses(root)).toEqual(['release not recorded', 'release not recorded']);
   expect(fetch).toHaveBeenCalledTimes(2);
 });
 

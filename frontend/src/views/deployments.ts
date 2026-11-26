@@ -1,34 +1,14 @@
 import { css, html, nothing, type CSSResult } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
-import { deployments, type Deployment, type DeploymentTarget } from '../api/client';
+import { deployments, type Deployment } from '../api/client';
 import '../components/pb-empty-state';
-import '../components/pb-relative-time';
-import '../components/pb-rule-set-chip';
 import '../components/pb-status-pill';
-import '../components/pb-tooltip';
 import { CockpitView } from './cockpit-view';
-import { releasePath, repositoryPath, ruleSetPath } from './router';
+import {
+  compareEvidence, deploymentList, deploymentListStyles, evidenceStatus, statuses, targetKey, targetLabel,
+} from './deployment-list';
 
-const statuses = ['ERROR', 'FAIL', 'release not recorded', 'No evidence', 'PASS'] as const;
-type EvidenceStatus = typeof statuses[number];
 type GroupBy = 'target' | 'repository';
-
-function evidenceStatus(entry: Deployment): EvidenceStatus {
-  if (entry.state === 'release_not_recorded') return 'release not recorded';
-  return entry.evidence?.overall ?? 'No evidence';
-}
-
-function targetKey({ owner, name }: DeploymentTarget) {
-  return JSON.stringify([owner, name]);
-}
-
-function targetLabel({ owner, name }: DeploymentTarget) {
-  return `${owner} · ${name}`;
-}
-
-function compareEvidence(a: Deployment, b: Deployment) {
-  return statuses.indexOf(evidenceStatus(a)) - statuses.indexOf(evidenceStatus(b));
-}
 
 function groupDeployments(entries: Deployment[], groupBy: GroupBy) {
   const groups = new Map<string, { key: string; label: string; rows: Deployment[] }>();
@@ -45,49 +25,19 @@ function groupDeployments(entries: Deployment[], groupBy: GroupBy) {
   return [...groups.values()].sort((a, b) => compareEvidence(a.rows[0], b.rows[0]) || a.label.localeCompare(b.label));
 }
 
-function deploymentReference(entry: Deployment) {
-  if (entry.state === 'release_not_recorded') return entry.version;
-  if (entry.version !== null) {
-    return html`<a data-route href=${releasePath(entry.repository, entry.version)}>${entry.version}</a>`;
-  }
-  return html`<pb-tooltip .description=${entry.reported_commit}>
-    <code>${entry.reported_commit.slice(0, 7)}</code></pb-tooltip>`;
-}
-
-function deploymentRow(entry: Deployment) {
-  const sets = entry.evidence?.completed_rule_sets ?? [];
-  return html`
-    <li class="deployment">
-      <h3><a data-route href=${repositoryPath(entry.repository)}>${entry.repository}</a></h3>
-      <dl>
-        <div><dt>${entry.version === null ? 'Commit' : 'Version'}</dt><dd>${deploymentReference(entry)}</dd></div>
-        <div><dt>Target</dt><dd>${targetLabel(entry.target)}</dd></div>
-        <div><dt>Recorded</dt><dd><pb-relative-time .value=${entry.received_at}></pb-relative-time></dd></div>
-        <div><dt>Evidence</dt><dd><pb-status-pill .status=${evidenceStatus(entry)}></pb-status-pill></dd></div>
-        ${sets.length === 0 ? nothing : html`
-          <div class="rule-sets">
-            <dt>Completed Rule Sets</dt>
-            <dd><ul class="sets" role="list">${sets.map(set => html`
-              <li><pb-rule-set-chip .label=${set.name} .href=${ruleSetPath(set, set.version)}></pb-rule-set-chip></li>
-            `)}</ul></dd>
-          </div>`}
-      </dl>
-    </li>`;
-}
-
 export class DeploymentsView extends CockpitView<Deployment[]> {
-  static override styles = [CockpitView.styles as CSSResult, css`
+  static override styles = [CockpitView.styles as CSSResult, deploymentListStyles, css`
     @layer components {
       :host { overflow-wrap: anywhere; }
 
-      .controls, .deployment {
+      .controls {
         padding: var(--space-3) var(--space-4);
         border: 1px solid var(--border);
         border-radius: var(--radius-panel);
         background: var(--surface-raised);
       }
 
-      .controls, dl {
+      .controls {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: var(--space-3) var(--space-4);
@@ -119,21 +69,14 @@ export class DeploymentsView extends CockpitView<Deployment[]> {
         margin-block-end: var(--space-2);
       }
 
-      h2, h3, p, dl, dd, ul { margin: 0; }
-      h3 { font-size: inherit; margin-block-end: var(--space-2); }
-      dt { color: var(--text-muted); }
-      ul { padding: 0; list-style: none; }
-      .deployments { display: grid; gap: var(--space-2); }
-      .rule-sets { grid-column: 1 / -1; }
-      .sets { display: flex; flex-wrap: wrap; gap: var(--space-1); }
-      .sets li { max-inline-size: 100%; }
+      h2, p { margin: 0; }
 
       @media (max-width: 52rem) {
-        .controls, dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       }
 
       @media (max-width: 28rem) {
-        .controls, dl { grid-template-columns: minmax(0, 1fr); }
+        .controls { grid-template-columns: minmax(0, 1fr); }
       }
     }
   `];
@@ -213,7 +156,7 @@ export class DeploymentsView extends CockpitView<Deployment[]> {
             <h2 id=${`deployment-group-${index}`}>${label}</h2>
             <p><pb-status-pill .status=${status}></pb-status-pill> ${count} of ${rows.length}</p>
           </header>
-          <ul class="deployments" role="list">${repeat(rows, row => row.id, deploymentRow)}</ul>
+          ${deploymentList(rows, 'repository')}
         </section>`;
       })}
     `;

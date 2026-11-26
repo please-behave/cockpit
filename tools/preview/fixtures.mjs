@@ -408,7 +408,10 @@ const deploymentFixtures = [
   { name: 'staging', fact: latestReleases[2], unrecorded: 'v3.0' },
   { name: 'p'.repeat(64), owner: `github.com/${longOwner}/${longName}`, fact: latestReleases[5] },
   { name: 'demo', owner: markup, fact: latestReleases[4] },
-  ...Array.from({ length: 105 }, (_, index) => ({
+  { name: 'rollback', fact: releaseFacts.find(fact => fact.repository === releaseRepository && fact.version === '1.11') },
+  { name: 'canary', fact: { ...latestReleases[0], commit: '9'.repeat(40), evidence: null }, commitOnly: true },
+  { name: 'p'.repeat(64), owner: `github.com/${longOwner}/${longName}`, fact: latestReleases[0], unrecorded: '3.0' },
+  ...Array.from({ length: 102 }, (_, index) => ({
     name: `test-${String(index + 1).padStart(3, '0')}`, fact: latestReleases[0],
   })),
 ];
