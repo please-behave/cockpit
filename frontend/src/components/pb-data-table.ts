@@ -44,6 +44,8 @@ export class DataTable extends LitElement {
       }
 
       .scroll {
+        /* Keep visually hidden cell labels inside the scrolling region. */
+        position: relative;
         overflow-x: auto;
       }
 

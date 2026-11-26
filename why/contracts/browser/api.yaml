@@ -16,7 +16,7 @@ contracts:
     name: Attestation List
     document: list.md
     schema: list.schema.json
-    requirements: [REQ-0011, REQ-0012, REQ-0013, REQ-0021, REQ-0022]
+    requirements: [REQ-0011, REQ-0012, REQ-0013, REQ-0021, REQ-0022, REQ-0033]
   - id: CON-0004
     name: Registered Rules
     document: rules.md

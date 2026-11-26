@@ -71,7 +71,7 @@ async function tableRoot(view: HistoryView) {
 }
 
 const hrefs = (view: HistoryView) => [...view.shadowRoot!.querySelectorAll('pb-data-table')]
-  .flatMap(table => [...table.shadowRoot!.querySelectorAll('tbody a[data-route]')])
+  .flatMap(table => [...table.shadowRoot!.querySelectorAll('tbody td:first-child a[data-route]')])
   .map(link => link.getAttribute('href'));
 
 async function rowCount(view: HistoryView) {
@@ -125,8 +125,9 @@ test('shows one row per attestation with its columns, links and tooltips', async
   expect(timestamp.dateTime).toBe(report.received_at);
   expect(timestamp.hasAttribute('title')).toBe(false);
 
-  const link = first.querySelector<HTMLAnchorElement>('a[data-route]')!;
-  expect(link.getAttribute('href')).toBe('/attestations/first%3Fquery');
+  expect(time.closest('a')?.getAttribute('href')).toBe('/attestations/first%3Fquery');
+  const link = first.querySelector<HTMLAnchorElement>('pb-tooltip > a[data-route]')!;
+  expect(link.getAttribute('href')).toBe('/repositories/detail?repository=github.com%2Facme%2Fwidget');
   expect(link.querySelector<ShortName>('pb-short-name')!.value).toBe('github.com/acme/widget');
   expect(link.parentElement).toMatchObject({ localName: 'pb-tooltip', description: report.repository });
 

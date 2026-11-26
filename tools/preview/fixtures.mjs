@@ -309,9 +309,16 @@ function limitFrom(params) {
 
 function attestations(params) {
   const limit = limitFrom(params);
-  if (limit === undefined) return code(400, 'invalid_query');
   const before = params.get('before');
-  const page = before === null ? history : history.filter(summary => summary.id < before);
+  const repository = params.get('repository');
+  const allowed = ['limit', 'before', 'repository', 'preview'];
+  if (limit === undefined || repository === '' || repository?.includes('\0') ||
+      (before !== null && !/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(before)) ||
+      [...params.keys()].some(key => !allowed.includes(key) || params.getAll(key).length !== 1)) {
+    return code(400, 'invalid_query');
+  }
+  const page = history.filter(summary => (before === null || summary.id < before)
+    && (repository === null || summary.repository === repository));
   return json(200, page.slice(0, limit));
 }
 
@@ -323,6 +330,7 @@ const releaseFacts = [
   release('github.com/acme/missing-evidence', '1.0', 2, null),
   release('github.com/acme/failing-evidence', '1.0', 3, 'FAIL'),
   release('github.com/acme/evidence-error', '1.0', 4, 'ERROR'),
+  release(`github.com/${longOwner}/${longName}`, '1.0', 6, 'FAIL'),
   release(completedRuleSets[0].repository, `release-${markup}-${'v'.repeat(190)}`, 5, 'PASS', [markupSet], 'api_key'),
   ...Array.from({ length: 103 }, (_, index) =>
     release(`github.com/acme/project-${String(index + 1).padStart(3, '0')}`, '1.0', 20 + index, 'PASS')),

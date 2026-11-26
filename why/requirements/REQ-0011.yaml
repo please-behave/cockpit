@@ -2,9 +2,9 @@ id: REQ-0011
 name: Browser Attestation Reads
 description: >-
   The cockpit serves same-origin, read-only JSON endpoints for the latest
-  attestation summaries, a paged list of all attestation summaries with the
-  optional query parameters limit and before, and a single attestation by
-  identifier under /v0. It uses its bounded ledger client to validate each
+  attestation summaries, a paged list of attestation summaries with the
+  optional query parameters limit, before and repository, and a single
+  attestation by identifier under /v0. It uses its bounded ledger client to validate each
   successful response from ledger:CON-0002, ledger:CON-0003 or ledger:CON-0004
   and forwards the reported JSON with its fields, values and order intact.
   The list query is forwarded to the ledger.

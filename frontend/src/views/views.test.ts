@@ -100,6 +100,8 @@ test.each(['light', 'dark'])('detail presents reported results and verification 
   const [overall, commitValue, reported, id, canonicalName] = facts.querySelectorAll('dd');
   expect(id.textContent).toBe(value.id);
   expect(canonicalName.textContent).toBe(repository);
+  expect(canonicalName.querySelector('a')?.getAttribute('href'))
+    .toBe(`/repositories/detail?${new URLSearchParams({ repository })}`);
   const commit = commitValue.querySelector<CommitLink>('pb-commit-link')!;
   await commit.updateComplete;
   expect(commit.shadowRoot!.querySelector('code')?.textContent).toBe(value.commit);

@@ -1,0 +1,117 @@
+import { css, html, nothing, type CSSResult } from 'lit';
+import { attestationPage, latestAttestations, releases, type ReleaseSummary, type Summary } from '../api/client';
+import '../components/pb-commit-link';
+import type { DataTableColumn } from '../components/pb-data-table';
+import '../components/pb-data-table';
+import '../components/pb-empty-state';
+import { shortName } from '../components/pb-short-name';
+import '../components/pb-status-pill';
+import '../components/pb-time';
+import { CockpitView } from './cockpit-view';
+import { releaseList, releaseListStyles } from './releases';
+
+const historyLimit = 100;
+const attestationColumns: DataTableColumn[] = [
+  { label: 'Execution points', part: 'execution-points' },
+  { label: 'Reported', mode: 'content' },
+  { label: 'Commit', mode: 'content' },
+  { label: 'Overall', mode: 'content' },
+];
+
+interface RepositoryData {
+  releases: ReleaseSummary[];
+  heads: Map<string | null, Summary>;
+  recent: Summary[];
+}
+
+function latestByPoint(summaries: Summary[], repository: string) {
+  const heads = new Map<string | null, Summary>();
+  for (const summary of summaries) {
+    if (summary.repository !== repository) continue;
+    const points = summary.execution_points.length ? summary.execution_points : [null];
+    for (const point of points) {
+      const previous = heads.get(point);
+      // The ledger emits fixed-precision UTC timestamps and breaks ties by identifier.
+      if (!previous || summary.received_at > previous.received_at ||
+          (summary.received_at === previous.received_at && summary.id > previous.id)) heads.set(point, summary);
+    }
+  }
+  return heads;
+}
+
+function attestationRow(summary: Summary, key: string, points: string) {
+  return {
+    key,
+    cells: [
+      points,
+      html`<a data-route href=${`/attestations/${encodeURIComponent(summary.id)}`}>
+        <pb-time .value=${summary.received_at}></pb-time></a>`,
+      html`<pb-commit-link .repository=${summary.repository} .commit=${summary.commit}></pb-commit-link>`,
+      html`<pb-status-pill .status=${summary.overall}></pb-status-pill>`,
+    ],
+  };
+}
+
+export class RepositoryView extends CockpitView<RepositoryData> {
+  static override properties = { repository: { attribute: false } };
+
+  static override styles = [CockpitView.styles as CSSResult, releaseListStyles, css`
+    @layer components {
+      .canonical { margin-block: var(--space-2) 0; color: var(--text-muted); }
+      section { margin-block-start: var(--space-6); }
+      h2 { margin-block: 0 var(--space-2); }
+      pb-data-table::part(execution-points) { min-inline-size: 10ch; }
+      pb-data-table + pb-data-table { margin-block-start: var(--space-4); }
+    }
+  `];
+
+  declare repository: string;
+
+  protected override heading() {
+    return shortName(this.repository);
+  }
+
+  protected override async read(signal: AbortSignal): Promise<RepositoryData> {
+    const repository = this.repository;
+    const [recorded, latest, recent] = await Promise.all([
+      releases(repository, signal),
+      latestAttestations(signal),
+      attestationPage({ repository, limit: historyLimit }, signal),
+    ]);
+    return { releases: recorded, heads: latestByPoint(latest, repository), recent };
+  }
+
+  protected override content(data?: RepositoryData) {
+    return html`
+      <p class="canonical">${this.repository}</p>
+      <section aria-labelledby="releases">
+        <h2 id="releases">Releases</h2>
+        <p><a data-route href="/releases">All releases</a></p>
+        ${data ? releaseList(data.releases, false) : nothing}
+      </section>
+      <section aria-labelledby="attestations">
+        <h2 id="attestations">Attestations</h2>
+        ${data ? this.attestations(data) : nothing}
+      </section>
+    `;
+  }
+
+  private attestations({ heads, recent }: RepositoryData) {
+    if (heads.size === 0 && recent.length === 0) {
+      return html`<pb-empty-state heading="No attestations"
+        message="No attestations have been reported for this repository."></pb-empty-state>`;
+    }
+    const latestRows = [...heads].map(([point, summary]) =>
+      attestationRow(summary, JSON.stringify(point), point ?? 'No execution points'));
+    const recentRows = recent.map(summary =>
+      attestationRow(summary, summary.id, summary.execution_points.join(', ') || 'No execution points'));
+    return html`
+      ${latestRows.length ? html`<pb-data-table label="Latest by execution point"
+        .columns=${attestationColumns} .rows=${latestRows} row-header-column="0"></pb-data-table>` : nothing}
+      ${recentRows.length ? html`<pb-data-table label="Recent attestations"
+        .columns=${attestationColumns} .rows=${recentRows}></pb-data-table>` : nothing}
+    `;
+  }
+}
+
+customElements.define('pb-repository', RepositoryView);

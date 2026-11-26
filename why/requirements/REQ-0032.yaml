@@ -14,9 +14,9 @@ description: >-
   Set names its non-passing rules, each with its status and a link to the
   registered rule version, and states when its version is unregistered. A
   release without evidence says so explicitly as No evidence. The page does
-  not repeat the attestation's result list. It links back to the releases
-  of its repository, explains an unknown release, renders stored text as
-  escaped plain text and follows REQ-0004, REQ-0015 and REQ-0016.
+  not repeat the attestation's result list. Its repository name and return link
+  open the repository page of REQ-0033. It explains an unknown release,
+  renders stored text as escaped plain text and follows REQ-0004, REQ-0015 and REQ-0016.
 rationale: >-
   Viewers can see what the evidence of a release says and judge how far its
   sender can be trusted, then follow the evidence to the attestation and

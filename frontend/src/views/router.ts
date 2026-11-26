@@ -4,7 +4,7 @@ export type Route =
   | { view: 'dashboard' }
   | { view: 'history' }
   | { view: 'releases' }
-  | { view: 'repository-releases'; repository: string }
+  | { view: 'repository'; repository: string }
   | { view: 'release'; repository: string; version: string }
   | { view: 'detail'; id: string }
   | { view: 'rules'; search: string }
@@ -32,8 +32,8 @@ export function followHistoryBack(event: MouseEvent) {
   window.history.back();
 }
 
-export function repositoryReleasesPath(repository: string) {
-  return `/releases/repository?${new URLSearchParams({ repository })}`;
+export function repositoryPath(repository: string) {
+  return `/repositories/detail?${new URLSearchParams({ repository })}`;
 }
 
 export function releasePath(repository: string, version: string) {
@@ -47,10 +47,10 @@ export function routeFor(location: string): Route {
   if (path === '/') return { view: 'dashboard' };
   if (path === '/attestations') return { view: 'history' };
   if (path === '/releases') return { view: 'releases' };
-  if (path === '/releases/repository') {
+  if (path === '/repositories/detail' || path === '/releases/repository') {
     const params = new URLSearchParams(search);
     const repository = params.get('repository');
-    if (repository && params.size === 1) return { view: 'repository-releases', repository };
+    if (repository && params.size === 1) return { view: 'repository', repository };
   }
   if (path === '/releases/detail') {
     const params = new URLSearchParams(search);

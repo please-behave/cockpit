@@ -15,9 +15,10 @@ description: >-
   the same line by the rule count. A tooltip and assistive technology
   expose the full value of a shortened commit. The tile shows no counts of
   warnings or rules not run.
-  The shortened name links to the attestation, and the whole tile follows that
-  link. Execution points are shown only for a repository with more than one
-  tile. An empty ledger has an explicit empty state.
+  The shortened name links to the attestation, and the tile follows that link
+  outside its other controls. Each tile has a separate "View repository" link
+  to the repository page of REQ-0033. Execution points are shown only for a
+  repository with more than one tile. An empty ledger has an explicit empty state.
 rationale: >-
   Viewers see at a glance whether every repository passes and can reach the
   evidence of each head attestation.

@@ -15,7 +15,7 @@ import '../components/pb-status-pill';
 import '../components/pb-time';
 import '../components/pb-tooltip';
 import { CockpitView } from './cockpit-view';
-import { followHistoryBack, rulePath, ruleSetPath } from './router';
+import { followHistoryBack, repositoryPath, rulePath, ruleSetPath } from './router';
 
 const columns: DataTableColumn[] = [
   { label: 'Rule', part: 'rule-name' },
@@ -168,7 +168,7 @@ export class DetailView extends CockpitView<Detail> {
         .commit=${attestation.commit}></pb-commit-link>` },
       { term: 'Reported', description: html`<pb-time .value=${attestation.received_at}></pb-time>` },
       { term: 'Attestation ID', description: html`<code>${attestation.id}</code>` },
-      { term: 'Canonical name', description: attestation.repository },
+      { term: 'Canonical name', description: html`<a data-route href=${repositoryPath(attestation.repository)}>${attestation.repository}</a>` },
     ];
     return html`
       <pb-fact-strip .items=${items}></pb-fact-strip>

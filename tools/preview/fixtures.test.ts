@@ -301,3 +301,21 @@ test('serves release details with the complete evidence in the client shape', ()
   expect(respond('/v0/releases/detail?repository=x')?.status).toBe(400);
   expect(respond('/v0/releases/detail?repository=x&version=y')?.status).toBe(404);
 });
+
+test('filters the attestation history by exact repository before paging', () => {
+  const repository = 'github.com/acme/widget';
+  const filter = `repository=${encodeURIComponent(repository)}`;
+  const first = body<Summary[]>(`${fixtureTargets.history}?limit=2&${filter}`);
+  const second = body<Summary[]>(`${fixtureTargets.history}?limit=2&${filter}&before=${first[1].id}`);
+  expect(first).toHaveLength(2);
+  expect(second).toHaveLength(2);
+  for (const summary of [...first, ...second]) {
+    expectSummary(summary);
+    expect(summary.repository).toBe(repository);
+  }
+  expect(second[0].id < first[1].id).toBe(true);
+  expect(body<Summary[]>(`${fixtureTargets.history}?repository=github.com%2Facme`)).toEqual([]);
+  for (const query of ['repository=', 'repository=%00', `${filter}&${filter}`]) {
+    expect(respond(`${fixtureTargets.history}?${query}`)?.status).toBe(400);
+  }
+});

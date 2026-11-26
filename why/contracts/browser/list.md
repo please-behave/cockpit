@@ -9,10 +9,12 @@ empty when nothing matches. Fields, values and order are preserved as reported.
 | --- | --- |
 | `limit` | The greatest number of summaries to return, an integer from 1 to 200. The ledger defaults it to 100. |
 | `before` | A UUID. Only attestations with a smaller identifier are returned. Without it the page starts at the newest attestation. |
+| `repository` | A URL-encoded normalized repository identity. Only attestations with the exact stored identity match. Omit it to include all repositories. |
 
 Cockpit forwards the query to the ledger unchanged and does not validate it. A
 reader pages by passing the identifier of the last summary it received as
-`before`; a page with fewer summaries than `limit` is the last one.
+`before` and retaining the same `repository` filter when present. A page
+with fewer summaries than `limit` is the last one.
 
 The [session, headers and errors](latest.md#session-headers-and-errors) apply
 to this endpoint. An authorized request can also receive this response.

@@ -500,6 +500,7 @@ async fn authenticated_page_requests_return_the_embedded_shell() {
         "/rules",
         "/releases",
         "/releases/repository?repository=github.com%2Fteam%2Fapp",
+        "/repositories/detail?repository=github.com%2Fteam%2Fapp",
         "/releases/detail?repository=github.com%2Fteam%2Fapp&version=v1",
         "/rules/detail?source=github.com%2Forg%2Frules&path=checks%2Fexample&id=example",
         "/future/view?query=1",
@@ -1081,6 +1082,15 @@ async fn browser_api_forwards_the_list_and_its_query() {
         reported_summary(ATTESTATION, "a/first", "release", "FAIL")
     ])
     .to_string();
+    const FILTER: &str = "limit=2&repository=a%2Ffirst%2Bextra";
+    let filtered_page = json!([reported_summary(
+        ATTESTATION,
+        "a/first+extra",
+        "release",
+        "FAIL"
+    )])
+    .to_string();
+    let ledger_filtered_page = filtered_page.clone();
     let ledger_page = page.clone();
     let site = TestSite::start_with_ledger(Router::new().route(
         API_LIST,
@@ -1089,7 +1099,10 @@ async fn browser_api_forwards_the_list_and_its_query() {
                 None | Some("limit=2&before=00000000-0000-0000-0000-000000000009") => {
                     (StatusCode::OK, ledger_page)
                 }
-                Some("limit=0") => (StatusCode::BAD_REQUEST, "synthetic upstream message".into()),
+                Some(FILTER) => (StatusCode::OK, ledger_filtered_page),
+                Some("limit=0" | "repository=" | "repository=a&repository=b") => {
+                    (StatusCode::BAD_REQUEST, "synthetic upstream message".into())
+                }
                 Some(_) => (StatusCode::BAD_GATEWAY, String::new()),
             }
         }),
@@ -1111,12 +1124,23 @@ async fn browser_api_forwards_the_list_and_its_query() {
         assert_eq!(response.text().await.unwrap(), page);
     }
     let response = site
-        .get("/v0/attestations?limit=0")
+        .get(&format!("{API_LIST}?{FILTER}"))
         .header(header::COOKIE, &session)
         .send()
         .await
         .unwrap();
-    assert_api_error(response, StatusCode::BAD_REQUEST, "invalid_query").await;
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_api_headers(&response);
+    assert_eq!(response.text().await.unwrap(), filtered_page);
+    for query in ["limit=0", "repository=", "repository=a&repository=b"] {
+        let response = site
+            .get(&format!("{API_LIST}?{query}"))
+            .header(header::COOKIE, &session)
+            .send()
+            .await
+            .unwrap();
+        assert_api_error(response, StatusCode::BAD_REQUEST, "invalid_query").await;
+    }
     let response = site
         .get("/v0/attestations?limit=3")
         .header(header::COOKIE, &session)

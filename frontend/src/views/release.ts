@@ -7,7 +7,7 @@ import '../components/pb-rule-set-chip';
 import '../components/pb-status-pill';
 import '../components/pb-time';
 import { CockpitView } from './cockpit-view';
-import { repositoryReleasesPath, rulePath, ruleSetPath } from './router';
+import { repositoryPath, rulePath, ruleSetPath } from './router';
 
 const methods: Record<AuthMethod, string> = { api_key: 'API key', github_oidc: 'GitHub OIDC' };
 
@@ -93,14 +93,14 @@ export class ReleaseView extends CockpitView<ReleaseDetail> {
   protected override content(release?: ReleaseDetail) {
     const items = release ? [
       { term: 'Version', description: release.version },
-      { term: 'Repository', description: release.repository },
+      { term: 'Repository', description: html`<a data-route href=${repositoryPath(release.repository)}>${release.repository}</a>` },
       { term: 'Commit', description: html`<pb-commit-link full .repository=${release.repository}
         .commit=${release.commit}></pb-commit-link>` },
       { term: 'Recorded', description: html`<pb-time .value=${release.received_at}></pb-time>` },
       { term: 'Sender', description: sender(release) },
     ] : [];
     return html`
-      <p><a data-route href=${repositoryReleasesPath(this.repository)}>Back to ${this.repository} releases</a></p>
+      <p><a data-route href=${repositoryPath(this.repository)}>Back to repository</a></p>
       ${release ? html`<pb-fact-strip .items=${items}></pb-fact-strip>${evidence(release)}` : nothing}
     `;
   }

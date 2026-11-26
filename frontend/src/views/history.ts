@@ -10,6 +10,7 @@ import '../components/pb-status-pill';
 import '../components/pb-time';
 import '../components/pb-tooltip';
 import { CockpitView } from './cockpit-view';
+import { repositoryPath } from './router';
 
 const pageSize = 100;
 
@@ -167,9 +168,10 @@ export class HistoryView extends CockpitView<Summary[]> {
     const rows = this.loaded.map(summary => ({
       key: summary.id,
       cells: [
-        html`<pb-time .value=${summary.received_at}></pb-time>`,
+        html`<a data-route href=${`/attestations/${encodeURIComponent(summary.id)}`}>
+          <pb-time .value=${summary.received_at}></pb-time></a>`,
         html`<pb-tooltip external-trigger .description=${summary.repository}>
-          <a data-route href=${`/attestations/${encodeURIComponent(summary.id)}`}>
+          <a data-route href=${repositoryPath(summary.repository)}>
             <pb-short-name .value=${summary.repository}></pb-short-name></a>
         </pb-tooltip>`,
         html`<pb-commit-link .repository=${summary.repository} .commit=${summary.commit}></pb-commit-link>`,

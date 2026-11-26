@@ -119,6 +119,12 @@ test('routes the repository link through shadow DOM and leaves the commit link i
     name.shadowRoot!.querySelector<HTMLElement>('.short')!.click();
     expect(navigate).toHaveBeenCalledExactlyOnceWith('/attestations/first%3Fquery', 'dashboard', false);
     expect(window.location.pathname).toBe('/attestations/first%3Fquery');
+
+    navigate.mockClear();
+    const repositoryPage = root.querySelector<HTMLAnchorElement>('.repository-page')!;
+    expect(repositoryPage.getAttribute('aria-label')).toBe('View repository github.com/acme/widget');
+    repositoryPage.click();
+    expect(navigate).toHaveBeenCalledExactlyOnceWith('/repositories/detail?repository=github.com%2Facme%2Fwidget', undefined, false);
   } finally {
     router.disconnect();
   }

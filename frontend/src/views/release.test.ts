@@ -41,8 +41,10 @@ const pills = (root: ParentNode) => [...root.querySelectorAll<StatusPill>('pb-st
 test('shows a complete release with its commit, sender, evidence link and Rule Set chips', async () => {
   const root = await open(releasePath(repository, '2.0'));
   expect(root.querySelector('h1:not(.assistive)')?.textContent).toBe('2.0');
-  expect(root.querySelector('a[href="/releases/repository?repository=github.com%2Facme%2Freturn-navigation"]')).not.toBeNull();
+  expect(root.querySelector('a[href="/repositories/detail?repository=github.com%2Facme%2Freturn-navigation"]')).not.toBeNull();
   const facts = root.querySelector('pb-fact-strip')!.shadowRoot!;
+  const repositoryLink = facts.querySelector('a[href="/repositories/detail?repository=github.com%2Facme%2Freturn-navigation"]');
+  expect(repositoryLink?.textContent).toBe(repository);
   expect(facts.textContent).toContain('ci@example.com');
   expect(facts.textContent).toContain('GitHub OIDC');
   expect(facts.querySelector('pb-commit-link')).toHaveProperty('commit', expect.stringMatching(/^[0-9a-f]{40}$/));

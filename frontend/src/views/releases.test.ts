@@ -7,7 +7,7 @@ import type { StatusPill } from '../components/pb-status-pill';
 import type { Tooltip } from '../components/pb-tooltip';
 import { respond } from '../../../tools/preview/fixtures.mjs';
 import type { ReleasesView } from './releases';
-import { repositoryReleasesPath, routeFor } from './router';
+import { repositoryPath } from './router';
 
 const repository = 'github.com/acme/return-navigation';
 
@@ -48,12 +48,13 @@ test('lists the latest releases across pages with attention first and escapes st
   const { shadowRoot: root } = await loaded(app);
   expect(root!.querySelector('h1.assistive')?.textContent).toBe('Releases');
   const rows = [...root!.querySelectorAll('.release')];
-  expect(rows).toHaveLength(108);
+  expect(rows).toHaveLength(109);
   const names = rows.map(row => row.querySelector('h2')!.textContent!.trim());
-  expect(names.slice(0, 3)).toEqual([
+  expect(names.slice(0, 4)).toEqual([
     'github.com/acme/evidence-error', 'github.com/acme/failing-evidence', 'github.com/acme/missing-evidence',
+    expect.stringMatching(/^github.com\/.{100,}/),
   ]);
-  expect(names.slice(3)).toEqual(names.slice(3).sort((a, b) => a.localeCompare(b)));
+  expect(names.slice(4)).toEqual(names.slice(4).sort((a, b) => a.localeCompare(b)));
   expect(names).not.toContain('github.com/acme/empty');
   expect(rows.slice(0, 3).map(row => row.querySelector<StatusPill>('pb-status-pill')!.status))
     .toEqual(['ERROR', 'FAIL', 'No evidence']);
@@ -89,42 +90,16 @@ test('lists the latest releases across pages with attention first and escapes st
 
   deepLink.click();
   await app.updateComplete;
-  const history = await loaded(app);
-  expect(window.location.pathname + window.location.search).toBe(repositoryReleasesPath(repository));
-  expect(history.shadowRoot?.activeElement?.textContent).toBe(repository);
+  const view = app.shadowRoot!.querySelector('pb-repository')!;
+  expect(window.location.pathname + window.location.search).toBe(repositoryPath(repository));
+  await vi.waitFor(() => expect(view.shadowRoot?.activeElement?.textContent).toBe('return-navigation'));
 });
 
-test('opens repository release history directly and keeps receipts in ledger order', async () => {
-  const fetch = mockPreview();
-  const app = await open(repositoryReleasesPath(repository));
-  const { shadowRoot: root } = await loaded(app);
-  expect(root!.querySelector('h1:not(.assistive)')?.textContent).toBe(repository);
-  expect([...root!.querySelectorAll('h2')].map(el => el.textContent)).toEqual(['2.0', '1.11', '1.9']);
-  expect([...root!.querySelectorAll<StatusPill>('pb-status-pill')].map(pill => pill.status))
-    .toEqual(['PASS', 'ERROR', 'PASS']);
-  const firstCommit = root!.querySelector<Tooltip>('.release pb-tooltip')!;
-  await firstCommit.updateComplete;
-  expect(firstCommit.description).toMatch(/^[0-9a-f]{40}$/);
-  expect(firstCommit.querySelector('code')?.textContent).toBe(firstCommit.description.slice(0, 7));
-  const descriptionId = firstCommit.shadowRoot?.querySelector('button')?.getAttribute('aria-describedby');
-  expect(firstCommit.shadowRoot?.getElementById(descriptionId!)?.textContent?.trim()).toBe(firstCommit.description);
-  expect(root!.querySelector('a[href="/releases"]')).not.toBeNull();
-  expect(new URL(fetch.mock.calls[0][0], window.location.origin).searchParams.get('repository')).toBe(repository);
-});
-
-test.each([
-  ['/releases', 'No release has been recorded yet.'],
-  [repositoryReleasesPath('github.com/acme/unreleased'), 'No release has been recorded for this repository.'],
-])('explains an empty release page at %s', async (path, message) => {
+test('explains an empty release overview', async () => {
   vi.stubGlobal('fetch', vi.fn(async () => Response.json([])));
-  const app = await open(path);
+  const app = await open('/releases');
   const root = app.shadowRoot!.querySelector('pb-releases')!.shadowRoot!;
   await vi.waitFor(() => expect(root.querySelector('pb-empty-state')).not.toBeNull());
-  expect(root.querySelector('pb-empty-state')).toHaveProperty('message', message);
+  expect(root.querySelector('pb-empty-state')).toHaveProperty('message', 'No release has been recorded yet.');
   expect(root.querySelector('.release')).toBeNull();
-});
-
-test('round-trips a repository address containing URL delimiters', () => {
-  const repository = 'host/org/repo +?&/#%<b>✓';
-  expect(routeFor(repositoryReleasesPath(repository))).toEqual({ view: 'repository-releases', repository });
 });

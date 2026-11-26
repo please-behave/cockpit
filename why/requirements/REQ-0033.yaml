@@ -1,0 +1,23 @@
+id: REQ-0033
+name: Repository Page
+description: >-
+  A repository opens directly at /repositories/detail with its URL-encoded
+  canonical name in the repository query parameter. The page shows the
+  shortened name of REQ-0017 and the full canonical name. Its Releases
+  section lists that repository's releases under REQ-0030 through CON-0011.
+  Existing /releases/repository addresses open the same repository page.
+  The Attestations section uses CON-0001 for the newest attestation of each
+  execution point in that repository, including a row for attestations without
+  execution points when present. It shows up to 100 recent attestations through
+  CON-0003, filtered by the exact canonical name and in ledger order. The rows
+  show execution points, the reported time, commit and overall status, and the
+  reported time links to the attestation detail. Each section explains when
+  no records exist. Long names wrap within the available width and both
+  sections follow REQ-0004, REQ-0015 and REQ-0016. The attestation tables
+  keep the time, commit and status on one line in their scrollable regions.
+rationale: Viewers can follow a repository across its reported runs and releases from a single address.
+decisions:
+  - DEC-0001
+  - DEC-0002
+  - DEC-0008
+  - DEC-0009

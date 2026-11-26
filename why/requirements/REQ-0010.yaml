@@ -9,7 +9,7 @@ description: >-
   "Canonical name". Each label sits above its value. The facts sit side by
   side and wrap on narrow screens, and long values wrap within the available
   width. The commit uses the same link target rules as the dashboard and
-  attestation history.
+  attestation history. The full repository name links to its page under REQ-0033.
   It follows REQ-0015 and shows a table of results with their kinds, statuses
   and verification. A header row links to each bound Rule Set version in
   reported binding order. The view reads CON-0009 for the bound versions

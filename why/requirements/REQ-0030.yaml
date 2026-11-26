@@ -5,11 +5,11 @@ description: >-
   Each entry shows the repository, its newest recorded version, the ledger
   receipt time, and the release's reported evidence. Repositories with no
   evidence or a FAIL or ERROR outcome appear first. Within each group, the
-  list is ordered by repository name. The repository name opens a directly
-  linkable page of that repository's releases in descending receipt order.
-  Each version opens the release detail page of REQ-0032.
-  Its entries show the version, the first seven characters of the commit,
-  the receipt time, and the reported evidence. The full commit is available
+  list is ordered by repository name. The repository name opens the repository
+  page of REQ-0033, which lists that repository's releases in descending
+  receipt order. Each version opens the release detail page of REQ-0032.
+  The history entries show the version, the first seven characters of the
+  commit, the receipt time, and the reported evidence. The full commit is available
   in an accessible tooltip. Both views show relative receipt times with the
   localized exact time in an accessible tooltip and explain when no release
   has been recorded. Evidence shows the reported status or “No evidence” as

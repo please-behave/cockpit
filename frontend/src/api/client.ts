@@ -205,15 +205,17 @@ export function completedRuleSets(signal: AbortSignal): Promise<RepositoryRuleSe
 export interface PageOptions {
   before?: string;
   limit?: number;
+  repository?: string;
 }
 
 export function attestationPage(
-  { before, limit }: PageOptions,
+  { before, limit, repository }: PageOptions,
   signal: AbortSignal,
 ): Promise<Summary[]> {
   const query = new URLSearchParams();
   if (limit !== undefined) query.set('limit', String(limit));
   if (before !== undefined) query.set('before', before);
+  if (repository !== undefined) query.set('repository', repository);
   const suffix = query.size > 0 ? `?${query}` : '';
   return read(`/v0/attestations${suffix}`, signal, 'invalid_query');
 }
