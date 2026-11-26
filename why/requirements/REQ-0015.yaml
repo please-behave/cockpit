@@ -8,8 +8,11 @@ description: >-
   navigation, and main landmarks with a keyboard-accessible skip link.
   The header presents adjoining, full-height navigation segments labeled
   "Please Behave Dashboard", "Attestations", "Releases", "Deployments", and
-  "Rules" on the raised surface.
+  "Rules" on the raised surface. At desktop widths and default zoom the header
+  is at most 3rem high. The logo is at least 32 CSS pixels high.
   Segments wrap when space is constrained and stay free of underlines in every state.
+  A compact toolbar directly below the header reserves a row on every view and
+  provides space for view-specific controls and the refresh status of REQ-0020.
   The current segment uses the page surface and semibold brand text, and
   exposes aria-current="page", including on attestation detail, repository
   release history, release detail and rule detail routes.

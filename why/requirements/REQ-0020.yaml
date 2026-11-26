@@ -5,8 +5,9 @@ description: >-
   attestation history reads CON-0003 every 5 minutes and when the tab becomes visible
   after it was hidden for longer than that. They do nothing while the tab is
   hidden. The registered rules, the rule detail and the attestation detail do
-  not refresh. Only refreshable views reserve a status line directly below the
-  header from the first render. At the end of the line are a refresh button
+  do not refresh. Every view reserves the toolbar row below the header from the
+  first render. After a successful read, refreshable views show a status line
+  at the end of that row, with a refresh button
   named "Refresh" and the text "Updated a few seconds ago", "Updated 1 minute
   ago", "Updated 2 minutes ago" and so on. The text stays on one line. The
   header and the start of the content stay in the same position across views,

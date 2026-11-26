@@ -261,7 +261,7 @@ const status = (shell: CockpitAppShell) => shell.shadowRoot!.querySelector('pb-r
 test.each([
   ['/', repositoryOverview],
   ['/attestations', attestationPage],
-] as const)('reserves a line below the header on %s before data arrives', async (path, read) => {
+] as const)('reserves a toolbar below the header on %s before data arrives', async (path, read) => {
   let complete!: () => void;
   if (read === repositoryOverview) {
     vi.mocked(read).mockReturnValueOnce(new Promise(resolve => {
@@ -274,22 +274,35 @@ test.each([
   await shell.updateComplete;
 
   const root = shell.shadowRoot!;
-  const line = root.querySelector('header + .refresh-line')!;
-  expect(line.nextElementSibling).toBe(root.querySelector('main'));
+  const toolbar = root.querySelector('header + .toolbar')!;
+  expect(toolbar.nextElementSibling).toBe(root.querySelector('main'));
   expect(status(shell)).toBeNull();
 
   complete();
-  await vi.waitFor(() => expect(status(shell)?.parentElement).toBe(line));
+  await vi.waitFor(() => expect(status(shell)?.parentElement).toBe(toolbar));
   expect(status(shell)!.shadowRoot!.querySelector('button')?.getAttribute('aria-label')).toBe('Refresh');
 });
 
 // Verifies REQ-0020.
-test.each(['/rules', '/attestations/example', '/missing'])('shows no refresh status on %s', async path => {
+test.each(['/rules', '/attestations/example', '/missing'])('reserves a toolbar without refresh status on %s', async path => {
   vi.mocked(getAttestation).mockReturnValue(new Promise(() => {}));
   const { shell } = await mountAt(path);
   await shell.updateComplete;
-  expect(shell.shadowRoot!.querySelector('.refresh-line')).toBeNull();
+  const root = shell.shadowRoot!;
+  expect(root.querySelector('header + .toolbar')?.nextElementSibling).toBe(root.querySelector('main'));
   expect(status(shell)).toBeNull();
+});
+
+// Verifies REQ-0015.
+test('places view controls in the toolbar', async () => {
+  const { shell } = await mountAt('/rules');
+  const control = document.createElement('button');
+  control.slot = 'toolbar';
+  shell.append(control);
+  await shell.updateComplete;
+
+  const slot = shell.shadowRoot!.querySelector<HTMLSlotElement>('.toolbar slot[name="toolbar"]');
+  expect(slot?.assignedElements()).toEqual([control]);
 });
 
 // Verifies REQ-0020.

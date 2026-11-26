@@ -66,7 +66,7 @@ export class CockpitAppShell extends LitElement {
       }
 
       img {
-        block-size: max(32px, 2.5rem);
+        block-size: max(32px, var(--space-8));
         inline-size: auto;
       }
 
@@ -87,7 +87,7 @@ export class CockpitAppShell extends LitElement {
       }
 
       .sign-out {
-        padding: var(--space-2);
+        padding: var(--space-1) var(--control-padding-inline);
       }
 
       .sign-out:hover {
@@ -98,36 +98,34 @@ export class CockpitAppShell extends LitElement {
         outline-offset: calc(-1 * var(--focus-offset));
       }
 
-      .refresh-line, main {
+      .toolbar, main {
         box-sizing: border-box;
         max-inline-size: var(--content-width-detail);
         margin-inline: auto;
         padding-inline: var(--space-4);
       }
 
-      .refresh-line, main.wide {
+      .toolbar, main.wide {
         max-inline-size: var(--content-width-wide);
       }
 
-      .refresh-line {
-        display: flex;
-        justify-content: flex-end;
+      .toolbar {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
         align-items: center;
-        block-size: var(--space-8);
+        column-gap: var(--space-2);
+        min-block-size: var(--space-8);
+      }
+
+      .view-controls {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
       }
 
       main {
-        padding-block: var(--space-8);
-      }
-
-      /* The status line occupies the same space as the regular top padding. */
-      .refresh-line + main {
-        padding-block-start: 0;
-      }
-
-      /* Keep loading and error margins inside the view. */
-      .refresh-line + main ::slotted(*) {
         display: flow-root;
+        padding-block-end: var(--space-8);
       }
 
       main:focus-visible {
@@ -183,14 +181,12 @@ export class CockpitAppShell extends LitElement {
 
   private refreshStatus() {
     const state = this.refreshState;
-    if (this.currentView !== 'dashboard' && this.currentView !== 'history') return nothing;
+    if (!state?.view.isConnected || (this.currentView !== 'dashboard' && this.currentView !== 'history')) {
+      return nothing;
+    }
     return html`
-      <div class="refresh-line">
-        ${state?.view.isConnected ? html`
-          <pb-refresh-status .updatedAt=${state.updatedAt} .busy=${state.busy}
-            @refresh=${() => state.view.refresh()}></pb-refresh-status>
-        ` : nothing}
-      </div>
+      <pb-refresh-status .updatedAt=${state.updatedAt} .busy=${state.busy}
+        @refresh=${() => state.view.refresh()}></pb-refresh-status>
     `;
   }
 
@@ -213,7 +209,7 @@ export class CockpitAppShell extends LitElement {
               ${this.navLabel('Releases')}
             </pb-nav-tab>
             <pb-nav-tab href="/deployments" .active=${this.currentView === 'deployments'}>
-              Deployments
+              ${this.navLabel('Deployments')}
             </pb-nav-tab>
             <pb-nav-tab href="/rules" .active=${['rules', 'rule', 'rule-set'].includes(this.currentView)}>
               ${this.navLabel('Rules')}
@@ -225,7 +221,10 @@ export class CockpitAppShell extends LitElement {
           </div>
         </div>
       </header>
-      ${this.refreshStatus()}
+      <div class="toolbar">
+        <slot class="view-controls" name="toolbar"></slot>
+        ${this.refreshStatus()}
+      </div>
       <main id="main-content" class=${wide ? 'wide' : nothing} tabindex="-1"><slot></slot></main>
     `;
   }
