@@ -5,8 +5,8 @@ const dashboardEntries = 'pb-stat-tile, li:has(> .reason, > .fact), li:has(> pb-
 const repositoryEntries = `.sets > li, ${tableRows}`;
 
 // A heavy case renders thousands of entries, so the review sheet measures its frames one at a time.
-// Select the primary repeated entries in each view. Selectors also cover open shadow roots.
-export const reviewCases = [
+// Select the primary entries in every route and fixture state, including open shadow roots.
+export const viewManifest = [
   ['Dashboard', '/', 'pb-dashboard', dashboardEntries, 'Status tiles, attention rows, activity entries and repository chips'],
   ['Dashboard (large)', '/?preview=dashboard-large', 'pb-dashboard', dashboardEntries,
     'Status tiles, attention rows, activity entries and repository chips'],
@@ -28,10 +28,15 @@ export const reviewCases = [
     'Status tiles, attention rows, activity entries and repository chips'],
   ['Dashboard (empty)', '/?preview=dashboard-empty', 'pb-dashboard', 'pb-empty-state', 'Empty state'],
   ['Attestations', '/attestations', 'pb-history', tableRows, 'Attestation rows'],
+  ['Attestations (empty)', '/attestations?preview=empty', 'pb-history', 'pb-empty-state', 'Empty state'],
+  ['Attestations (error)', '/attestations?preview=error', 'pb-history', 'pb-error-state', 'Error state'],
   ['Attestations (volume)', '/attestations?preview=volume', 'pb-history', tableRows,
     'Attestation rows from 20,000 generated attestations', true],
   ['Attestation detail', reviewTargets.attestation.slice(3), 'pb-attestation', tableRows, 'Rule result rows'],
+  ['Attestation detail (long values)', reviewTargets.attestationLong.slice(3), 'pb-attestation',
+    tableRows, 'Rule result rows with long identifiers'],
   ['Releases', '/releases', 'pb-releases', tableRows, 'Release rows'],
+  ['Releases (empty)', '/releases?preview=empty', 'pb-releases', 'pb-empty-state', 'Empty state'],
   ['Releases (volume)', '/releases?preview=volume', 'pb-releases', tableRows, 'Release rows of 1,000 repositories', true],
   ['Repository', '/repositories/detail' + reviewTargets.repository, 'pb-repository', repositoryEntries,
     'Rule Set chips, deployment, release and attestation rows'],
@@ -39,10 +44,15 @@ export const reviewCases = [
     repositoryEntries, 'Rule Set chips, deployment, release and attestation rows'],
   ['Release detail', reviewTargets.release.slice(3), 'pb-release', '.rule-sets > li', 'Evidence Rule Sets'],
   ['Deployments', '/deployments', 'pb-deployments', tableRows, 'Deployment rows'],
+  ['Deployments (empty)', '/deployments?preview=empty', 'pb-deployments', 'pb-empty-state', 'Empty state'],
   ['Deployments (volume)', '/deployments?preview=volume', 'pb-deployments', tableRows,
     'Deployment rows across several targets', true],
   ['Rules', '/rules', 'pb-rules', 'details > summary', 'Rule and Rule Set group summaries'],
+  ['Rules (empty)', '/rules?preview=empty', 'pb-rules', 'pb-empty-state', 'Empty state'],
   ['Rule detail', reviewTargets.rule.slice(3), 'pb-rule', 'article dl > div:has(> dt)', 'Version facts'],
+  ['Rule detail (long values)', reviewTargets.ruleLong.slice(3), 'pb-rule', 'article dl > div:has(> dt)',
+    'Version facts with long values'],
+  ['Rule detail (missing)', reviewTargets.ruleMissing.slice(3), 'pb-rule', 'pb-error-state', 'Error state'],
   ['Rule Set detail', reviewTargets.ruleSet.slice(3), 'pb-rule-set', `${tableRows}, .repositories > li`,
     'Member rule rows and repository entries'],
   ['Sign in', '/sign-in', '.sign-in-card', '.sign-in-link', 'Sign-in action'],

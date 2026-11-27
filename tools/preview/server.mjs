@@ -3,7 +3,7 @@ import { createServer } from 'node:http';
 import { extname, join, normalize } from 'node:path';
 import { setTimeout } from 'node:timers/promises';
 import { respond } from './fixtures.mjs';
-import { reviewCases } from './review-cases.mjs';
+import { viewManifest } from './review-cases.mjs';
 
 const dist = join(import.meta.dirname, '../../dist/preview');
 const types = { '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml' };
@@ -18,6 +18,7 @@ const reviewFiles = new Map([
   ['/preview/review.css', ['review.css', 'text/css']],
   ['/preview/review.mjs', ['review.mjs', 'text/javascript']],
   ['/preview/review-metrics.mjs', ['review-metrics.mjs', 'text/javascript']],
+  ['/preview/review-inventory.mjs', ['review-inventory.mjs', 'text/javascript']],
 ]);
 const host = '127.0.0.1';
 const port = Number(process.env.PREVIEW_PORT ?? 8090);
@@ -34,7 +35,7 @@ async function serve(request, response) {
   const url = new URL(request.url, `http://${host}`);
   const { pathname } = url;
   if (pathname === '/preview/review-cases.json') {
-    return send(response, 200, 'application/json', JSON.stringify(reviewCases));
+    return send(response, 200, 'application/json', JSON.stringify(viewManifest));
   }
   const reviewFile = reviewFiles.get(pathname);
   if (reviewFile) {
@@ -50,8 +51,9 @@ async function serve(request, response) {
   }
   if (pathname.startsWith('/v0') && request.headers.referer && !url.searchParams.has('preview')) {
     const referrer = new URL(request.headers.referer);
-    if (referrer.searchParams.get('preview') === 'volume') {
-      for (const name of volumeParameters) {
+    const preview = referrer.searchParams.get('preview');
+    if (['volume', 'empty', 'error'].includes(preview)) {
+      for (const name of preview === 'volume' ? volumeParameters : ['preview']) {
         if (referrer.searchParams.has(name)) url.searchParams.set(name, referrer.searchParams.get(name));
       }
     }

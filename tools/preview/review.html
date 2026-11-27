@@ -15,7 +15,7 @@
         entries with a field spanning multiple lines. Heights and page overflow are in CSS pixels.</p>
       <p id="status" role="status">Loading preview cases…</p>
       <div class="scroll" role="region" aria-label="Measurements" tabindex="0">
-        <table>
+        <table id="measurements">
           <thead>
             <tr>
               <th scope="col" rowspan="2">View</th>
@@ -27,6 +27,11 @@
           </thead>
         </table>
       </div>
+      <section id="inventory" aria-labelledby="inventory-heading">
+        <h2 id="inventory-heading">Consistency inventory</h2>
+        <p>Forms and popups are sampled at 1440 and 320 CSS pixels in both themes. Volume fixtures are sampled at
+          320 CSS pixels in the light theme. Each entry lists the view, width, theme and number of occurrences.</p>
+      </section>
       <div id="views"></div>
     </main>
   </body>

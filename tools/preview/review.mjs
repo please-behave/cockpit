@@ -1,4 +1,5 @@
 import { measure, queryDeep, themes, viewportHeight, widths } from './review-metrics.mjs';
+import { inventory } from './review-inventory.mjs';
 
 const columns = [
   ['visible', 'Visible'],
@@ -7,7 +8,7 @@ const columns = [
   ['wrapped', 'Wrapped'],
   ['overflow', 'Overflow'],
 ];
-const table = document.querySelector('table');
+const table = document.querySelector('#measurements');
 const views = document.querySelector('#views');
 const status = document.querySelector('#status');
 
@@ -48,7 +49,7 @@ async function measureFrame(frame, reviewCase, theme) {
   throw new Error('Fixture entries did not render');
 }
 
-function addCase(reviewCase, index) {
+function addCase(reviewCase, index, inventories) {
   const { name, path, entries, heavy } = reviewCase;
   const id = `view-${index + 1}`;
   const section = add(views, 'section');
@@ -84,6 +85,14 @@ function addCase(reviewCase, index) {
         try {
           const result = await measureFrame(frame, reviewCase, theme);
           columns.forEach(([key], index) => { cells[index].textContent = result[key]; });
+          const sample = heavy ? width === widths.at(-1) && theme === themes[0]
+            : width === widths[0] || width === widths.at(-1);
+          if (sample) {
+            // Allow the frame to paint and any size-dependent tooltips to render before probing.
+            await new Promise(resolve => setTimeout(resolve, 50));
+            const report = await inventory(frame.contentDocument);
+            inventories.push({ id, name, width, theme, ...report });
+          }
           return true;
         } catch (error) {
           cells[0].colSpan = columns.length;
@@ -96,6 +105,46 @@ function addCase(reviewCase, index) {
       return run;
     });
   });
+}
+
+function showInventory(reports) {
+  const target = document.querySelector('#inventory');
+  const groups = new Map();
+  const ordered = reports.sort((a, b) => a.name.localeCompare(b.name) || b.width - a.width
+    || a.theme.localeCompare(b.theme));
+  for (const { id, name, width, theme, groups: findings } of ordered) {
+    for (const { category, name: form, example, count } of findings) {
+      const entries = groups.get(category) ?? new Map();
+      const key = JSON.stringify(category === 'Repeated popups' ? [form, example] : [form]);
+      const item = entries.get(key) ?? { form, example, views: new Map() };
+      const view = item.views.get(id) ?? { name, frames: [] };
+      view.frames.push(`${width} ${theme} × ${count}`);
+      item.views.set(id, view);
+      entries.set(key, item);
+      groups.set(category, entries);
+    }
+  }
+  const count = ordered.reduce((total, report) => total + report.probed, 0);
+  add(target, 'p', `${ordered.length} frames inventoried, ${count} interactive elements probed.`).id = 'inventory-summary';
+  for (const category of ['Outcomes', 'Classifications', 'Object references', 'Time formats', 'Version formats',
+    'Repeated popups']) {
+    const items = [...(groups.get(category)?.values() ?? [])];
+    const section = add(target, 'details');
+    add(section, 'summary', `${category} (${items.length})`);
+    const list = add(section, 'ul');
+    for (const { form, example, views } of items.sort((a, b) => a.form.localeCompare(b.form)
+      || a.example.localeCompare(b.example))) {
+      const item = add(list, 'li');
+      add(item, 'strong', form);
+      item.append(` · ${example}`);
+      const occurrences = add(item, 'ul');
+      for (const [id, { name, frames }] of views) {
+        const row = add(occurrences, 'li');
+        add(row, 'a', name).href = `#${id}`;
+        row.append(` (${frames.join(', ')})`);
+      }
+    }
+  }
 }
 
 async function showReview() {
@@ -111,7 +160,8 @@ async function showReview() {
     }
   }
 
-  const jobs = cases.flatMap(addCase);
+  const inventories = [];
+  const jobs = cases.flatMap((reviewCase, index) => addCase(reviewCase, index, inventories));
   let failed = 0;
   // A batch keeps the initial rendering and API requests manageable. Heavy frames follow one at a time.
   const light = jobs.filter(run => !run.heavy);
@@ -124,6 +174,7 @@ async function showReview() {
     failed += results.filter(result => !result).length;
     complete += batch.length;
   }
+  showInventory(inventories);
   status.textContent = failed
     ? `Measured ${jobs.length - failed} of ${jobs.length} previews. See the table for failures.`
     : `Measured all ${jobs.length} previews.`;

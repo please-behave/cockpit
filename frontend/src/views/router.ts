@@ -41,33 +41,47 @@ export function releasePath(repository: string, version: string) {
   return `/releases/detail?${new URLSearchParams({ repository, version })}`;
 }
 
+export const routePatterns = {
+  dashboard: '/',
+  history: '/attestations',
+  releases: '/releases',
+  deployments: '/deployments',
+  repository: '/repositories/detail',
+  repositoryReleaseHistory: '/releases/repository',
+  release: '/releases/detail',
+  rules: '/rules',
+  rule: '/rules/detail',
+  ruleSet: '/rule-sets/detail',
+  attestation: /^\/attestations\/([^/]+)$/,
+} as const;
+
 export function routeFor(location: string): Route {
   const query = location.indexOf('?');
   const path = query === -1 ? location : location.slice(0, query);
   const search = query === -1 ? '' : location.slice(query);
-  if (path === '/') return { view: 'dashboard', search };
-  if (path === '/attestations') return { view: 'history' };
-  if (path === '/releases') return { view: 'releases' };
-  if (path === '/deployments') return { view: 'deployments' };
-  if (path === '/repositories/detail' || path === '/releases/repository') {
+  if (path === routePatterns.dashboard) return { view: 'dashboard', search };
+  if (path === routePatterns.history) return { view: 'history' };
+  if (path === routePatterns.releases) return { view: 'releases' };
+  if (path === routePatterns.deployments) return { view: 'deployments' };
+  if (path === routePatterns.repository || path === routePatterns.repositoryReleaseHistory) {
     const params = new URLSearchParams(search);
     const repository = params.get('repository');
     if (repository && params.size === 1) return { view: 'repository', repository };
   }
-  if (path === '/releases/detail') {
+  if (path === routePatterns.release) {
     const params = new URLSearchParams(search);
     const repository = params.get('repository');
     const version = params.get('version');
     if (repository && version && params.size === 2) return { view: 'release', repository, version };
   }
-  if (path === '/rules') return { view: 'rules', search };
-  if (path === '/rules/detail' || path === '/rule-sets/detail') {
+  if (path === routePatterns.rules) return { view: 'rules', search };
+  if (path === routePatterns.rule || path === routePatterns.ruleSet) {
     const identity = new URLSearchParams(search);
     const version = identity.get('version');
     identity.delete('version');
-    return { view: path === '/rules/detail' ? 'rule' : 'rule-set', search: identity.toString(), version };
+    return { view: path === routePatterns.rule ? 'rule' : 'rule-set', search: identity.toString(), version };
   }
-  const detail = /^\/attestations\/([^/]+)$/.exec(path);
+  const detail = routePatterns.attestation.exec(path);
   if (detail) {
     try {
       return { view: 'detail', id: decodeURIComponent(detail[1]) };

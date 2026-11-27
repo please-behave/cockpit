@@ -1,28 +1,28 @@
 import { expect, test, vi } from 'vitest';
-import { routeFor } from '../../frontend/src/views/router';
+import { routeFor, routePatterns } from '../../frontend/src/views/router';
 import { respond } from './fixtures.mjs';
-import { reviewCases } from './review-cases.mjs';
+import { viewManifest } from './review-cases.mjs';
+import { inventory } from './review-inventory.mjs';
 import { fullyVisible, measure, queryDeep, spansLines } from './review-metrics.mjs';
 
 const rect = (top: number, bottom: number, width = 100) => new DOMRect(0, top, width, bottom - top);
 
-test('covers the app views, fixture detail addresses and standalone preview pages', () => {
-  const routes = reviewCases.map(({ path }: { path: string }) => path);
+test('the manifest covers every router pattern with a working fixture address', () => {
+  const routes: string[] = viewManifest.map(({ path }: { path: string }) => path);
   expect(new Set(routes).size).toBe(routes.length);
-  const standalone = ['/sign-in', '/preview/repository-map', '/preview/status-pill',
-    '/preview/needs-attention', '/preview/needs-attention?clear'];
-  for (const path of standalone) expect(routes).toContain(path);
-  const appRoutes = routes.filter((path: string) => !standalone.includes(path));
-  expect(appRoutes.map((path: string) => routeFor(path).view).sort()).toEqual([
-    'dashboard', 'dashboard', 'dashboard', 'dashboard', 'dashboard', 'dashboard', 'dashboard', 'dashboard',
-    'dashboard', 'dashboard', 'dashboard', 'deployments', 'deployments', 'detail', 'history', 'history', 'not-found',
-    'release',
-    'releases', 'releases', 'repository', 'repository', 'rule', 'rule-set', 'rules',
-  ]);
-  for (const path of appRoutes) {
+  for (const [name, pattern] of Object.entries(routePatterns)) {
+    expect(viewManifest.some(({ path, selector }: { path: string; selector: string }) => {
+      const pathname = path.split('?')[0];
+      return (typeof pattern === 'string' ? pathname === pattern : pattern.test(pathname))
+        && selector !== 'pb-error-state' && routeFor(path).view !== 'not-found';
+    }), name).toBe(true);
+  }
+  expect(viewManifest.some(({ path, root }: { path: string; root: string }) =>
+    root === 'pb-not-found' && routeFor(path).view === 'not-found')).toBe(true);
+  for (const { path, selector } of viewManifest) {
     const route = routeFor(path);
     if (route.view === 'detail' || route.view === 'release' || route.view === 'rule' || route.view === 'rule-set') {
-      expect(respond('/v0' + path)?.status, path).toBe(200);
+      expect(respond('/v0' + path)?.status, path).toBe(selector === 'pb-error-state' ? 404 : 200);
     }
     if (route.view === 'repository') {
       const query = new URLSearchParams({ repository: route.repository });
@@ -30,6 +30,36 @@ test('covers the app views, fixture detail addresses and standalone preview page
       expect(respond('/v0/deployments?' + query)?.body, path).not.toEqual([]);
       expect(respond('/v0/attestations?' + query)?.body, path).not.toEqual([]);
     }
+  }
+});
+
+test('inventories two forms of the same classification and finds a repeated popup by hovering', async () => {
+  const fixture = document.createElement('div');
+  fixture.innerHTML = `
+    <pb-badge tone="check" style="border-radius: 3px; font-weight: 600">check</pb-badge>
+    <pb-badge tone="check" style="border-radius: 12px; font-weight: 600">check</pb-badge>
+    <pb-tooltip external-trigger><button>Same label</button></pb-tooltip>`;
+  document.body.append(fixture);
+  const tooltip = fixture.querySelector('pb-tooltip')!;
+  const shadow = tooltip.attachShadow({ mode: 'open' });
+  shadow.innerHTML = '<div><slot></slot><span popover="manual" aria-hidden="true" hidden>Same label</span></div>';
+  const popup = shadow.querySelector<HTMLElement>('[popover]')!;
+  const focus = vi.spyOn(tooltip.querySelector('button')!, 'focus');
+  const hover = vi.fn(() => { window.setTimeout(() => { popup.hidden = false; }, 100); });
+  shadow.firstElementChild!.addEventListener('pointerenter', hover);
+  vi.spyOn(Element.prototype, 'getClientRects').mockReturnValue([rect(0, 25)] as unknown as DOMRectList);
+  vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+  try {
+    const { groups, probed } = await inventory(document);
+    expect(probed).toBe(1);
+    expect(focus).toHaveBeenCalledOnce();
+    expect(hover).toHaveBeenCalledOnce();
+    expect(groups.filter(group => group.category === 'Classifications').map(group => group.name))
+      .toEqual([expect.stringContaining('check · radius 3px'), expect.stringContaining('check · radius 12px')]);
+    expect(groups).toContainEqual({ category: 'Repeated popups', name: 'Cockpit popup', example: 'Same label', count: 1 });
+  } finally {
+    vi.restoreAllMocks();
+    fixture.remove();
   }
 });
 

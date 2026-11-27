@@ -609,6 +609,7 @@ function ruleDetail(params) {
 }
 
 const activityReads = new Set(['/v0/attestations', '/v0/releases/latest', '/v0/deployments']);
+const previewLists = new Set([...activityReads, '/v0/releases', '/v0/rules', '/v0/rule-sets']);
 
 function activityPreview(pathname, searchParams) {
   if (!activityReads.has(pathname) || !searchParams.has('limit')) return undefined;
@@ -645,6 +646,11 @@ function volumeResponse(pathname, searchParams, { options, invalid }) {
 export function respond(target) {
   const url = new URL(target, 'http://preview.invalid');
   const { pathname, searchParams } = url;
+  if (previewLists.has(pathname)) {
+    const preview = searchParams.get('preview');
+    if (preview === 'empty') return json(200, []);
+    if (preview === 'error') return code(503, 'ledger_unavailable');
+  }
   const volume = pathname.startsWith('/v0') ? volumeRequest(searchParams) : undefined;
   if (volume) {
     const response = volumeResponse(pathname, searchParams, volume);
@@ -735,12 +741,16 @@ export const fixtureTargets = {
 // Use populated detail cases, including the repository with evidence in every section.
 export const reviewTargets = {
   repository: `?${new URLSearchParams({ repository: releaseRepository })}`,
-  release: fixtureTargets.releaseDetails[0],
-  attestation: fixtureTargets.details[0],
+  release: `/v0/releases/detail?${new URLSearchParams({ repository: releaseRepository, version: '2.0' })}`,
+  attestation: `/v0/attestations/${uuid(130)}`,
   attestationPassed: fixtureTargets.details[1],
   attestationError: fixtureTargets.details[3],
+  attestationLong: `/v0/attestations/${uuid(124)}`,
   advisoryReview: `/v0/rules/detail?${new URLSearchParams(identity('reviews/docs', 'docs-review'))}`,
   rule: `/v0/rules/detail?${new URLSearchParams(identity('reviews/design', 'design-review'))}`,
+  ruleLong: `/v0/rules/detail?${new URLSearchParams(identity('checks/long',
+    'rule-with-a-very-long-identifier-that-needs-to-wrap-on-narrow-screens'))}`,
+  ruleMissing: `/v0/rules/detail?${new URLSearchParams(identity('checks/missing', 'missing'))}`,
   ruleSet: `/v0/rule-sets/detail?${new URLSearchParams(identity('sets/baseline', 'baseline'))}`,
 };
 

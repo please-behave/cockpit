@@ -57,6 +57,14 @@ and each row of frames can be scrolled horizontally. The 640-pixel width
 represents 200% zoom in a 1280-pixel window. Compare in the same browser with
 the same settings and fixture data.
 
+The same manifest includes the detail routes and fixed empty, error, long-value
+and volume fixtures. The consistency inventory samples 1440 and 320 CSS pixels
+in both themes, with one 320-pixel light frame per volume fixture. It groups
+outcomes, classifications and object references by
+their computed styling, lists visible time and version formats, and probes
+controls with focus and hover to find popups that repeat visible text. Expand
+an inventory group to see examples and counts for each view.
+
 Open `/?preview=volume` (or `/attestations`, `/releases` and `/deployments` with the
 same parameter) to review the volume scenario. A seeded generator builds
 1,000 repositories, 20,000 attestations, their releases, deployments across

@@ -12,11 +12,11 @@ export function queryDeep(root, selector) {
   return matches;
 }
 
-function composedParent(element) {
+export function composedParent(element) {
   return element.assignedSlot ?? element.parentElement ?? element.getRootNode().host;
 }
 
-function children(node) {
+export function children(node) {
   if (node.localName === 'slot') {
     const assigned = node.assignedNodes();
     if (assigned.length) return assigned;

@@ -59,3 +59,12 @@ iframe {
   outline: 1px solid color-mix(in srgb, CanvasText 25%, Canvas);
   outline-offset: -1px;
 }
+
+#inventory summary {
+  cursor: pointer;
+  min-block-size: 24px;
+}
+
+#inventory li {
+  overflow-wrap: anywhere;
+}
