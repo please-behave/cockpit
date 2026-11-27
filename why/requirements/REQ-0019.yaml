@@ -43,6 +43,16 @@ description: >-
   available under DEC-0012. The empty overview has an explicit empty state.
   The dashboard follows REQ-0015 in both themes and forced colors, with every
   status conveyed in text.
+
+  A repository status tile uses the same health grouping as the repository
+  stripe. It shows a status symbol, count and label. A nonzero tile links to
+  the dashboard with status=failed, status=warning, status=not-run (unknown)
+  or status=passed in the query. Its accessible name conveys the count and
+  status. Hover, keyboard focus and the first touch tap show a tooltip with
+  the first three matching repository names in input order and "and N more"
+  when more remain. The preview is also the link's accessible description.
+  The next tap follows the link. The current filter is visible and exposed to
+  assistive technology. A zero tile is muted and has no link.
 rationale: >-
   Viewers can identify missing or stale evidence and see the reported check
   verdict for each repository.
@@ -52,5 +62,6 @@ decisions:
   - DEC-0011
   - DEC-0012
   - DEC-0016
+  - why:DEC-0009
   - why:DEC-0024
   - why:DEC-0025

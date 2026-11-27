@@ -2,6 +2,7 @@ import { expect, test } from 'vitest';
 import type {
   Attestation, Deployment, RegisteredRule, RegisteredRuleSet, RegisteredRuleSetVersion, RegisteredVersion, RepositoryOverview, RepositoryRuleSets, RuleSetCompliance, ReleaseDetail, ReleaseSummary, Summary,
 } from '../../frontend/src/api/client';
+import { repositoryHealth } from '../../frontend/src/repository-health';
 import { fixtureTargets, respond } from './fixtures.mjs';
 
 const isString = (value: unknown): value is string => typeof value === 'string';
@@ -353,6 +354,19 @@ test('serves all current deployment states and continues from the last event ID'
   expect(body<Deployment[]>(path + '?' + new URLSearchParams({ repository, limit: '200' })))
     .toEqual(entries.filter(entry => entry.repository === repository));
   expect(respond(path + '?before=0')?.status).toBe(400);
+});
+
+test('serves status tile fixtures for empty, truncated and escaped previews', () => {
+  const overview = body<RepositoryOverview>(fixtureTargets.repositoryOverview);
+  const statTiles = body<RepositoryOverview>(`${fixtureTargets.repositoryOverview}?preview=stat-tiles`);
+  expect(statTiles).toEqual({
+    ...overview,
+    repositories: overview.repositories.filter(entry => repositoryHealth(entry) !== 'warning'),
+  });
+  expect(statTiles.repositories.filter(entry => repositoryHealth(entry) === 'failed')).toHaveLength(4);
+  expect(statTiles.repositories.find(entry => entry.repository.includes('<img'))).toMatchObject({
+    state: 'current', latest_check: { overall: 'PASS' },
+  });
 });
 
 test('serves repository health, evidence and covering syncs in the client shape', () => {

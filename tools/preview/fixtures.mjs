@@ -571,6 +571,12 @@ export function respond(target) {
   const url = new URL(target, 'http://preview.invalid');
   const { pathname, searchParams } = url;
   if (pathname === '/v0/repositories/overview') {
+    if (searchParams.get('preview') === 'stat-tiles') {
+      return json(200, {
+        ...repositoryOverview,
+        repositories: repositoryOverview.repositories.filter(entry => entry.repository !== 'github.com/acme/widget'),
+      });
+    }
     const response = json(200, repositoryOverview);
     return searchParams.get('preview') === 'slow-refresh' ? { ...response, delay: 750 } : response;
   }
