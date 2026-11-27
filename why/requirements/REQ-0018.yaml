@@ -6,9 +6,11 @@ description: >-
   that it takes the remaining width and truncates with an ellipsis. In the
   rules table of the detail view, the kind, status and verification columns
   never wrap. The rule column takes the remaining width and wraps its content.
-  Data tables use the density and subtle dividers of REQ-0015. Column headers
-  stay visible as the table scrolls vertically, and the table can scroll
-  horizontally when it exceeds the available width. A view may supply
+  Data tables use the density and subtle dividers of REQ-0015. The page
+  handles vertical scrolling. Column headers stay at the top of the viewport
+  while their table is in view and scroll away at the end of the table. A table
+  that exceeds the available width scrolls horizontally within its own region.
+  A view may supply
   comparators for columns of a complete data set. Each sortable header
   contains a keyboard-operable button. The first activation sorts ascending
   and repeated activation of that column switches direction. The active

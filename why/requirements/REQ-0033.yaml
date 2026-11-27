@@ -23,7 +23,7 @@ description: >-
   reported time links to the attestation detail. Each section explains when
   no records exist. Long names wrap within the available width or show their
   full value in a tooltip. All sections follow REQ-0004, REQ-0015 and REQ-0016. The attestation tables
-  keep the time, commit and status on one line in their scrollable regions.
+  keep the time, commit and status on one line and follow REQ-0018 for scrolling.
   The latest combinations table can be sorted by execution points, reported
   time, commit or overall status under REQ-0018. The recent attestations table
   keeps ledger order.

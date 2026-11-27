@@ -1,5 +1,5 @@
 import { html } from 'lit';
-import { afterEach, expect, test } from 'vitest';
+import { afterEach, expect, test, vi } from 'vitest';
 import { DataTable } from './pb-data-table';
 import './pb-status-pill';
 
@@ -40,6 +40,34 @@ test('exposes a named table with column and optional row headers in a focusable 
   await table.updateComplete;
   expect(root.querySelector('tbody th')).toBeNull();
   expect(root.querySelectorAll('tbody td')).toHaveLength(3);
+});
+
+// Verifies REQ-0018.
+test('pins the original column headers to the page viewport within the table bounds', async () => {
+  const component = new DataTable();
+  component.columns = ['Name'];
+  document.body.append(component);
+  await component.updateComplete;
+
+  const root = component.shadowRoot!;
+  const table = root.querySelector('table')!;
+  const header = table.tHead!;
+  const caption = vi.spyOn(table.caption!, 'getBoundingClientRect');
+  const bounds = vi.spyOn(table, 'getBoundingClientRect');
+  vi.spyOn(header, 'getBoundingClientRect').mockReturnValue(DOMRect.fromRect({ height: 40 }));
+  const rule = root.adoptedStyleSheets.at(-1)!.cssRules[0] as CSSStyleRule;
+
+  function pageScroll(start: number, end: number) {
+    caption.mockReturnValue(DOMRect.fromRect({ y: start }));
+    bounds.mockReturnValue(DOMRect.fromRect({ y: start, height: end - start }));
+    window.dispatchEvent(new Event('scroll'));
+    return rule.style.getPropertyValue('--header-offset');
+  }
+
+  expect(pageScroll(-90, 210)).toBe('90px');
+  expect(pageScroll(-275, 25)).toBe('260px');
+  expect(pageScroll(15, 315)).toBe('0px');
+  expect(header.hasAttribute('style')).toBe(false);
 });
 
 test('retains rows by key through reordering, updates, insertion and removal', async () => {

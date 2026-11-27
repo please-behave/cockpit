@@ -55,8 +55,7 @@ export class DataTable<Row extends DataTableRow = DataTableRow> extends LitEleme
         /* Keep visually hidden cell labels inside the scrolling region. */
         position: relative;
         overflow-x: auto;
-        max-block-size: max(12rem, 65dvh);
-        scroll-padding-block-start: 3.5rem;
+        overflow-y: hidden;
       }
 
       td, th {
@@ -119,9 +118,9 @@ export class DataTable<Row extends DataTableRow = DataTableRow> extends LitEleme
       }
 
       thead {
-        position: sticky;
-        inset-block-start: 0;
+        position: relative;
         z-index: 1;
+        transform: translateY(var(--header-offset, 0px));
       }
 
       thead th, th[scope='rowgroup'] {
@@ -166,7 +165,10 @@ export class DataTable<Row extends DataTableRow = DataTableRow> extends LitEleme
   declare rowHeaderColumn: number;
 
   declare private sort?: Sort;
-  private scrollPosition?: { top: number; left: number };
+  private horizontalScroll = 0;
+  private headerOffset = 0;
+  private headerStyle?: CSSStyleDeclaration;
+  private resizeObserver?: ResizeObserver;
 
   constructor() {
     super();
@@ -176,22 +178,76 @@ export class DataTable<Row extends DataTableRow = DataTableRow> extends LitEleme
     this.rowHeaderColumn = -1;
   }
 
-  get scrollRegion() {
-    return this.renderRoot?.querySelector<HTMLDivElement>('.scroll');
-  }
-
   override connectedCallback() {
     super.connectedCallback();
-    const region = this.scrollRegion;
-    if (region && this.scrollPosition) {
-      region.scrollTop = this.scrollPosition.top;
-      region.scrollLeft = this.scrollPosition.left;
+    const region = this.renderRoot.querySelector<HTMLDivElement>('.scroll');
+    if (region) {
+      region.scrollLeft = this.horizontalScroll;
+      this.watchHeader();
     }
   }
 
+  protected override firstUpdated() {
+    if (this.isConnected) this.watchHeader();
+  }
+
+  override disconnectedCallback() {
+    const viewport = this.ownerDocument.defaultView;
+    viewport?.removeEventListener('scroll', this.pinHeader);
+    viewport?.removeEventListener('resize', this.pinHeader);
+    this.resizeObserver?.disconnect();
+    super.disconnectedCallback();
+  }
+
+  private watchHeader() {
+    const root = this.shadowRoot!;
+    const viewport = this.ownerDocument.defaultView;
+    if (!viewport || !root.adoptedStyleSheets) return;
+    if (!this.headerStyle) {
+      // The horizontal scroller captures native sticky positioning. Move the
+      // original header with the page using an adopted rule for its offset.
+      const sheet = new CSSStyleSheet();
+      sheet.insertRule('thead {}');
+      this.headerStyle = (sheet.cssRules[0] as CSSStyleRule).style;
+      root.adoptedStyleSheets = [...root.adoptedStyleSheets, sheet];
+    }
+
+    const table = root.querySelector('table')!;
+    if (typeof ResizeObserver !== 'undefined') {
+      this.resizeObserver ??= new ResizeObserver(this.pinHeader);
+      this.resizeObserver.observe(table);
+      this.resizeObserver.observe(table.caption!);
+      this.resizeObserver.observe(table.tHead!);
+    }
+    viewport.addEventListener('scroll', this.pinHeader, { passive: true });
+    viewport.addEventListener('resize', this.pinHeader);
+    this.pinHeader();
+  }
+
+  private readonly pinHeader = () => {
+    const table = this.renderRoot.querySelector('table')!;
+    const start = table.caption!.getBoundingClientRect().bottom;
+    const end = table.getBoundingClientRect().bottom - table.tHead!.getBoundingClientRect().height;
+    const offset = Math.max(0, Math.min(-start, end - start));
+    if (offset === this.headerOffset) return;
+    this.headerOffset = offset;
+    this.headerStyle!.setProperty('--header-offset', `${offset}px`);
+  };
+
   private rememberScroll(event: Event) {
-    const region = event.currentTarget as HTMLDivElement;
-    this.scrollPosition = { top: region.scrollTop, left: region.scrollLeft };
+    this.horizontalScroll = (event.currentTarget as HTMLDivElement).scrollLeft;
+  }
+
+  private revealFocus(event: FocusEvent) {
+    const path = event.composedPath();
+    const target = path[0] as Element;
+    const table = this.renderRoot.querySelector('table')!;
+    if (!target.matches(':focus-visible') || !Array.from(table.tBodies).some(body => path.includes(body))) return;
+    const { top, bottom } = target.getBoundingClientRect();
+    const header = table.tHead!.getBoundingClientRect();
+    if (header.top <= 0 && bottom > 0 && top < header.bottom) {
+      this.ownerDocument.defaultView?.scrollBy(0, top - header.bottom - 4);
+    }
   }
 
   private sortBy(index: number) {
@@ -212,7 +268,8 @@ export class DataTable<Row extends DataTableRow = DataTableRow> extends LitEleme
         : html`<td class=${mode ?? nothing} part=${part ?? nothing}>${row.cells[index]}</td>`)}</tr>`,
     );
     return html`
-      <div class="scroll" part="scroll" role="region" aria-labelledby="caption" tabindex="0" @scroll=${this.rememberScroll}>
+      <div class="scroll" role="region" aria-labelledby="caption" tabindex="0"
+        @scroll=${this.rememberScroll} @focusin=${this.revealFocus}>
         <table>
           <caption id="caption">${this.label}</caption>
           <thead>
@@ -234,7 +291,6 @@ export class DataTable<Row extends DataTableRow = DataTableRow> extends LitEleme
               </tbody>
             `)}
         </table>
-        <slot></slot>
       </div>
     `;
   }

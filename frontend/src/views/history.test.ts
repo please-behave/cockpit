@@ -164,7 +164,7 @@ test('loads follow-up pages with the cursor until a short page ends the list', a
   const view = await mount();
   expect(observers).toHaveLength(1);
   expect(observers[0].options).toEqual({
-    root: (await tableRoot(view)).querySelector('.scroll'),
+    root: null,
     rootMargin: `0px 0px ${window.innerHeight}px`,
   });
   expect(observers[0].observed.has(sentinel(view))).toBe(true);
@@ -306,8 +306,8 @@ test('abandons a pending page when the view is removed', async () => {
   expect(observers[0].observed.size).toBe(0);
 });
 
-// Verifies REQ-0022.
-test('a refresh inserts new entries at the top and keeps the loaded pages', async () => {
+// Verifies REQ-0020 and REQ-0022.
+test('a refresh prepends entries without re-anchoring the page or dropping loaded rows', async () => {
   page.mockResolvedValueOnce(range(2, 100)).mockResolvedValueOnce(range(102, 20));
   const view = await mount();
   await reach(view);
@@ -317,6 +317,8 @@ test('a refresh inserts new entries at the top and keeps the loaded pages', asyn
   await view.refresh();
   await vi.waitFor(() => expect(hrefs(view)[0]).toBe('/attestations/id-0001'));
   expect(hrefs(view)).toHaveLength(121);
+  const sheet = view.shadowRoot!.adoptedStyleSheets.at(-1)!;
+  expect([...sheet.cssRules].some(rule => /:host\s*\{\s*overflow-anchor:\s*none/.test(rule.cssText))).toBe(true);
   expect(hrefs(view)[1]).toBe('/attestations/id-0002');
   expect(page).toHaveBeenLastCalledWith({ limit: 100 }, expect.any(AbortSignal));
   expect(view.shadowRoot!.querySelector('[role=status]:not(.assistive)')).toBeNull();

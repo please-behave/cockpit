@@ -11,7 +11,9 @@ description: >-
   A tooltip and assistive technology
   expose the full value of a shortened commit. The commit links to github.com
   by the rule of DEC-0011. The columns never wrap and long values are
-  truncated. A ledger without attestations has an explicit empty state, and
+  truncated. The table scrolls with the page and keeps its column headers
+  visible according to REQ-0018. A ledger without attestations has an
+  explicit empty state, and
   a failed first page shows the ledger-unavailable error with a retry action.
   The page has an entry in the navigation and refreshes by the rule of
   REQ-0020.

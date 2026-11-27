@@ -4,17 +4,19 @@ area: attestations
 description: >-
   The history loads 100 attestations first and a further page of 100 whenever
   the end of the loaded rows comes within one viewport height of the visible
-  area. Each page asks for the attestations before the last loaded one. A page
+  area, measured against the page viewport. Each page asks for the attestations before the last loaded one. A page
   with fewer than 100 attestations ends the list, which then states that no
   older attestations exist. An attestation that arrives twice is shown once. A
   failed page keeps the loaded rows and shows an inline error with a retry
   action. A refresh reads the first page again and inserts the attestations not
   yet loaded at the top, matched by identifier, while the pages loaded below
-  stay. If the page contains no loaded attestation, it replaces the list. Loading a page does not move the scroll position, and the loaded and
-  end states are announced to assistive technology. While the detail page
+  stay. If the page contains no loaded attestation, it replaces the list.
+  Appending a page or refreshing keeps the page scroll position, within the
+  bounds of the resulting page. The loaded and end states are announced to
+  assistive technology. While the detail page
   opened from the history is shown, the router keeps the history with its
   loaded pages in memory. Going back through the browser history attaches it
-  again at the same scroll position without a request. The menu entry
+  again at the same page scroll position without a request. The menu entry
   `Attestations`, another view or a second detail page discards it, and a kept
   history makes no requests while detached.
 rationale: >-

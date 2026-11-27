@@ -18,8 +18,8 @@ description: >-
   registry pages, and the view reveals groups and their rules in batches.
   Within a group, rule summaries retain ledger order and show a link named
   with the display name or ID, the reported owner, and the description.
-  The description wraps without truncation, and the table scrolls
-  horizontally when necessary. The list renders registered text as escaped
+  The description wraps without truncation, and the table follows REQ-0018
+  for scrolling. The list renders registered text as escaped
   plain text. The rule detail uses CON-0005 and uses the selected version's registered name or local ID as
   the headline, its description as an introduction when present, and a
   fact strip with Kind, Blocking for reviews, and Registered, in that

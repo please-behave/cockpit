@@ -6,8 +6,9 @@ context: >-
   place and request every page again.
 decision: >-
   While the detail page reached from the history is shown, the router keeps the
-  history view in memory with its loaded pages and scroll position and attaches
-  it again when the viewer goes back through the browser history. Any other
+  history view in memory with its loaded pages and the page's vertical scroll
+  position. It reattaches the view and restores that position when the viewer
+  goes back through the browser history. Any other
   navigation discards it. The view is never written to browser storage and does
   not survive a reload.
 rationale: >-

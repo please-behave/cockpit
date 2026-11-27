@@ -43,7 +43,6 @@ export class DeploymentsView extends CockpitView<Deployment[]> {
       select { min-inline-size: 0; }
 
       pb-data-table { margin-block-start: var(--space-4); }
-      pb-data-table::part(scroll) { max-block-size: 78dvh; }
 
       p { margin: 0; }
 
