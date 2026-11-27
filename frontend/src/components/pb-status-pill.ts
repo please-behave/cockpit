@@ -18,7 +18,10 @@ const statuses = new Map<string, { style: string; icon: IconName }>([
 ]);
 
 export class StatusPill extends LitElement {
-  static override properties = { status: { type: String } };
+  static override properties = {
+    status: { type: String },
+    variant: { type: String },
+  };
 
   static override styles = css`
     @layer components {
@@ -30,13 +33,16 @@ export class StatusPill extends LitElement {
         box-sizing: border-box;
         align-items: baseline;
         gap: var(--space-1);
+        color: var(--text-muted);
+        font-weight: var(--weight-semibold);
+        overflow-wrap: anywhere;
+      }
+
+      .pill:not(.compact) {
         padding: var(--space-1) var(--space-2);
         border: 1px solid var(--border);
         border-radius: var(--radius-control);
         background: var(--surface-raised);
-        color: var(--text-muted);
-        font-weight: var(--weight-semibold);
-        overflow-wrap: anywhere;
       }
 
       .passed { color: var(--status-passed); }
@@ -48,6 +54,7 @@ export class StatusPill extends LitElement {
   `;
 
   declare status: string;
+  declare variant?: 'boxed' | 'compact';
 
   constructor() {
     super();
@@ -56,8 +63,9 @@ export class StatusPill extends LitElement {
 
   override render() {
     const status = statuses.get(this.status);
+    const compact = this.variant === 'compact' ? ' compact' : '';
     return html`
-      <span class="pill ${status?.style ?? 'unknown'}">
+      <span class="pill ${status?.style ?? 'unknown'}${compact}">
         <pb-icon name=${status?.icon ?? 'question'}></pb-icon>
         <span>${this.status}</span>
       </span>

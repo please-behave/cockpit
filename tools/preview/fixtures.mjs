@@ -646,3 +646,9 @@ export const reviewTargets = {
   rule: `/v0/rules/detail?${new URLSearchParams(identity('reviews/design', 'design-review'))}`,
   ruleSet: `/v0/rule-sets/detail?${new URLSearchParams(identity('sets/baseline', 'baseline'))}`,
 };
+
+export const statusPillLabels = [
+  'PASS', 'FAIL', 'ERROR', 'WARN', 'NOT_RUN',
+  'release not recorded', 'No evidence', 'Verified', 'Unverified', 'Complete', 'Incomplete', 'API key',
+  'FUTURE_STATUS_WITH_A_LONG_REPORTED_VALUE_THAT_NEEDS_TO_WRAP_IN_NARROW_COLUMNS',
+];

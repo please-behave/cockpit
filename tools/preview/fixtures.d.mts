@@ -1,4 +1,5 @@
 export function respond(target: string): { status: number; body: unknown; delay?: number } | undefined;
+export const statusPillLabels: readonly string[];
 
 export const fixtureTargets: {
   latest: string;

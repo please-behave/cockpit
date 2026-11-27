@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => ({
     emptyOutDir: true,
     rolldownOptions: {
       input: mode === 'preview'
-        ? ['index.html', 'sign-in.html', 'repository-map-preview.html']
+        ? ['index.html', 'sign-in.html', 'repository-map-preview.html', 'status-pill-preview.html']
         : ['index.html', 'sign-in.html'],
     },
   },

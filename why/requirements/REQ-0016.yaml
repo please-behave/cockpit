@@ -4,7 +4,9 @@ description: >-
   The cockpit never relies on color alone to convey an outcome. It displays
   the status exactly as reported. PASS, FAIL, ERROR, WARN and NOT_RUN each
   have visible text and a distinct SVG symbol in addition to color. Unrecognized
-  statuses retain their reported text with neutral styling. The verification
+  statuses retain their reported text with neutral styling. Status labels
+  have a boxed presentation for standalone use and a compact presentation
+  with the same text and symbol and no surrounding box. The verification
   reason in REQ-0024 is available through a tooltip and the accessible
   description of its focusable status label. The tooltip opens on hover,
   keyboard focus or tap and stays visible while the pointer moves into it.

@@ -3,7 +3,7 @@ import type {
   Attestation, Deployment, RegisteredRule, RegisteredRuleSet, RegisteredRuleSetVersion, RegisteredVersion, RepositoryOverview, RepositoryRuleSets, RuleSetCompliance, ReleaseDetail, ReleaseSummary, Summary,
 } from '../../frontend/src/api/client';
 import { repositoryHealth } from '../../frontend/src/repository-health';
-import { fixtureTargets, respond } from './fixtures.mjs';
+import { fixtureTargets, respond, statusPillLabels } from './fixtures.mjs';
 
 const isString = (value: unknown): value is string => typeof value === 'string';
 const isCount = (value: unknown) => Number.isInteger(value) && (value as number) >= 0;
@@ -99,6 +99,7 @@ test('serves every attestation in the client shape with matching counts', () => 
     }
   }
   expect(statuses.size).toBe(5);
+  expect(statusPillLabels).toEqual(expect.arrayContaining([...statuses]));
   const errorDetail = fixtureTargets.details.map(target => body<Attestation>(target))
     .find(attestation => attestation.overall === 'ERROR');
   expect(new Set(errorDetail?.results.map(item => item.status))).toEqual(statuses);
