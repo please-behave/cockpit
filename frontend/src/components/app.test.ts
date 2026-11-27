@@ -64,6 +64,40 @@ test('pb-app renders its content in the application shell', async () => {
 });
 
 // Verifies REQ-0015.
+test.each([false, true])('returns focus and scroll to the top with reduced motion %s', async reducedMotion => {
+  const height = window.innerHeight;
+  const scrollY = vi.spyOn(window, 'scrollY', 'get').mockReturnValue(height - 1);
+  const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+  const matchMedia = vi.fn((query: string) => ({
+    matches: reducedMotion && query === '(prefers-reduced-motion: reduce)',
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  }));
+  vi.stubGlobal('matchMedia', matchMedia);
+  const shell = new CockpitAppShell();
+  document.body.append(shell);
+  await shell.updateComplete;
+  const root = shell.shadowRoot!;
+  const button = () => root.querySelector<HTMLButtonElement>('.back-to-top');
+  expect(button()).toBeNull();
+
+  scrollY.mockReturnValue(height);
+  window.dispatchEvent(new Event('scroll'));
+  await shell.updateComplete;
+  expect(button()?.textContent).toBe('Back to top');
+  button()!.focus();
+  button()!.click();
+  expect(root.activeElement).toBe(root.querySelector('header'));
+  expect(matchMedia).toHaveBeenCalledWith('(prefers-reduced-motion: reduce)');
+  expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: reducedMotion ? 'instant' : 'smooth' });
+
+  scrollY.mockReturnValue(0);
+  window.dispatchEvent(new Event('scroll'));
+  await shell.updateComplete;
+  expect(button()).toBeNull();
+});
+
+// Verifies REQ-0015.
 test('updates the header links for direct routes, link clicks, and history traversal', async () => {
   vi.stubGlobal('IntersectionObserver', class { observe() {} unobserve() {} disconnect() {} });
   vi.spyOn(window, 'scrollTo').mockImplementation(() => {});

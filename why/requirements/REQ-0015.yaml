@@ -13,6 +13,12 @@ description: >-
   It shows the repository owner's copyright notice and links the product
   name to the Please Behave GitHub organization without an opener or referrer.
   The link makes no external request before activation.
+  The shell shows a Back to top button in the bottom corner after the
+  viewer scrolls at least one viewport height, and hides it above that
+  threshold. It leaves the footer link and all page content reachable.
+  The button has an accessible name and visible keyboard focus in both
+  themes and forced colors. It scrolls to the top and moves focus to the
+  header, without animation when reduced motion is requested.
   The header presents adjoining, full-height navigation segments labeled
   "Please Behave Dashboard", "Attestations", "Releases", "Deployments", and
   "Rules" on the raised surface. At desktop widths and default zoom the header

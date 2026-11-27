@@ -1,6 +1,7 @@
 import { css, html, LitElement, nothing } from 'lit';
 import logo from '../../brand/logo.svg';
 import logoDark from '../../brand/logo-dark.svg';
+import { controlStyles } from '../styles/controls';
 import { linkStyles } from '../styles/links';
 import type { RefreshState } from '../views/cockpit-view';
 import type { Route } from '../views/router';
@@ -11,6 +12,7 @@ import './pb-theme-toggle';
 export class CockpitAppShell extends LitElement {
   static override styles = css`
     ${linkStyles}
+    ${controlStyles}
 
     @layer base {
       :focus-visible {
@@ -143,8 +145,16 @@ export class CockpitAppShell extends LitElement {
         padding-block-end: var(--space-8);
       }
 
-      main:focus-visible {
+      header:focus-visible, main:focus-visible {
         outline-offset: calc(-1 * var(--focus-offset));
+      }
+
+      .back-to-top {
+        position: fixed;
+        z-index: 2;
+        inset-block-end: var(--space-2);
+        inset-inline-end: var(--space-2);
+        min-inline-size: var(--target-min-size);
       }
 
       footer {
@@ -187,9 +197,23 @@ export class CockpitAppShell extends LitElement {
   static override properties = {
     currentView: { attribute: false },
     refreshState: { state: true },
+    showBackToTop: { state: true },
   };
   declare currentView: Route['view'];
   declare private refreshState?: RefreshState;
+  declare private showBackToTop?: boolean;
+
+  private readonly updateBackToTop = () => {
+    const viewport = this.ownerDocument.defaultView;
+    this.showBackToTop = viewport !== null && viewport.scrollY >= viewport.innerHeight;
+  };
+
+  private backToTop() {
+    const viewport = this.ownerDocument.defaultView;
+    const reducedMotion = viewport?.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    this.renderRoot.querySelector('header')?.focus({ preventScroll: true });
+    viewport?.scrollTo({ top: 0, behavior: reducedMotion ? 'instant' : 'smooth' });
+  }
 
   private skipToMain(event: MouseEvent) {
     event.preventDefault();
@@ -203,10 +227,17 @@ export class CockpitAppShell extends LitElement {
   override connectedCallback() {
     super.connectedCallback();
     this.addEventListener('refresh-state', this.refreshStateChanged);
+    const viewport = this.ownerDocument.defaultView;
+    viewport?.addEventListener('scroll', this.updateBackToTop, { passive: true });
+    viewport?.addEventListener('resize', this.updateBackToTop);
+    this.updateBackToTop();
   }
 
   override disconnectedCallback() {
     this.removeEventListener('refresh-state', this.refreshStateChanged);
+    const viewport = this.ownerDocument.defaultView;
+    viewport?.removeEventListener('scroll', this.updateBackToTop);
+    viewport?.removeEventListener('resize', this.updateBackToTop);
     super.disconnectedCallback();
   }
 
@@ -227,7 +258,7 @@ export class CockpitAppShell extends LitElement {
     const wide = ['dashboard', 'history', 'releases', 'deployments', 'rules'].includes(this.currentView);
     return html`
       <a class="skip-link" href="#main-content" @click=${this.skipToMain}>Skip to content</a>
-      <header>
+      <header tabindex="-1">
         <div class="bar">
           <nav aria-label="Main">
             <pb-nav-tab class="brand" href="/" .active=${this.currentView === 'dashboard'}>
@@ -263,6 +294,9 @@ export class CockpitAppShell extends LitElement {
         <a href="https://github.com/please-behave" target="_blank" rel="noopener noreferrer">Please Behave</a>
         <span>© 2026 Please Behave</span>
       </footer>
+      ${this.showBackToTop ? html`
+        <button class="back-to-top" type="button" @click=${this.backToTop}>Back to top</button>
+      ` : nothing}
     `;
   }
 }
