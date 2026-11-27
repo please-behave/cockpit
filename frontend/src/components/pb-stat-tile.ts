@@ -36,7 +36,15 @@ export class StatTile extends LitElement {
         line-height: var(--line-data);
       }
 
+      a.tile { cursor: pointer; }
       a:hover { background: var(--surface-hover); }
+
+      @media (forced-colors: active) {
+        a:hover:not(:focus-visible) {
+          outline: 1px solid var(--border);
+          outline-offset: -1px;
+        }
+      }
       .empty { color: var(--text-muted); }
       .active {
         border-color: currentColor;
@@ -76,22 +84,24 @@ export class StatTile extends LitElement {
       <span class="count">${count}</span> <span>${status.label}</span>
       ${this.active ? html`<span class="active-label">Current filter</span>` : nothing}
     `;
-    if (count === 0) {
-      return html`<span class="tile empty ${this.active ? 'active' : ''}">${content}</span>`;
-    }
-
     const noun = count === 1 ? 'repository' : 'repositories';
     const name = this.status === 'warning'
       ? `${count} ${noun} with ${count === 1 ? 'a warning' : 'warnings'}`
       : `${count} ${status.label} ${noun}`;
+    const link = html`
+      <a class="tile ${count === 0 ? 'empty' : ''} ${this.active ? 'active' : ''}"
+        data-route href=${this.href ?? `/?status=${this.status}`}
+        aria-label=${name} aria-current=${this.active ? 'true' : nothing}
+        aria-describedby=${count ? 'preview' : nothing}>${content}</a>
+    `;
+    if (count === 0) return link;
+
     const names = matching.slice(0, previewLimit).map(entry => entry.repository).join(', ');
     const remaining = count - previewLimit;
     const preview = remaining > 0 ? `${names} and ${remaining} more` : names;
     return html`
       <pb-tooltip external-trigger .description=${preview}>
-        <a class="tile ${this.active ? 'active' : ''}" data-route href=${this.href ?? `/?status=${this.status}`}
-          aria-label=${name} aria-current=${this.active ? 'true' : nothing}
-          aria-describedby="preview">${content}</a>
+        ${link}
       </pb-tooltip>
       <span id="preview" hidden>${preview}</span>
     `;

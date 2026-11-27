@@ -54,12 +54,22 @@ test('exposes the current filter and shows the first three names on keyboard foc
   expect(popup.textContent?.trim()).toBe(preview);
 });
 
-test('shows zero as muted text without a link or tooltip', async () => {
-  const emptyWarning = respond(`${fixtureTargets.repositoryOverview}?preview=stat-tiles`)!.body as RepositoryOverview;
-  const root = await mount('warning', true, emptyWarning.repositories);
-  expect(root.querySelector('.empty')?.textContent).toMatch(/0\s+warning/);
-  expect(root.querySelector('.active-label')?.textContent).toBe('Current filter');
-  expect(root.querySelector('a, pb-tooltip, button')).toBeNull();
+test.each([
+  ['failed', 'failed', '0 failed repositories', 'dashboard-clear'],
+  ['warning', 'warning', '0 repositories with warnings', 'dashboard-clear'],
+  ['not-run', 'unknown', '0 unknown repositories', 'dashboard-clear'],
+  ['passed', 'passed', '0 passed repositories', 'dashboard-unsynced'],
+] as const)('links the muted zero %s tile without a preview', async (status, label, name, fixture) => {
+  const data = respond(`${fixtureTargets.repositoryOverview}?preview=${fixture}`)!.body as RepositoryOverview;
+  const root = await mount(status, true, data.repositories);
+  const link = root.querySelector('a.empty')!;
+  expect(link.hasAttribute('data-route')).toBe(true);
+  expect(link.getAttribute('href')).toBe(`/?status=${status}`);
+  expect(link.getAttribute('aria-label')).toBe(name);
+  expect(link.getAttribute('aria-current')).toBe('true');
+  expect(link.textContent).toMatch(new RegExp(`0\\s+${label}`));
+  expect(link.querySelector('.active-label')?.textContent).toBe('Current filter');
+  expect(root.querySelector('pb-tooltip, [aria-describedby], #preview')).toBeNull();
 });
 
 // Verifies REQ-0004.

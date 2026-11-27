@@ -26,13 +26,15 @@ description: >-
   repositories.
 
   Each status tile shows a symbol, count and text label for its health group
-  across the full overview. A nonzero tile links to the dashboard with
+  across the full overview. Every tile links to the dashboard with
   status=failed, status=warning, status=not-run (unknown) or status=passed
-  in the query. Its accessible name conveys the count and status. Hover,
-  keyboard focus and the first touch tap show the first three matching
-  repository names in input order and "and N more" when more remain. The
-  preview is also the link's accessible description. The next tap follows the
-  link. A zero tile is muted and has no link.
+  in the query. Its accessible name conveys the count and status. For
+  nonzero counts, hover, keyboard focus and the first touch tap show the
+  first three matching repository names in input order and "and N more"
+  when more remain. The preview is also the link's accessible description.
+  The next tap follows the link. A zero tile stays muted, uses the same
+  pointer cursor and hover and focus styles as the other tiles, and
+  offers no preview.
 
   The Needs attention widget shows every repository whose health is failed,
   warning or unknown, ordered by health severity and then by name. Each row

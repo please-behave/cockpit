@@ -201,15 +201,22 @@ test.each([
   expect(tiles(view).find(tile => tile.active)?.status).toBe(status === 'bogus' ? undefined : status);
 });
 
-test('explains an empty filtered map and offers a clear link', async () => {
-  overview.mockResolvedValue(repositories(entry('a/one')));
-  const view = await mount('?status=failed');
+test.each([
+  ['failed', 'dashboard-clear'],
+  ['warning', 'dashboard-clear'],
+  ['not-run', 'dashboard-clear'],
+  ['passed', 'dashboard-unsynced'],
+])('explains an empty %s filter and offers a clear link', async (status, fixture) => {
+  const data = respond(`${fixtureTargets.repositoryOverview}?preview=${fixture}`)!.body as RepositoryOverview;
+  overview.mockResolvedValue(data);
+  const view = await mount(`?preview=${fixture}&status=${status}`);
   expect(chips(view)).toHaveLength(0);
   expect(map(view).shadowRoot!.querySelector('p')?.textContent).toBe('No repositories match this status.');
-  expect(map(view).link).toEqual({ href: '/', label: 'Clear status filter' });
-  const [failed] = tiles(view);
-  expect(failed.shadowRoot!.querySelector('a')).toBeNull();
-  expect(failed.shadowRoot!.textContent).toContain('Current filter');
+  expect(map(view).link).toEqual({ href: `/?preview=${fixture}`, label: 'Clear status filter' });
+  const active = tiles(view).find(tile => tile.active)!;
+  expect(active.status).toBe(status);
+  expect(active.shadowRoot!.querySelector('a.empty[aria-current="true"]')?.getAttribute('href'))
+    .toBe(`/?preview=${fixture}&status=${status}`);
 });
 
 test('shows the covering sync and stale state in the toolbar template', async () => {
