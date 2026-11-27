@@ -21,6 +21,9 @@ export const reviewCases = [
     'Member rule rows and repository entries'],
   ['Sign in', '/sign-in', '.sign-in-card', '.sign-in-link', 'Sign-in action'],
   ['Repository map', '/preview/repository-map', 'pb-repository-map', 'li:has(> pb-repo-chip)', 'Repository chips'],
+  ['Needs attention', '/preview/needs-attention', 'pb-needs-attention', 'li', 'Repository rows'],
+  ['Needs attention (all clear)', '/preview/needs-attention?clear', 'pb-needs-attention', 'pb-widget > p',
+    'All-clear message'],
   ['Status pills', '/preview/status-pill', 'main', tableRows, 'Pairs of boxed and compact status pills'],
   ['Page not found', '/preview/unknown-page', 'pb-not-found', 'p', 'Message and return link'],
 ].map(([name, path, root, selector, entries]) => ({ name, path, root, selector, entries }));

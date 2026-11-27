@@ -9,7 +9,8 @@ const rect = (top: number, bottom: number, width = 100) => new DOMRect(0, top, w
 test('covers the app views, fixture detail addresses and standalone preview pages', () => {
   const routes = reviewCases.map(({ path }: { path: string }) => path);
   expect(new Set(routes).size).toBe(routes.length);
-  const standalone = ['/sign-in', '/preview/repository-map', '/preview/status-pill'];
+  const standalone = ['/sign-in', '/preview/repository-map', '/preview/status-pill',
+    '/preview/needs-attention', '/preview/needs-attention?clear'];
   for (const path of standalone) expect(routes).toContain(path);
   const appRoutes = routes.filter((path: string) => !standalone.includes(path));
   expect(appRoutes.map((path: string) => routeFor(path).view).sort()).toEqual([

@@ -583,6 +583,18 @@ export function respond(target) {
         repositoryFixtures.length);
       return json(200, { ...repositoryOverview, repositories: [...repositoryOverview.repositories, longName] });
     }
+    if (searchParams.get('preview') === 'needs-attention') {
+      const longName = repositoryEntry([`github.com/acme/${'long-repository-name-'.repeat(10)}unknown`, 'unknown'],
+        repositoryFixtures.length);
+      return json(200, { ...repositoryOverview, repositories: [...repositoryOverview.repositories, longName] });
+    }
+    if (searchParams.get('preview') === 'needs-attention-clear') {
+      return json(200, {
+        ...repositoryOverview,
+        repositories: repositoryOverview.repositories.filter(entry =>
+          entry.latest_check?.overall === 'PASS' && (entry.state === 'current' || entry.state === 'pending')),
+      });
+    }
     if (searchParams.get('preview') === 'stat-tiles') {
       return json(200, {
         ...repositoryOverview,

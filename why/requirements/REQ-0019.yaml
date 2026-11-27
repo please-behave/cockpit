@@ -63,6 +63,19 @@ description: >-
   and deployment as the tile, where applicable, plus the direct completed
   Rule Set links of REQ-0028. Preview controls are keyboard accessible. The
   second tap on the chip follows its link, as in REQ-0017.
+
+  The Needs attention widget shows every supplied repository whose health is
+  failed, warning or unknown, ordered by health severity and then by name.
+  Each row shows the health symbol and text label, the shortened repository
+  name linked to the repository page, and one reason. Unknown health explains
+  that the evidence status is unknown. Never integrated repositories show
+  that state. Otherwise a reported FAIL or ERROR takes precedence over an
+  overdue step and shows the verdict, shortened commit and relative ledger
+  receipt time labeled "Reported". The commit and receipt time expose their
+  full values as on the repository tile. Overdue health without a failing
+  verdict shows the reached and total configured steps. When no supplied
+  repository needs attention, the widget shows an all-clear message and the
+  number of supplied repositories.
 rationale: >-
   Viewers can identify missing or stale evidence and see the reported check
   verdict for each repository.

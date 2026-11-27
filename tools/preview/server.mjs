@@ -10,6 +10,7 @@ const types = { '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg
 const pages = new Map([
   ['/sign-in', 'sign-in.html'],
   ['/preview/repository-map', 'repository-map-preview.html'],
+  ['/preview/needs-attention', 'needs-attention-preview.html'],
   ['/preview/status-pill', 'status-pill-preview.html'],
 ]);
 const reviewFiles = new Map([

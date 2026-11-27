@@ -389,6 +389,22 @@ test('serves the repository map fixtures with every health group and a long unbr
   });
 });
 
+test('serves needs-attention fixtures with an unbroken name and a populated all-clear overview', () => {
+  const path = fixtureTargets.repositoryOverview;
+  const { repositories } = body<RepositoryOverview>(path + '?preview=needs-attention');
+  expect(repositories).toEqual(expect.arrayContaining(body<RepositoryOverview>(path).repositories));
+  expect(repositories.find(entry => entry.repository.endsWith('-unknown'))).toMatchObject({
+    repository: expect.stringMatching(/\/[^/\s]{160,}$/),
+    state: 'unknown',
+    latest_check: null,
+  });
+
+  const clear = body<RepositoryOverview>(path + '?preview=needs-attention-clear').repositories;
+  expect(clear.length).toBeGreaterThan(0);
+  expect(clear.every(entry => repositoryHealth(entry) === 'passed')).toBe(true);
+  expect(clear.some(entry => entry.state === 'pending')).toBe(true);
+});
+
 test('serves repository health, evidence and covering syncs in the client shape', () => {
   const { heartbeat, repositories } = body<RepositoryOverview>(fixtureTargets.repositoryOverview);
   expect(heartbeat.completed_at).toBe(repositories.flatMap(entry => entry.heartbeat_completed_at ?? []).sort()[0]);
