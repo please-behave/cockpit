@@ -1,0 +1,16 @@
+id: DEC-0019
+name: Keep Views Free of Shared-Element Styling
+context: >-
+  The shared decision why:DEC-0026 requires each recurring element to be one
+  shared component whose styling is used consistently across views. Views can
+  still restyle shared elements with their own CSS, and review catches that
+  late.
+decision: >-
+  Views declare layout only: display, grid, flex, gap, margins, padding,
+  alignment, sizing and wrapping. A view style block that declares a border,
+  background, radius, shadow, color, font size or font weight fails a frontend
+  test, which lists the allowed exceptions in `tools/view-styles/exceptions.ts`
+  with a reason for each. The test reads the view sources only.
+rationale: >-
+  Styling lives in the shared component, so a change to an element reaches
+  every view. The violation is caught when it is written, not in review.
