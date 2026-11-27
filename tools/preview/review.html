@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cockpit review sheet</title>
+    <link rel="stylesheet" href="/preview/review.css">
+    <script type="module" src="/preview/review.mjs"></script>
+  </head>
+  <body>
+    <main>
+      <h1>Cockpit review sheet</h1>
+      <p>Initial layout at 900 CSS pixels high. The 640-pixel frames represent 200% zoom in a 1280-pixel window.</p>
+      <p>Visible entries fit vertically in the viewport and any nested scroll region. Wrapped entries include all rendered
+        entries with a field spanning multiple lines. Heights and page overflow are in CSS pixels.</p>
+      <p id="status" role="status">Loading preview cases…</p>
+      <div class="scroll" role="region" aria-label="Measurements" tabindex="0">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col" rowspan="2">View</th>
+              <th scope="col" rowspan="2">Width</th>
+              <th scope="colgroup" colspan="5">Light</th>
+              <th scope="colgroup" colspan="5">Dark</th>
+            </tr>
+            <tr id="metrics"></tr>
+          </thead>
+        </table>
+      </div>
+      <div id="views"></div>
+    </main>
+  </body>
+</html>

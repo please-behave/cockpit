@@ -17,6 +17,7 @@
 ## Visual checks
 
 - Check visual changes in a real browser with browser automation against the fixture preview (`mise run preview`, see the README), not against a deployed cockpit. Cover the light and dark theme, 320 CSS pixels width, 200 percent zoom and visible keyboard focus. Keep screenshots out of commits.
+- For every issue that changes the interface, open `/preview/review` before and after the change with the same browser settings and fixtures. Record the measured numbers before and after in the commit message body.
 - Add a fixture for every new visual case to `tools/preview/fixtures.mjs`; the fixture test keeps the responses in the shape of the API client.
 
 ## GitHub issues

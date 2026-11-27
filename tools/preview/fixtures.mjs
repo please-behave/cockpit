@@ -637,3 +637,12 @@ export const fixtureTargets = {
   details: [...details.keys()].map(id => `/v0/attestations/${id}`),
   ruleDetails: rules.map(([first]) => `/v0/rules/detail?${new URLSearchParams({ source: first.source, path: first.path, id: first.id })}`),
 };
+
+// Use populated detail cases, including the repository with evidence in every section.
+export const reviewTargets = {
+  repository: `?${new URLSearchParams({ repository: releaseRepository })}`,
+  release: fixtureTargets.releaseDetails[0],
+  attestation: fixtureTargets.details[0],
+  rule: `/v0/rules/detail?${new URLSearchParams(identity('reviews/design', 'design-review'))}`,
+  ruleSet: `/v0/rule-sets/detail?${new URLSearchParams(identity('sets/baseline', 'baseline'))}`,
+};

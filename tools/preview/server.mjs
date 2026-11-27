@@ -3,12 +3,19 @@ import { createServer } from 'node:http';
 import { extname, join, normalize } from 'node:path';
 import { setTimeout } from 'node:timers/promises';
 import { respond } from './fixtures.mjs';
+import { reviewCases } from './review-cases.mjs';
 
 const dist = join(import.meta.dirname, '../../dist/preview');
 const types = { '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml' };
 const pages = new Map([
   ['/sign-in', 'sign-in.html'],
   ['/preview/repository-map', 'repository-map-preview.html'],
+]);
+const reviewFiles = new Map([
+  ['/preview/review', ['review.html', 'text/html; charset=utf-8']],
+  ['/preview/review.css', ['review.css', 'text/css']],
+  ['/preview/review.mjs', ['review.mjs', 'text/javascript']],
+  ['/preview/review-metrics.mjs', ['review-metrics.mjs', 'text/javascript']],
 ]);
 const host = '127.0.0.1';
 const port = Number(process.env.PREVIEW_PORT ?? 8090);
@@ -20,6 +27,15 @@ async function send(response, status, type, body) {
 
 async function serve(request, response) {
   const { pathname } = new URL(request.url, `http://${host}`);
+  if (pathname === '/preview/review-cases.json') {
+    return send(response, 200, 'application/json', JSON.stringify(reviewCases));
+  }
+  const reviewFile = reviewFiles.get(pathname);
+  if (reviewFile) {
+    const [file, type] = reviewFile;
+    return send(response, 200, type, await readFile(join(import.meta.dirname, file)));
+  }
+
   const fixture = respond(request.url);
   if (fixture) {
     if (fixture.delay) await setTimeout(fixture.delay);

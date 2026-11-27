@@ -1,0 +1,61 @@
+:root {
+  color-scheme: light dark;
+  font: 1rem / 1.5 system-ui, sans-serif;
+}
+
+body {
+  margin: 1rem;
+}
+
+h1, h2, p {
+  margin-block: 0.5rem;
+}
+
+section {
+  margin-block: 2rem;
+}
+
+.scroll {
+  overflow: auto;
+}
+
+table {
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+  text-align: start;
+  min-inline-size: min(100%, 72rem);
+}
+
+th, td {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid color-mix(in srgb, CanvasText 25%, Canvas);
+}
+
+thead, tbody:nth-of-type(even) {
+  background: color-mix(in srgb, CanvasText 6%, Canvas);
+}
+
+td, thead th:not(:first-child) {
+  text-align: end;
+}
+
+.frames {
+  display: flex;
+  gap: 1rem;
+}
+
+figure {
+  flex: none;
+  margin: 0;
+}
+
+figcaption {
+  padding-block: 0.25rem;
+}
+
+iframe {
+  display: block;
+  border: 0;
+  outline: 1px solid color-mix(in srgb, CanvasText 25%, Canvas);
+  outline-offset: -1px;
+}
