@@ -47,6 +47,7 @@ The task builds the frontend and serves it at `http://127.0.0.1:8090/` (set
 `PREVIEW_PORT` to change the port). `tools/preview/` answers the read API with
 fixtures for every view, including repository health states, several execution points,
 verified and unverified results, rule versions, very long texts and markup.
+Open `/preview/repository-map` to exercise the repository map widget on its own.
 The preview is a developer tool and is not part of the executable.
 
 The executable serves the content-hashed bundles from `/assets/` and the Vite

@@ -9,6 +9,7 @@ export class Tooltip extends LitElement {
     description: { type: String },
     hint: { type: Boolean },
     externalTrigger: { type: Boolean, attribute: 'external-trigger', reflect: true },
+    interactive: { type: Boolean },
   };
 
   static override styles = css`
@@ -73,6 +74,12 @@ export class Tooltip extends LitElement {
         padding: 0 0 var(--space-2);
       }
 
+      [role="group"] .surface {
+        box-sizing: border-box;
+        max-block-size: calc(100dvh - 16px - var(--space-2));
+        overflow: auto;
+      }
+
       .surface {
         display: block;
         padding: var(--space-2) var(--space-3);
@@ -106,17 +113,20 @@ export class Tooltip extends LitElement {
   declare description: string;
   declare hint: boolean;
   declare externalTrigger: boolean;
+  declare interactive: boolean;
 
   private timer?: ReturnType<typeof setTimeout>;
   private listeners?: AbortController;
   private coordinates?: CSSStyleDeclaration;
   private pointerOverTrigger = false;
+  private tapped = false;
 
   constructor() {
     super();
     this.description = '';
     this.hint = false;
     this.externalTrigger = false;
+    this.interactive = false;
   }
 
   override disconnectedCallback() {
@@ -132,13 +142,14 @@ export class Tooltip extends LitElement {
   override render() {
     return html`
       <span @pointerenter=${this.enter} @pointermove=${this.move} @pointerleave=${this.leave}
-        @focusin=${this.focusTrigger} @focusout=${this.dismiss} @click=${this.activate}>
+        @focusin=${this.focusTrigger} @focusout=${this.focusLeft} @click=${this.activate}>
         ${this.externalTrigger ? html`<slot></slot>` : html`
           <button type="button" class=${this.hint ? 'hint' : ''} aria-describedby="description"><slot></slot></button>
         `}
-        <span id="description" role="tooltip" popover="manual" hidden
-          aria-hidden=${this.externalTrigger ? 'true' : nothing}>
-          <span class="surface">${this.description}</span>
+        <span id="description" role=${this.interactive ? 'group' : 'tooltip'} popover="manual" hidden
+          aria-label=${this.interactive ? this.description : nothing}
+          aria-hidden=${this.externalTrigger && !this.interactive ? 'true' : nothing}>
+          <span class="surface">${this.interactive ? html`<slot name="preview"></slot>` : this.description}</span>
         </span>
       </span>
     `;
@@ -177,22 +188,36 @@ export class Tooltip extends LitElement {
   private leave(event: PointerEvent) {
     if (event.pointerType === 'touch') return;
     this.pointerOverTrigger = false;
-    if (!this.trigger.matches(':focus-visible')) this.dismiss();
+    if (!this.trigger.matches(':focus-visible') && !(this.interactive && this.focusInPreview)) this.dismiss();
   }
 
-  private focusTrigger() {
+  private focusTrigger(event: FocusEvent) {
+    if (!event.composedPath().includes(this.trigger)) return;
     if (!this.trigger.matches(':focus-visible')) return;
     if (this.externalTrigger) this.trigger.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
     this.open();
+  }
+
+  private focusLeft(event: FocusEvent) {
+    const next = event.relatedTarget;
+    if (this.interactive && next instanceof Node &&
+        (this.contains(next) || this.renderRoot.contains(next))) return;
+    this.dismiss();
+  }
+
+  private get focusInPreview() {
+    const focused = (this.getRootNode() as Document | ShadowRoot).activeElement;
+    return focused !== null && this.contains(focused) && focused !== this.trigger;
   }
 
   private activate(event: PointerEvent) {
     if (!event.composedPath().includes(this.trigger)) return;
     if (this.externalTrigger) {
       if (event.pointerType !== 'touch' || !this.overTrigger(event)) return;
-      if (this.trigger instanceof HTMLAnchorElement && this.popup.hidden) {
+      if (this.trigger instanceof HTMLAnchorElement && (this.interactive ? !this.tapped : this.popup.hidden)) {
         // Let the first tap reveal the complete value and a second follow the link.
         event.preventDefault();
+        this.tapped = true;
         this.open();
       } else if (this.trigger instanceof HTMLButtonElement) {
         this.open();
@@ -210,7 +235,9 @@ export class Tooltip extends LitElement {
     this.listeners = new AbortController();
     const { signal } = this.listeners;
     this.ownerDocument.addEventListener('keydown', event => {
-      if (event.key === 'Escape') this.dismiss();
+      if (event.key !== 'Escape') return;
+      if (this.interactive && this.focusInPreview) this.trigger.focus({ preventScroll: true });
+      this.dismiss();
     }, { signal });
     this.ownerDocument.addEventListener('pointerdown', event => {
       if (!event.composedPath().includes(this)) this.dismiss();
@@ -236,6 +263,7 @@ export class Tooltip extends LitElement {
   }
 
   private dismiss() {
+    this.tapped = false;
     clearTimeout(this.timer);
     this.timer = undefined;
     this.listeners?.abort();

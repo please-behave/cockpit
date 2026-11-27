@@ -6,7 +6,7 @@ import {
 import '../components/pb-empty-state';
 import '../components/pb-repository-tile';
 import '../components/pb-time';
-import { healthStatuses, repositoryHealth, type RepositoryHealth } from '../repository-health';
+import { compareByName, compareBySeverity, healthStatuses, repositoryHealth, type RepositoryHealth } from '../repository-health';
 import { CockpitView } from './cockpit-view';
 
 type Sort = 'severity' | 'time' | 'name';
@@ -20,30 +20,6 @@ const sortOptions: readonly { value: Sort; label: string }[] = [
   { value: 'time', label: 'Last attestation' },
   { value: 'name', label: 'Name' },
 ];
-
-function compareCodePoints(left: string, right: string): number {
-  const leftPoints = Array.from(left, character => character.codePointAt(0)!);
-  const rightPoints = Array.from(right, character => character.codePointAt(0)!);
-  for (let index = 0; index < Math.min(leftPoints.length, rightPoints.length); index++) {
-    const difference = leftPoints[index] - rightPoints[index];
-    if (difference) return difference;
-  }
-  return leftPoints.length - rightPoints.length;
-}
-
-function compareText(left: string, right: string): number {
-  // Lower-case code points ignore case without a locale, so ordering stays deterministic across browsers.
-  return compareCodePoints(left.toLowerCase(), right.toLowerCase()) || compareCodePoints(left, right);
-}
-
-function compareByName(left: RepositoryOverviewEntry, right: RepositoryOverviewEntry): number {
-  return compareText(left.repository, right.repository) || compareText(left.platform ?? '', right.platform ?? '');
-}
-
-function compareBySeverity(left: RepositoryOverviewEntry, right: RepositoryOverviewEntry): number {
-  return healthStatuses[repositoryHealth(left)].rank - healthStatuses[repositoryHealth(right)].rank ||
-    compareByName(left, right);
-}
 
 function receivedAt(entry: RepositoryOverviewEntry): number {
   const time = Date.parse(entry.latest_check?.received_at ?? '');

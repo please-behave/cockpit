@@ -369,6 +369,19 @@ test('serves status tile fixtures for empty, truncated and escaped previews', ()
   });
 });
 
+test('serves the repository map fixtures with every health group and a long unbroken name', () => {
+  const { repositories } = body<RepositoryOverview>(fixtureTargets.repositoryMap);
+  expect(new Set(repositories.map(repositoryHealth))).toEqual(new Set(['failed', 'warning', 'not-run', 'passed']));
+  expect(repositories).toEqual(expect.arrayContaining(body<RepositoryOverview>(fixtureTargets.repositoryOverview).repositories));
+  expect(repositories.find(entry => entry.repository.endsWith('-map'))).toMatchObject({
+    repository: expect.stringMatching(/\/[^/\s]{160,}$/),
+    state: 'current',
+    latest_check: { overall: 'PASS' },
+    latest_release: null,
+    latest_deployment: null,
+  });
+});
+
 test('serves repository health, evidence and covering syncs in the client shape', () => {
   const { heartbeat, repositories } = body<RepositoryOverview>(fixtureTargets.repositoryOverview);
   expect(heartbeat.completed_at).toBe(repositories.flatMap(entry => entry.heartbeat_completed_at ?? []).sort()[0]);

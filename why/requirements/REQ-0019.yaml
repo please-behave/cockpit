@@ -53,6 +53,16 @@ description: >-
   when more remain. The preview is also the link's accessible description.
   The next tap follows the link. The current filter is visible and exposed to
   assistive technology. A zero tile is muted and has no link.
+
+  The repository map widget presents one chip for each supplied repository
+  identity in a wrapping list ordered by health severity, then name. Each
+  chip links to the repository page, shows the shortened name and a distinct
+  health symbol, and names the full repository and health to assistive
+  technology. Hover, keyboard focus and the first touch tap open a preview
+  with the full name and the same owner, state, verdict, evidence, release,
+  deployment and completed Rule Set summary as the tile, where applicable.
+  Preview controls are keyboard accessible. The second tap on the chip
+  follows its link, as in REQ-0017.
 rationale: >-
   Viewers can identify missing or stale evidence and see the reported check
   verdict for each repository.

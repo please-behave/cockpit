@@ -1,13 +1,9 @@
 import { css, html, LitElement, nothing } from 'lit';
 import type { CompletedRuleSet, RepositoryOverviewEntry } from '../api/client';
-import { repositoryHealth, stateLabels } from '../repository-health';
+import { repositoryHealth } from '../repository-health';
 import { linkStyles } from '../styles/links';
-import './pb-commit-link';
-import './pb-relative-time';
-import { releasePath, repositoryPath } from '../views/router';
-import './pb-rule-set-chip';
-import { ownerName } from './pb-short-name';
-import './pb-status-pill';
+import { repositoryPath } from '../views/router';
+import { repositoryEvidence, repositoryIdentifiers, repositorySummaryStyles, repositoryVerdict } from './repository-summary';
 import './pb-tooltip';
 
 export class RepositoryTile extends LitElement {
@@ -18,6 +14,7 @@ export class RepositoryTile extends LitElement {
 
   static override styles = css`
     ${linkStyles}
+    ${repositorySummaryStyles}
 
     @layer components {
       :host {
@@ -43,31 +40,11 @@ export class RepositoryTile extends LitElement {
       .tile.failed { border-block-start-color: var(--status-failed); }
       .tile.warning { border-block-start-color: var(--status-warning); }
       .tile.not-run { border-block-start-color: var(--status-not-run); }
-      .meta.status-allowed { color: var(--status-allowed); }
-      .meta.status-warning { color: var(--status-warning); }
-
       .title {
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: start;
         gap: var(--space-1) var(--space-2);
-      }
-
-      .owner, .meta {
-        color: var(--text-muted);
-        font-size: var(--type-meta);
-        line-height: var(--line-meta);
-      }
-
-      .identifiers {
-        display: flex;
-        justify-content: space-between;
-        align-items: baseline;
-        gap: var(--space-2);
-      }
-
-      .identifiers pb-rule-set-chip {
-        flex: none;
       }
 
       .repository {
@@ -105,48 +82,21 @@ export class RepositoryTile extends LitElement {
     const { entry, completedSets } = this;
     if (!entry) return nothing;
 
-    const {
-      repository, state, status_token, latest_check: check, head, pending_since: pendingSince,
-      latest_release: release, latest_deployment: deployment,
-    } = entry;
-    const owner = ownerName(repository);
+    const { repository } = entry;
     const path = repositoryPath(repository);
-    const count = completedSets?.length ?? 0;
-    const managedLabel = entry.managed ? nothing : ' · Not managed';
 
     return html`
       <div class="tile ${repositoryHealth(entry)}">
-        ${owner || count ? html`<div class="identifiers">
-          ${owner ? html`<span class="owner">${owner}</span>` : nothing}
-          ${completedSets?.length ? html`<pb-rule-set-chip
-            .label=${`${count} Rule ${count === 1 ? 'Set' : 'Sets'}`} .href=${path}
-            .description=${completedSets.map(set => set.name).join(', ')}></pb-rule-set-chip>` : nothing}
-        </div>` : nothing}
+        ${repositoryIdentifiers(repository, completedSets)}
         <div class="title">
           <pb-tooltip external-trigger .description=${repository}>
             <a class="repository" data-route href=${path}>
               <pb-short-name .value=${repository}></pb-short-name>
             </a>
           </pb-tooltip>
-          <pb-status-pill .status=${check?.overall ?? 'No evidence'}></pb-status-pill>
+          ${repositoryVerdict(entry)}
         </div>
-        ${check ? html`<span class="meta">Reported <pb-commit-link .repository=${repository}
-          .commit=${check.commit}></pb-commit-link> · <pb-relative-time .value=${check.received_at}></pb-relative-time></span>`
-          : nothing}
-        ${head && !head.direct_evidence && pendingSince && (state === 'pending' || state === 'overdue') ? html`
-          <span class="meta ${status_token}">${stateLabels[state]}${state === 'overdue'
-            ? html` (step ${entry.overdue_step} of ${entry.overdue_steps})` : nothing}
-            · head <pb-commit-link .repository=${repository} .commit=${head.commit}></pb-commit-link>
-            · awaiting evidence for <pb-relative-time duration .value=${pendingSince}></pb-relative-time>
-            · ${entry.observed_heads_since_evidence} observed ${entry.observed_heads_since_evidence === 1 ? 'head' : 'heads'} since evidence${managedLabel}</span>`
-          : html`<span class="meta">${stateLabels[state]}${managedLabel}</span>`}
-        ${release || deployment ? html`<div class="meta facts">
-          ${release ? html`Release <a class="release-link" data-route
-            href=${releasePath(repository, release.version)}>${release.version}</a>` : nothing}
-          ${release && deployment ? ' · ' : nothing}
-          ${deployment ? html`${release ? nothing : 'Deployed to '}${deployment.name},
-            <pb-relative-time .value=${deployment.received_at}></pb-relative-time>` : nothing}
-        </div>` : nothing}
+        ${repositoryEvidence(entry)}
       </div>
     `;
   }

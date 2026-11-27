@@ -32,8 +32,7 @@ run = "npm --prefix frontend run build"
 
 [tasks.preview]
 description = "Serve the built frontend with fixture data, without a ledger or sign-in"
-depends = ["frontend-build"]
-run = "node tools/preview/server.mjs"
+run = ["npm --prefix frontend run build -- --mode preview", "node tools/preview/server.mjs"]
 
 [tasks.format]
 description = "Format Rust and shell sources"

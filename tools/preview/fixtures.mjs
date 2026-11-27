@@ -571,6 +571,11 @@ export function respond(target) {
   const url = new URL(target, 'http://preview.invalid');
   const { pathname, searchParams } = url;
   if (pathname === '/v0/repositories/overview') {
+    if (searchParams.get('preview') === 'repository-map') {
+      const longName = repositoryEntry([`github.com/acme/${'long-repository-name-'.repeat(10)}map`, 'current', 'PASS'],
+        repositoryFixtures.length);
+      return json(200, { ...repositoryOverview, repositories: [...repositoryOverview.repositories, longName] });
+    }
     if (searchParams.get('preview') === 'stat-tiles') {
       return json(200, {
         ...repositoryOverview,
@@ -612,6 +617,7 @@ export function respond(target) {
 export const fixtureTargets = {
   latest: '/v0/attestations/latest',
   repositoryOverview: '/v0/repositories/overview',
+  repositoryMap: '/v0/repositories/overview?preview=repository-map',
   completedRuleSets: '/v0/repositories/completed-rule-sets',
   history: '/v0/attestations',
   releases: '/v0/releases/latest',

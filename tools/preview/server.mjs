@@ -4,8 +4,12 @@ import { extname, join, normalize } from 'node:path';
 import { setTimeout } from 'node:timers/promises';
 import { respond } from './fixtures.mjs';
 
-const dist = join(import.meta.dirname, '../../frontend/dist');
+const dist = join(import.meta.dirname, '../../dist/preview');
 const types = { '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml' };
+const pages = new Map([
+  ['/sign-in', 'sign-in.html'],
+  ['/preview/repository-map', 'repository-map-preview.html'],
+]);
 const host = '127.0.0.1';
 const port = Number(process.env.PREVIEW_PORT ?? 8090);
 
@@ -27,13 +31,13 @@ async function serve(request, response) {
     if (!file.startsWith(join(dist, 'assets'))) return send(response, 404, 'text/plain', 'not found');
     return send(response, 200, types[extname(file)] ?? 'application/octet-stream', await readFile(file));
   }
-  const page = pathname === '/sign-in' ? 'sign-in.html' : 'index.html';
+  const page = pages.get(pathname) ?? 'index.html';
   return send(response, 200, 'text/html; charset=utf-8', await readFile(join(dist, page)));
 }
 
 createServer((request, response) => {
   serve(request, response).catch(error => {
     const missing = error?.code === 'ENOENT';
-    send(response, missing ? 404 : 500, 'text/plain', missing ? 'not found; run "mise run frontend-build" first' : 'error');
+    send(response, missing ? 404 : 500, 'text/plain', missing ? 'not found; run "mise run preview"' : 'error');
   });
 }).listen(port, host, () => console.log(`Preview with fixture data at http://${host}:${port}/`));
