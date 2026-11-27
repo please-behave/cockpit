@@ -60,6 +60,7 @@ test.each([repositoryPath(repository), '/releases/repository?repository=github.c
     expect(latest.label).toBe('Latest by execution-point combination');
     expect(latest.rows.map(row => row.cells[0])).toEqual(['check']);
     expect(history.label).toBe('Recent attestations');
+    expect(history.shadowRoot?.querySelector('thead button, [aria-sort]')).toBeNull();
     const filteredHistory = '/v0/attestations?limit=100&repository=github.com%2Facme%2Freturn-navigation';
     const expected = respond(filteredHistory)!.body as Summary[];
     expect(history.rows.map(row => row.key)).toEqual(expected.map(summary => summary.id));
@@ -146,6 +147,12 @@ test('shows every overlapping execution-point combination separately', async () 
     ['build', '/attestations/00000000-0000-4000-8000-000000000081'],
     ['release, deploy', '/attestations/00000000-0000-4000-8000-000000000080'],
   ]);
+  const executionPoints = latest.shadowRoot!.querySelector<HTMLButtonElement>('thead button')!;
+  executionPoints.click();
+  await latest.updateComplete;
+  expect(executionPoints.closest('th')?.getAttribute('aria-sort')).toBe('ascending');
+  expect([...latest.shadowRoot!.querySelectorAll('tbody th')].map(cell => cell.textContent))
+    .toEqual(['build', 'deploy', 'release, deploy']);
   expect(root.querySelector('pb-empty-state')).toHaveProperty('heading', 'No releases');
 });
 

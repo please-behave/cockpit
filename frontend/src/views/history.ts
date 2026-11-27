@@ -1,6 +1,6 @@
 import { css, html, nothing, type CSSResult } from 'lit';
 import { attestationPage, type Summary } from '../api/client';
-import type { DataTableColumn } from '../components/pb-data-table';
+import type { DataTable, DataTableColumn } from '../components/pb-data-table';
 import '../components/pb-commit-link';
 import '../components/pb-data-table';
 import '../components/pb-empty-state';
@@ -71,16 +71,18 @@ export class HistoryView extends CockpitView<Summary[]> {
 
   override connectedCallback() {
     super.connectedCallback();
-    this.observer = new IntersectionObserver(
-      entries => {
-        if (entries.some(entry => entry.isIntersecting)) void this.loadMore();
-      },
-      { rootMargin: '100% 0px' },
-    );
-    this.watchSentinel();
+    window.addEventListener('resize', this.resize);
+    void this.watchSentinel();
   }
 
+  private readonly resize = () => {
+    this.observer?.disconnect();
+    this.observer = undefined;
+    void this.watchSentinel();
+  };
+
   override disconnectedCallback() {
+    window.removeEventListener('resize', this.resize);
     this.more?.abort();
     this.more = undefined;
     this.loadingMore = false;
@@ -122,16 +124,31 @@ export class HistoryView extends CockpitView<Summary[]> {
 
   protected override updated() {
     super.updated();
-    this.watchSentinel();
+    void this.watchSentinel();
   }
 
-  private watchSentinel() {
-    // Observing again reports the sentinel's current position, which a page that
-    // did not push it out of range needs in order to load the next page.
-    const sentinel = this.renderRoot.querySelector('.sentinel');
-    if (this.watching) this.observer?.unobserve(this.watching);
-    this.watching = sentinel ?? undefined;
-    if (sentinel) this.observer?.observe(sentinel);
+  private async watchSentinel() {
+    const table = this.renderRoot?.querySelector<DataTable>('pb-data-table');
+    if (!table) {
+      this.observer?.disconnect();
+      this.observer = undefined;
+      this.watching = undefined;
+      return;
+    }
+    await table.updateComplete;
+    if (!this.isConnected || table !== this.renderRoot.querySelector('pb-data-table')) return;
+
+    this.observer ??= new IntersectionObserver(
+      (entries, observer) => {
+        if (this.observer === observer && entries.some(entry => entry.isIntersecting)) void this.loadMore();
+      },
+      { root: table.scrollRegion, rootMargin: `0px 0px ${window.innerHeight}px` },
+    );
+
+    // Observe again after a page in case the sentinel is still in range.
+    if (this.watching) this.observer.unobserve(this.watching);
+    this.watching = table.querySelector('.sentinel') ?? undefined;
+    if (this.watching) this.observer.observe(this.watching);
   }
 
   private async loadMore() {
@@ -181,15 +198,16 @@ export class HistoryView extends CockpitView<Summary[]> {
     const count = `${this.loaded.length} ${this.loaded.length === 1 ? 'attestation' : 'attestations'}`;
 
     return html`
-      <pb-data-table label="Attestations" .columns=${columns} .rows=${rows}></pb-data-table>
-      <div class="sentinel"></div>
-      ${this.loadingMore ? html`<p role="status">Loading older attestations…</p>` : nothing}
-      ${this.moreFailed
-        ? html`<pb-error-state heading="Older attestations unavailable"
-          message="Cockpit could not load older attestations." retryable
-          @retry=${this.retryMore}></pb-error-state>`
-        : nothing}
-      ${this.ended ? html`<p class="end">No older attestations exist.</p>` : nothing}
+      <pb-data-table label="Attestations" .columns=${columns} .rows=${rows}>
+        <div class="sentinel"></div>
+        ${this.loadingMore ? html`<p role="status">Loading older attestations…</p>` : nothing}
+        ${this.moreFailed
+          ? html`<pb-error-state heading="Older attestations unavailable"
+            message="Cockpit could not load older attestations." retryable
+            @retry=${this.retryMore}></pb-error-state>`
+          : nothing}
+        ${this.ended ? html`<p class="end">No older attestations exist.</p>` : nothing}
+      </pb-data-table>
       <p class="assistive" role="status">${this.loadingMore || this.moreFailed ? nothing
         : this.ended ? `All ${count} loaded.` : `${count} loaded.`}</p>
     `;

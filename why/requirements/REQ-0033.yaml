@@ -23,6 +23,9 @@ description: >-
   no records exist. Long names wrap within the available width and all
   sections follow REQ-0004, REQ-0015 and REQ-0016. The attestation tables
   keep the time, commit and status on one line in their scrollable regions.
+  The latest combinations table can be sorted by execution points, reported
+  time, commit or overall status under REQ-0018. The recent attestations table
+  keeps ledger order.
 rationale: Viewers can see a repository's reported runs, releases and deployment targets from a single address.
 decisions:
   - DEC-0001

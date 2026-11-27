@@ -17,11 +17,15 @@ import '../components/pb-tooltip';
 import { CockpitView } from './cockpit-view';
 import { followHistoryBack, repositoryPath, rulePath, ruleSetPath } from './router';
 
-const columns: DataTableColumn[] = [
-  { label: 'Rule', part: 'rule-name' },
-  { label: 'Kind', mode: 'content' },
-  { label: 'Status', mode: 'content' },
-  { label: 'Verification', mode: 'content' },
+type Result = Attestation['results'][number];
+type ResultRow = DataTableRow & { result: Result };
+
+const columns: DataTableColumn<ResultRow>[] = [
+  { label: 'Rule', part: 'rule-name', compare: (a, b) => ruleLabel(a.result).localeCompare(ruleLabel(b.result)) },
+  { label: 'Kind', mode: 'content', compare: (a, b) => a.result.kind.localeCompare(b.result.kind) },
+  { label: 'Status', mode: 'content', compare: (a, b) => a.result.status.localeCompare(b.result.status) },
+  { label: 'Verification', mode: 'content',
+    compare: (a, b) => a.result.verification.status.localeCompare(b.result.verification.status) },
 ];
 
 const verificationReasons = {
@@ -29,7 +33,7 @@ const verificationReasons = {
   mismatch: 'The reported rule differs from its registered version: the digest does not match.',
 };
 
-function verificationCell(verification: Attestation['results'][number]['verification']) {
+function verificationCell(verification: Result['verification']) {
   if (verification.status === 'verified') return html`<pb-status-pill status="Verified"></pb-status-pill>`;
   return html`
     <pb-tooltip hint .description=${verificationReasons[verification.reason]}>
@@ -38,17 +42,26 @@ function verificationCell(verification: Attestation['results'][number]['verifica
   `;
 }
 
-function ruleCell({ id, name, rule, verification }: Attestation['results'][number]) {
-  if (!rule?.version || (verification.status === 'unverified' && verification.reason === 'unregistered')) {
-    return rule?.id ?? id;
-  }
+function hasRegisteredVersion(result: Result) {
+  return Boolean(result.rule?.version) &&
+    !(result.verification.status === 'unverified' && result.verification.reason === 'unregistered');
+}
+
+function ruleLabel(result: Result) {
+  return hasRegisteredVersion(result) && result.name ? result.name : result.rule?.id ?? result.id;
+}
+
+function ruleCell(result: Result) {
+  const label = ruleLabel(result);
+  const { rule } = result;
+  if (!rule?.version || !hasRegisteredVersion(result)) return label;
   return html`
-    <a data-route href=${rulePath(rule, rule.version)}>${name || rule.id}</a>
+    <a data-route href=${rulePath(rule, rule.version)}>${label}</a>
     <div part="rule-version"><code>${rule.version}</code></div>
   `;
 }
 
-type ResultGroup = DataTableGroup & { rows: DataTableRow[] };
+type ResultGroup = DataTableGroup<ResultRow> & { rows: ResultRow[] };
 
 interface Detail {
   attestation: Attestation;
@@ -59,7 +72,7 @@ function versionKey({ source, path, id, version }: RuleIdentity & { version?: st
   return JSON.stringify([source, path, id, version]);
 }
 
-function resultGroups({ attestation, sets }: Detail): DataTableGroup[] {
+function resultGroups({ attestation, sets }: Detail): ResultGroup[] {
   const byMember = new Map<string, Set<ResultGroup>>();
   const groups = sets.map(({ binding, registration }) => {
     const group: ResultGroup = {
@@ -82,7 +95,8 @@ function resultGroups({ attestation, sets }: Detail): DataTableGroup[] {
   attestation.results.forEach((result, index) => {
     const memberships = result.rule && byMember.get(versionKey(result.rule));
     const fallback = sets.length > 0 && result.rule?.source === attestation.repository ? local : unassigned;
-    const row = {
+    const row: ResultRow = {
+      result,
       key: String(index),
       cells: [
         ruleCell(result),

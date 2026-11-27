@@ -3,6 +3,8 @@ import {
   registeredRuleSetVersions, ruleSetCompliance, type RegisteredRuleSetVersion, type RuleSetCompliance,
 } from '../api/client';
 import '../components/pb-badge';
+import type { DataTableColumn } from '../components/pb-data-table';
+import '../components/pb-data-table';
 import '../components/pb-status-pill';
 import '../components/pb-time';
 import '../components/pb-widget';
@@ -56,6 +58,25 @@ function knowledgeDocument(knowledge: Record<string, unknown> = {}) {
     ? html`<h3>Knowledge</h3><dl class="knowledge">${fields}</dl>` : nothing;
 }
 
+function memberRow(member: RegisteredRuleSetVersion['members'][number], role: string) {
+  const label = `${member.id} ${member.version}`;
+  return {
+    key: JSON.stringify([member.source, member.path, member.id, member.version]),
+    label,
+    role,
+    cells: [
+      html`<a data-route href=${rulePath(member, member.version)}>${label}</a>
+        ${member.enabled ? nothing : html`<div part="member-status">Disabled</div>`}`,
+      role,
+    ],
+  };
+}
+
+const memberColumns: DataTableColumn<ReturnType<typeof memberRow>>[] = [
+  { label: 'Rule', part: 'member-rule', compare: (a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }) },
+  { label: 'Role', part: 'member-role', compare: (a, b) => a.role.localeCompare(b.role) },
+];
+
 function memberList(version: RegisteredRuleSetVersion) {
   const roles = new Map<string, string>();
   for (const entry of entries(version.knowledge?.rules)) {
@@ -66,12 +87,9 @@ function memberList(version: RegisteredRuleSetVersion) {
   }
   return html`
     <h3>Members</h3>
-    ${version.members.length ? html`<dl class="knowledge">
-      ${version.members.map(member => html`<div>
-        <dt><a data-route href=${rulePath(member, member.version)}>${member.id} ${member.version}</a></dt>
-        <dd class="plain-text">${member.enabled ? nothing : html`<div class="muted">Disabled</div>`}${roles.get(member.id) ?? nothing}</dd>
-      </div>`)}
-    </dl>` : html`<p>No member rules are registered for this version.</p>`}
+    ${version.members.length ? html`<pb-data-table label="Member rules" .columns=${memberColumns}
+      row-header-column="0" .rows=${version.members.map(member => memberRow(member, roles.get(member.id) ?? ''))}>
+    </pb-data-table>` : html`<p>No member rules are registered for this version.</p>`}
   `;
 }
 
@@ -118,7 +136,9 @@ export class RuleSetView extends CockpitView<RuleSetDetail> {
         align-items: baseline;
         gap: var(--space-1) var(--space-3);
       }
-      .muted, .registered {
+      pb-data-table::part(member-rule) { min-inline-size: 10ch; }
+      pb-data-table::part(member-role) { white-space: pre-wrap; }
+      pb-data-table::part(member-status), .registered {
         color: var(--text-muted);
         font-size: var(--type-meta);
         line-height: var(--line-meta);

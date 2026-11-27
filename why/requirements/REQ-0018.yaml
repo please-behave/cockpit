@@ -5,6 +5,16 @@ description: >-
   that it takes the remaining width and truncates with an ellipsis. In the
   rules table of the detail view, the kind, status and verification columns
   never wrap. The rule column takes the remaining width and wraps its content.
+  Data tables use the density and subtle dividers of REQ-0015. Column headers
+  stay visible as the table scrolls vertically, and the table can scroll
+  horizontally when it exceeds the available width. A view may supply
+  comparators for columns of a complete data set. Each sortable header
+  contains a keyboard-operable button. The first activation sorts ascending
+  and repeated activation of that column switches direction. The active
+  header exposes its direction through aria-sort. Sorting leaves focus on
+  the button, preserves the row set and group membership, and preserves the
+  initial order of equal values in either direction. Tables displaying
+  paged or limited results in ledger order have no sort controls.
 rationale: >-
   Short values stay readable on narrow screens while long values give way.
 decisions:

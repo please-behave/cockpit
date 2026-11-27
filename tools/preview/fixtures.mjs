@@ -128,6 +128,7 @@ const errorResults = [
 
 const scrollableResults = Array.from({ length: 36 }, (_, index) => ({
   ...(index === 34 ? mismatchedResult : verifiedResults[index % verifiedResults.length]),
+  ...(index % 7 === 0 ? { status: 'WARN' } : {}),
   id: `scroll-result-${index + 1}`,
 }));
 
@@ -201,7 +202,11 @@ const completedRuleSets = [{
 const [markupSet, baselineSet, securitySet, licensingSet] = completedRuleSets.flatMap(entry => entry.sets);
 const sets = [
   { registration: markupSet, members: ['markup'] },
-  { registration: baselineSet, members: ['license-file', 'design-review'], description: 'Common repository checks and reviews.' },
+  {
+    registration: baselineSet,
+    members: ['license-file', 'design-review', 'rule-with-a-very-long-identifier-that-needs-to-wrap-on-narrow-screens'],
+    description: 'Common repository checks and reviews.',
+  },
   { registration: securitySet, members: ['license-file', 'no-secrets'] },
   { registration: licensingSet, members: ['license-file'] },
   { registration: { source: ruleSource, path: 'sets/unbound', id: 'unbound', version: '1.0', name: 'Unbound set' }, members: [] },
@@ -226,7 +231,9 @@ function setVersion(registration, memberRules, description, knowledge) {
     digest: `v1:sha256:${'d'.repeat(64)}`,
     commit: 'e'.repeat(40),
     registered_at: '2026-11-24T12:00:00Z',
-    members: memberRules.map(({ source, path, id, version, digest }) => ({ source, path, id, version, digest, enabled: true })),
+    members: memberRules.map(({ source, path, id, version, digest }) => ({
+      source, path, id, version, digest, enabled: !id.startsWith('rule-with-a-very-long-identifier'),
+    })),
   };
 }
 

@@ -112,6 +112,7 @@ test('serves every attestation in the client shape with matching counts', () => 
   )!;
   const { results } = body<Attestation>(`/v0/attestations/${scrollable.id}`);
   expect(new Set(results.map(item => item.id)).size).toBe(36);
+  expect(new Set(results.map(item => item.status))).toEqual(new Set(['WARN', 'PASS']));
   expect(results.at(-2)?.verification).toEqual({ status: 'unverified', reason: 'mismatch' });
   expect(results.at(-1)?.rule).toMatchObject({ id: 'design-review', version: '2.0' });
   const factStrip = body<Summary[]>(fixtureTargets.latest).find(summary =>
@@ -233,6 +234,9 @@ test('serves Rule Set histories with valid member links, including a historical 
     const versions = body<RegisteredRuleSetVersion[]>(target);
     const latest = versions.at(-1)!;
     const summary = sets.find(set => set.id === latest.id)!;
+    if (latest.id === 'baseline') expect(latest.members).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: expect.stringContaining('long-identifier'), enabled: false }),
+    ]));
     expect(latest.version).toBe(summary.version);
     expect(latest.members).toHaveLength(summary.member_count);
     for (const version of versions) {

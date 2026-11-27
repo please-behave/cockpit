@@ -8,13 +8,13 @@ export interface DataTableRow {
   cells: readonly (string | TemplateResult)[];
 }
 
-export interface DataTableGroup {
+export interface DataTableGroup<Row extends DataTableRow = DataTableRow> {
   key: string;
   heading: string | TemplateResult;
-  rows: readonly DataTableRow[];
+  rows: readonly Row[];
 }
 
-export interface DataTableColumn {
+export interface DataTableColumn<Row extends DataTableRow = DataTableRow> {
   label: string;
   /** Optional CSS part name for the column header and cells. */
   part?: string;
@@ -23,15 +23,20 @@ export interface DataTableColumn {
    * remaining width and truncates with an ellipsis. Omit it to let content wrap.
    */
   mode?: 'content' | 'fill';
+  /** Only opt in when the table contains the complete data set. */
+  compare?: (left: Row, right: Row) => number;
 }
 
-export class DataTable extends LitElement {
+type Sort = { index: number; direction: 'ascending' | 'descending' };
+
+export class DataTable<Row extends DataTableRow = DataTableRow> extends LitElement {
   static override properties = {
     label: { type: String },
     columns: { attribute: false },
     rows: { attribute: false },
     groups: { attribute: false },
     rowHeaderColumn: { type: Number, attribute: 'row-header-column' },
+    sort: { state: true },
   };
 
   static override styles = css`
@@ -47,6 +52,8 @@ export class DataTable extends LitElement {
         /* Keep visually hidden cell labels inside the scrolling region. */
         position: relative;
         overflow-x: auto;
+        max-block-size: max(12rem, 65dvh);
+        scroll-padding-block-start: 3.5rem;
       }
 
       td, th {
@@ -80,7 +87,8 @@ export class DataTable extends LitElement {
 
       table {
         inline-size: 100%;
-        border-collapse: collapse;
+        border-collapse: separate;
+        border-spacing: 0;
         background: var(--surface);
         color: var(--text);
       }
@@ -100,18 +108,59 @@ export class DataTable extends LitElement {
         border-block-end: 1px solid var(--border-subtle);
       }
 
-      thead, th[scope='rowgroup'] {
-        background: var(--surface-raised);
+      thead {
+        position: sticky;
+        inset-block-start: 0;
+        z-index: 1;
       }
+
+      thead th, th[scope='rowgroup'] {
+        background: var(--panel-surface);
+      }
+
+      button {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-1);
+        min-inline-size: var(--target-min-size);
+        min-block-size: var(--target-min-size);
+        max-inline-size: 100%;
+        padding: 0 var(--space-1);
+        border: 0;
+        border-radius: var(--radius-control);
+        background: var(--surface-transparent);
+        color: inherit;
+        font: inherit;
+        text-align: start;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: var(--surface-hover);
+        outline: 1px solid var(--border);
+        outline-offset: -1px;
+      }
+
+      button:focus-visible {
+        outline: var(--focus-ring);
+        outline-offset: calc(-1 * var(--focus-offset));
+      }
+
+      button span::before { content: '↕'; }
+      [aria-sort='ascending'] button span::before { content: '↑'; }
+      [aria-sort='descending'] button span::before { content: '↓'; }
     }
   `;
 
   declare label: string;
-  declare columns: readonly (string | DataTableColumn)[];
-  declare rows: readonly DataTableRow[];
-  declare groups?: readonly DataTableGroup[];
+  declare columns: readonly (string | DataTableColumn<Row>)[];
+  declare rows: readonly Row[];
+  declare groups?: readonly DataTableGroup<Row>[];
   /** Zero-based column index. Use -1 for a table without row headers. */
   declare rowHeaderColumn: number;
+
+  declare private sort?: Sort;
+  private scrollPosition?: { top: number; left: number };
 
   constructor() {
     super();
@@ -121,20 +170,51 @@ export class DataTable extends LitElement {
     this.rowHeaderColumn = -1;
   }
 
+  get scrollRegion() {
+    return this.renderRoot?.querySelector<HTMLDivElement>('.scroll');
+  }
+
+  override connectedCallback() {
+    super.connectedCallback();
+    const region = this.scrollRegion;
+    if (region && this.scrollPosition) {
+      region.scrollTop = this.scrollPosition.top;
+      region.scrollLeft = this.scrollPosition.left;
+    }
+  }
+
+  private rememberScroll(event: Event) {
+    const region = event.currentTarget as HTMLDivElement;
+    this.scrollPosition = { top: region.scrollTop, left: region.scrollLeft };
+  }
+
+  private sortBy(index: number) {
+    const direction = this.sort?.index === index && this.sort.direction === 'ascending'
+      ? 'descending' : 'ascending';
+    this.sort = { index, direction };
+  }
+
   override render() {
     const columns = this.columns.map(column => typeof column === 'string' ? { label: column } : column);
-    const rows = (items: readonly DataTableRow[]) => repeat(items, row => row.key, row => html`
-      <tr>${columns.map(({ mode, part }, index) => index === this.rowHeaderColumn
+    const compare = this.sort && columns[this.sort.index]?.compare;
+    const order = this.sort?.direction === 'descending' ? -1 : 1;
+    const rows = (items: readonly Row[]) => repeat(
+      compare ? [...items].sort((left, right) => order * compare(left, right)) : items,
+      row => row.key,
+      row => html`<tr>${columns.map(({ mode, part }, index) => index === this.rowHeaderColumn
         ? html`<th scope="row" class=${mode ?? nothing} part=${part ?? nothing}>${row.cells[index]}</th>`
-        : html`<td class=${mode ?? nothing} part=${part ?? nothing}>${row.cells[index]}</td>`)}</tr>
-    `);
+        : html`<td class=${mode ?? nothing} part=${part ?? nothing}>${row.cells[index]}</td>`)}</tr>`,
+    );
     return html`
-      <div class="scroll" role="region" aria-labelledby="caption" tabindex="0">
+      <div class="scroll" role="region" aria-labelledby="caption" tabindex="0" @scroll=${this.rememberScroll}>
         <table>
           <caption id="caption">${this.label}</caption>
           <thead>
-            <tr>${columns.map(({ label, mode, part }) => html`
-              <th scope="col" class=${mode ?? nothing} part=${part ?? nothing}>${label}</th>`)}</tr>
+            <tr>${columns.map(({ label, mode, part, compare }, index) => html`
+              <th scope="col" class=${mode ?? nothing} part=${part ?? nothing}
+                aria-sort=${compare && this.sort?.index === index ? this.sort.direction : nothing}>${compare
+                  ? html`<button type="button" @click=${() => this.sortBy(index)}>${label}<span aria-hidden="true"></span></button>`
+                  : label}</th>`)}</tr>
           </thead>
           ${this.groups === undefined ? html`<tbody>${rows(this.rows)}</tbody>`
             : repeat(this.groups, group => group.key, group => html`
@@ -144,6 +224,7 @@ export class DataTable extends LitElement {
               </tbody>
             `)}
         </table>
+        <slot></slot>
       </div>
     `;
   }

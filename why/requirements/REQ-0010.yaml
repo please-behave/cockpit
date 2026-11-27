@@ -14,14 +14,16 @@ description: >-
   and verification. A header row links to each bound Rule Set version in
   reported binding order. The view reads CON-0009 for the bound versions
   and matches results by source, path, rule ID and version. Results appear in
-  every matching group and retain reported order within each group. When a
-  bound version is unregistered, the header uses the set ID and version.
-  When bindings exist, unmatched rules from the attestation repository appear
-  under "Local rules". Other unmatched results, and all results when bindings
-  are absent or empty, appear under "Unassigned". The Kind column shows each
-  kind as a text badge. Results with a registered version show the link described
-  by REQ-0027. Other results show the plain local rule ID, or the run-scoped
-  result ID when no rule identity was reported. A link at the top returns to the
+  every matching group in reported order by default. Viewers can sort the
+  results within each group by rule, kind, status or verification under
+  REQ-0018. When a bound version is unregistered, the header uses the set ID
+  and version. When bindings exist, unmatched rules from the attestation
+  repository appear under "Local rules". Other unmatched results, and all
+  results when bindings are absent or empty, appear under "Unassigned". The
+  Kind column shows each kind as a text badge. Results with a registered
+  version show the link described by REQ-0027. Other results show the plain
+  local rule ID, or the run-scoped result ID when no rule identity was
+  reported. A link at the top returns to the
   dashboard or the attestations page, whichever the viewer opened the detail
   from. The router keeps that origin in the navigation
   state of the history entry, so it survives a reload, and the link goes back

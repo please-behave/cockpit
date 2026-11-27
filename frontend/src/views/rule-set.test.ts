@@ -75,10 +75,14 @@ test('opens a Rule Set from Rules, escapes registered text, and shows exact memb
   expect(view.querySelector('h1')?.textContent).toBe(markup);
   expect(view.querySelector('img')).toBeNull();
   for (const content of [
-    `Description ${markup}`, `Purpose ${markup}`, `Role ${markup}`,
+    `Description ${markup}`, `Purpose ${markup}`,
     'Build repositories', 'Shell checks', 'Protect the build', 'Run in CI', 'Version is unregistered.',
   ]) expect(view.textContent).toContain(content);
-  expect(view.querySelector('article a')!.getAttribute('href')).toBe(rulePath(member, '1.3'));
+  const members = view.querySelector('article pb-data-table')!.shadowRoot!;
+  expect(members.textContent).toContain(`Role ${markup}`);
+  expect(members.querySelector('img')).toBeNull();
+  expect(members.querySelector('tbody a')!.getAttribute('href')).toBe(rulePath(member, '1.3'));
+  expect(members.querySelectorAll('thead button')).toHaveLength(2);
   const failing = view.querySelector('.non-passing')!;
   expect(failing.querySelector('a')!.getAttribute('href')).toBe(rulePath(member, '1.1'));
   expect(failing.querySelector('pb-status-pill')!.shadowRoot?.textContent).toContain('WARN');

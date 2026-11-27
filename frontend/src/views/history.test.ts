@@ -163,7 +163,10 @@ test('loads follow-up pages with the cursor until a short page ends the list', a
   page.mockResolvedValueOnce(Array.from({ length: 100 }, (_, i) => summary(1000 - i)));
   const view = await mount();
   expect(observers).toHaveLength(1);
-  expect(observers[0].options?.rootMargin).toBe('100% 0px');
+  expect(observers[0].options).toEqual({
+    root: (await tableRoot(view)).querySelector('.scroll'),
+    rootMargin: `0px 0px ${window.innerHeight}px`,
+  });
   expect(observers[0].observed.has(sentinel(view))).toBe(true);
   expect(announcement(view)).toBe('100 attestations loaded.');
   const lastOfFirst = 'id-0901';
@@ -189,6 +192,7 @@ test('loads follow-up pages with the cursor until a short page ends the list', a
   expect(new Set(hrefs(view)).size).toBe(202);
   expect(hrefs(view)[0]).toBe('/attestations/id-1000');
   expect(hrefs(view).at(-1)).toBe('/attestations/id-0799');
+  expect((await tableRoot(view)).querySelector('thead button, [aria-sort]')).toBeNull();
 });
 
 // Verifies REQ-0022.

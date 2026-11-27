@@ -89,3 +89,54 @@ test('keeps content columns on one line, truncates fill columns and leaves other
   expect(css).toMatch(/\.content\s*{[^}]*white-space:\s*nowrap/);
   expect(css).toMatch(/\.fill\s*{[^}]*text-overflow:\s*ellipsis/);
 });
+
+// Verifies REQ-0018.
+test('sorts opt-in columns stably within each group and keeps focus on the header button', async () => {
+  const table = new DataTable<{ key: string; cells: string[]; rank: number }>();
+  table.columns = [
+    { label: 'Name', compare: (a, b) => a.cells[0].localeCompare(b.cells[0]) },
+    { label: 'Rank', compare: (a, b) => a.rank - b.rank },
+    'Notes',
+  ];
+  const original = [
+    { key: 'first-tie', cells: ['Zulu', '2', 'First'], rank: 2 },
+    { key: 'low', cells: ['Alpha', '1', ''], rank: 1 },
+    { key: 'second-tie', cells: ['Beta', '2', 'Second'], rank: 2 },
+  ];
+  table.groups = [
+    { key: 'first', heading: 'First group', rows: original },
+    { key: 'second', heading: 'Second group', rows: [{ key: 'other', cells: ['Other', '0', ''], rank: 0 }] },
+  ];
+  document.body.append(table);
+  await table.updateComplete;
+
+  const root = table.shadowRoot!;
+  const [name, rank, notes] = root.querySelectorAll('thead th');
+  const names = () => Array.from(root.querySelectorAll('tbody tr td:first-child'), cell => cell.textContent);
+  const sort = (button: HTMLButtonElement) => {
+    button.click();
+    return table.updateComplete;
+  };
+  expect(notes.querySelector('button')).toBeNull();
+  expect(root.querySelector('[aria-sort]')).toBeNull();
+  expect(names()).toEqual(['Zulu', 'Alpha', 'Beta', 'Other']);
+  const rankButton = rank.querySelector('button')!;
+  rankButton.focus();
+
+  await sort(rankButton);
+  expect(rank.getAttribute('aria-sort')).toBe('ascending');
+  expect(root.activeElement).toBe(rankButton);
+  expect(names()).toEqual(['Alpha', 'Zulu', 'Beta', 'Other']);
+
+  await sort(rankButton);
+  expect(rank.getAttribute('aria-sort')).toBe('descending');
+  expect(root.activeElement).toBe(rankButton);
+  expect(names()).toEqual(['Zulu', 'Beta', 'Alpha', 'Other']);
+
+  await sort(name.querySelector('button')!);
+  expect(name.getAttribute('aria-sort')).toBe('ascending');
+  expect(rank.hasAttribute('aria-sort')).toBe(false);
+  expect(notes.hasAttribute('aria-sort')).toBe(false);
+  expect(names()).toEqual(['Alpha', 'Beta', 'Zulu', 'Other']);
+  expect(original.map(row => row.key)).toEqual(['first-tie', 'low', 'second-tie']);
+});

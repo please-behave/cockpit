@@ -24,6 +24,14 @@ const attestationColumns: DataTableColumn[] = [
   { label: 'Overall', mode: 'content' },
 ];
 
+type AttestationRow = ReturnType<typeof attestationRow>;
+const latestColumns: DataTableColumn<AttestationRow>[] = [
+  { ...attestationColumns[0], compare: (a, b) => a.cells[0].localeCompare(b.cells[0]) },
+  { ...attestationColumns[1], compare: (a, b) => Date.parse(a.summary.received_at) - Date.parse(b.summary.received_at) },
+  { ...attestationColumns[2], compare: (a, b) => a.summary.commit.localeCompare(b.summary.commit) },
+  { ...attestationColumns[3], compare: (a, b) => a.summary.overall.localeCompare(b.summary.overall) },
+];
+
 interface RepositoryData {
   releases: ReleaseSummary[];
   deployments: Deployment[];
@@ -35,13 +43,14 @@ interface RepositoryData {
 function attestationRow(summary: Summary) {
   return {
     key: summary.id,
+    summary,
     cells: [
       summary.execution_points.join(', ') || 'No execution points',
       html`<a data-route href=${`/attestations/${encodeURIComponent(summary.id)}`}>
         <pb-time .value=${summary.received_at}></pb-time></a>`,
       html`<pb-commit-link .repository=${summary.repository} .commit=${summary.commit}></pb-commit-link>`,
       html`<pb-status-pill .status=${summary.overall}></pb-status-pill>`,
-    ],
+    ] as const,
   };
 }
 
@@ -126,7 +135,7 @@ export class RepositoryView extends CockpitView<RepositoryData> {
     const recentRows = recent.map(attestationRow);
     return html`
       ${latestRows.length ? html`<pb-data-table label="Latest by execution-point combination"
-        .columns=${attestationColumns} .rows=${latestRows} row-header-column="0"></pb-data-table>` : nothing}
+        .columns=${latestColumns} .rows=${latestRows} row-header-column="0"></pb-data-table>` : nothing}
       ${recentRows.length ? html`<pb-data-table label="Recent attestations"
         .columns=${attestationColumns} .rows=${recentRows}></pb-data-table>` : nothing}
     `;
