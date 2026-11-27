@@ -1,5 +1,6 @@
 id: REQ-0025
 name: Browser Registry Reads
+area: registry
 description: >-
   The Cockpit provides same-origin authenticated read endpoints for a page
   of registered rules, all registered versions of a rule identity, a page of

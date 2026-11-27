@@ -1,5 +1,6 @@
 id: REQ-0011
 name: Browser Attestation Reads
+area: attestations
 description: >-
   The cockpit serves same-origin, read-only JSON endpoints for the latest
   attestation summaries, a paged list of attestation summaries with the

@@ -1,0 +1,33 @@
+id: COMP-0006
+name: Application Shell and Routing
+purpose: "Frames every page and moves the viewer between views."
+scope:
+  - "Renders the header, navigation and sign-out link around the active view."
+  - "Maps the address to a view and builds the links between views."
+  - "Keeps history navigation and the return from a detail page consistent."
+out_of_scope:
+  - description: "Presenting the content of a view."
+    owner: COMP-0009
+  - description: "Choosing and remembering the theme."
+    owner: COMP-0007
+must_not:
+  - "Fetch data on behalf of a view."
+  - "Render dynamic text without Lit template escaping."
+files:
+  - frontend/src/components/app-shell.ts
+  - frontend/src/components/app.ts
+  - frontend/src/components/pb-nav-tab.ts
+  - frontend/src/views/not-found.ts
+  - frontend/src/views/router.ts
+  - frontend/src/vite-env.d.ts
+depends_on:
+  - COMP-0005
+  - COMP-0007
+  - COMP-0008
+  - COMP-0009
+  - COMP-0010
+  - COMP-0011
+requirements:
+  - REQ-0004
+  - REQ-0012
+  - REQ-0033

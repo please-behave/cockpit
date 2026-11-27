@@ -1,5 +1,6 @@
 id: REQ-0010
 name: Reported Attestation Detail
+area: attestations
 description: >-
   The detail view loads the selected attestation through CON-0002 and shows
   the shortened repository name as defined in REQ-0017 as its headline.

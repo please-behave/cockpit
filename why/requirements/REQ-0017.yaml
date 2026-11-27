@@ -1,5 +1,6 @@
 id: REQ-0017
 name: Shortened Names
+area: identity
 description: >-
   Where the cockpit shortens a name, it shows the part after the last slash,
   or the whole value if there is none. The full repository name is available

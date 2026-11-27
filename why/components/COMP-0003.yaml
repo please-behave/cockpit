@@ -1,0 +1,37 @@
+id: COMP-0003
+name: Browser Delivery
+purpose: "Serves the frontend and the browser read API over HTTP with protective headers."
+scope:
+  - "Serves the embedded frontend shell and the content-hashed assets."
+  - "Exposes the browser read API behind the viewer session and maps ledger outcomes to its documented errors."
+  - "Sets the Content-Security-Policy, protective and cache headers on every response."
+  - "Answers the health and readiness probes."
+out_of_scope:
+  - description: "Establishing the session and authorization rules."
+    owner: COMP-0001
+  - description: "Talking to the ledger."
+    owner: COMP-0002
+  - description: "Rendering views in the browser."
+    owner: COMP-0009
+must_not:
+  - "Serve session-dependent content with a public cache lifetime."
+  - "Contact the ledger before the session is validated."
+  - "Reveal upstream details in an error response."
+files:
+  - frontend/dist/index.html
+  - src/web.rs
+  - src/web/api.rs
+  - src/web/assets.rs
+depends_on:
+  - COMP-0001
+  - COMP-0002
+requirements:
+  - REQ-0001
+  - REQ-0003
+  - REQ-0004
+  - REQ-0011
+  - REQ-0012
+  - REQ-0013
+  - REQ-0014
+  - REQ-0025
+  - REQ-0031

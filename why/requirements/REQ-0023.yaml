@@ -1,5 +1,6 @@
 id: REQ-0023
 name: Theme Choice
+area: identity
 description: >-
   The application shell offers a square icon button next to the sign-out link.
   It shows a sun in dark mode and a moon in light mode. Its accessible name

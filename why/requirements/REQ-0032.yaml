@@ -1,5 +1,6 @@
 id: REQ-0032
 name: Release Detail
+area: releases
 description: >-
   Each release version links to a directly linkable detail page that reads
   CON-0012 and shows the version as its headline. The page shows the

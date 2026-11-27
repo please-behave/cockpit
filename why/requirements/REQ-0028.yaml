@@ -1,5 +1,6 @@
 id: REQ-0028
 name: Completed Rule Sets on the Dashboard
+area: registry
 description: >-
   On each dashboard load and refresh, the Cockpit reads completed shared Rule
   Sets by repository through CON-0006 alongside the repository overview.

@@ -1,5 +1,6 @@
 id: REQ-0003
 name: Ledger Unavailability
+area: operations
 description: >-
   A view that cannot obtain its data because of a ledger connection failure,
   timeout or unexpected response shows a ledger-unavailable error with a retry

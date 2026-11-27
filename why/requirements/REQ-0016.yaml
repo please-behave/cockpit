@@ -1,5 +1,6 @@
 id: REQ-0016
 name: Accessible Reported Statuses
+area: identity
 description: >-
   The cockpit never relies on color alone to convey an outcome. It displays
   the status exactly as reported. PASS, FAIL, ERROR, WARN and NOT_RUN each

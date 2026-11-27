@@ -1,5 +1,6 @@
 id: REQ-0020
 name: Dashboard and History Refresh
+area: operations
 description: >-
   While the browser tab is visible, the dashboard reads CON-0014 together
   with the newest ten entries of CON-0003, CON-0010 and CON-0013, and the

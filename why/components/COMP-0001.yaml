@@ -1,0 +1,28 @@
+id: COMP-0001
+name: Sign-In and Sessions
+purpose: "Establishes who the viewer is and keeps that identity in a sealed session."
+scope:
+  - "Runs the GitHub sign-in flow and resolves the provider's immutable user ID."
+  - "Decides whether a user ID is authorized to view the cockpit."
+  - "Issues, validates and ends sealed session cookies with an expiry."
+  - "Serves the sign-in page and the sign-out action."
+out_of_scope:
+  - description: "Reading evidence from the ledger."
+    owner: COMP-0002
+  - description: "Serving the browser API and frontend assets."
+    owner: COMP-0003
+  - description: "Reading the sign-in configuration from the environment at startup."
+    owner: COMP-0004
+must_not:
+  - "Authorize by login name instead of the immutable user ID."
+  - "Keep the sign-in token once the identity is known."
+  - "Log session or token values."
+files:
+  - frontend/dist/sign-in.html
+  - src/auth.rs
+depends_on: []
+requirements:
+  - REQ-0006
+  - REQ-0007
+  - REQ-0008
+  - REQ-0012

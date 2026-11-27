@@ -1,5 +1,6 @@
 id: REQ-0027
 name: Link Results to Registered Versions
+area: registry
 description: >-
   When an attestation result carries a rule identity and version and the
   ledger reports verified or mismatch, the Cockpit links the registered name

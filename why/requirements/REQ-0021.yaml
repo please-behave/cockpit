@@ -1,5 +1,6 @@
 id: REQ-0021
 name: Attestation History
+area: attestations
 description: >-
   The attestations page lists every attestation the ledger holds, one row per
   attestation, loaded through CON-0003 and shown newest first as the ledger

@@ -1,5 +1,6 @@
 id: REQ-0013
 name: Browser API Errors and Headers
+area: operations
 description: >-
   The browser API returns HTTP 400 for a malformed identifier or a query the ledger rejects, HTTP 404 for
   an unknown attestation, rule identity or API route, HTTP 405 for an unsupported method and

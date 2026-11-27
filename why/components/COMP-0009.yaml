@@ -1,0 +1,51 @@
+id: COMP-0009
+name: Attestation and Dashboard Views
+purpose: "Shows reported attestations: the repository dashboard, the history and the detail of one attestation."
+scope:
+  - "Lists the latest attestations and the repository dashboard with its refresh."
+  - "Loads attestation history incrementally."
+  - "Shows one attestation with its rules, verification and linked registered versions."
+  - "Provides the base class that all views share for loading and error states."
+out_of_scope:
+  - description: "Rule and rule set pages."
+    owner: COMP-0010
+  - description: "Release, deployment and repository pages."
+    owner: COMP-0011
+must_not:
+  - "Show a status other than the one reported."
+  - "Modify reported values before display."
+files:
+  - frontend/src/activity.ts
+  - frontend/src/components/pb-activity-feed.ts
+  - frontend/src/components/pb-needs-attention.ts
+  - frontend/src/components/pb-refresh-status.ts
+  - frontend/src/components/pb-repository-map.ts
+  - frontend/src/components/repository-summary.ts
+  - frontend/src/needs-attention-preview.ts
+  - frontend/src/repository-health.ts
+  - frontend/src/repository-map-preview.ts
+  - frontend/src/views/cockpit-view.ts
+  - frontend/src/views/dashboard.ts
+  - frontend/src/views/detail.ts
+  - frontend/src/views/history.ts
+depends_on:
+  - COMP-0005
+  - COMP-0006
+  - COMP-0007
+  - COMP-0008
+  - COMP-0010
+  - COMP-0011
+requirements:
+  - REQ-0004
+  - REQ-0009
+  - REQ-0010
+  - REQ-0016
+  - REQ-0017
+  - REQ-0018
+  - REQ-0019
+  - REQ-0020
+  - REQ-0021
+  - REQ-0022
+  - REQ-0024
+  - REQ-0027
+  - REQ-0028

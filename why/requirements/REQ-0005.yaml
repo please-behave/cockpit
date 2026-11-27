@@ -1,5 +1,6 @@
 id: REQ-0005
 name: Structured Logs
+area: operations
 description: >-
   The cockpit emits structured JSON logs and never logs token or session values.
 rationale: >-

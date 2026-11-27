@@ -1,5 +1,6 @@
 id: REQ-0024
 name: Rule Result Verification
+area: attestations
 description: >-
   Wherever the cockpit shows rule results, it displays the verification
   supplied by the ledger under ledger:CON-0003, without computing it. It

@@ -1,5 +1,6 @@
 id: REQ-0007
 name: Viewer Sessions
+area: authentication
 description: >-
   Page requests require a live session for a currently allowed user ID and
   redirect to sign-in otherwise. Health and sign-in routes and embedded assets

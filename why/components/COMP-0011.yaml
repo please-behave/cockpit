@@ -1,0 +1,31 @@
+id: COMP-0011
+name: Release, Deployment and Repository Views
+purpose: "Shows releases, current deployments and the page of one repository."
+scope:
+  - "Lists releases by repository and shows one release."
+  - "Lists current deployments grouped by target or repository."
+  - "Shows one repository with its completed rule sets and releases."
+out_of_scope:
+  - description: "Dashboard overview of repositories."
+    owner: COMP-0009
+must_not:
+  - "Show an unrecorded release as linked."
+  - "Infer a deployment that the ledger did not report."
+files:
+  - frontend/src/views/deployment-table.ts
+  - frontend/src/views/deployments.ts
+  - frontend/src/views/release.ts
+  - frontend/src/views/releases.ts
+  - frontend/src/views/repository.ts
+depends_on:
+  - COMP-0005
+  - COMP-0006
+  - COMP-0008
+  - COMP-0009
+  - COMP-0010
+requirements:
+  - REQ-0030
+  - REQ-0031
+  - REQ-0032
+  - REQ-0033
+  - REQ-0034

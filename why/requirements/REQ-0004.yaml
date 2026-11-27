@@ -1,5 +1,6 @@
 id: REQ-0004
 name: Safe Page Rendering
+area: operations
 description: >-
   Lit templates escape all dynamic page output. Pages use no inline
   scripts or styles. Every HTTP response carries a Content-Security-Policy

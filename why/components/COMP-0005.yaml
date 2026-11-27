@@ -1,0 +1,21 @@
+id: COMP-0005
+name: Frontend Data Access
+purpose: "Gives the frontend typed access to the browser read API."
+scope:
+  - "Requests the browser API and returns typed results."
+  - "Turns failures into errors that carry the API's stable code and sends the viewer to sign-in on an unauthorized response."
+out_of_scope:
+  - description: "Deciding how a failure is shown."
+    owner: COMP-0008
+must_not:
+  - "Contact any origin other than the cockpit's own."
+  - "Cache responses beyond the page that requested them."
+files:
+  - frontend/src/api/client.ts
+depends_on: []
+requirements:
+  - REQ-0003
+  - REQ-0011
+  - REQ-0012
+  - REQ-0025
+  - REQ-0031

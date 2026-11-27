@@ -1,5 +1,6 @@
 id: REQ-0034
 name: Current Deployments
+area: deployments
 description: >-
   The Deployments tab shows the ledger's current deployment for each target owner,
   target name and canonical subject repository. It reads every page through CON-0013.

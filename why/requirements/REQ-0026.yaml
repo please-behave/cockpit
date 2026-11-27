@@ -1,5 +1,6 @@
 id: REQ-0026
 name: Registered Rule Views
+area: registry
 description: >-
   The Rules navigation opens two areas, registered Rule Sets and local rules
   grouped by source repository. The view reads registered rules and sets in

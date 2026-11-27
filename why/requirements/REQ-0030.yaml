@@ -1,5 +1,6 @@
 id: REQ-0030
 name: Releases by Repository
+area: releases
 description: >-
   The Releases tab shows a table with one row per repository with a recorded
   release. Each row shows the repository, its newest recorded version, the

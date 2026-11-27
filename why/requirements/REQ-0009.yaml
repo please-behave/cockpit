@@ -1,5 +1,6 @@
 id: REQ-0009
 name: Latest Attestations Overview
+area: attestations
 description: >-
   The overview loads the latest attestation summaries through CON-0001 and
   shows the latest reported attestation for each repository and execution-point

@@ -1,5 +1,6 @@
 id: REQ-0012
 name: Browser API Sessions
+area: authentication
 description: >-
   The browser API read endpoints require the live session and current
   authorization defined by REQ-0007. If either is absent, the endpoint returns

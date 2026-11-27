@@ -1,5 +1,6 @@
 id: REQ-0018
 name: Bounded Table Columns
+area: identity
 description: >-
   A table column can declare that it stays on one line at its natural width or
   that it takes the remaining width and truncates with an ellipsis. In the

@@ -1,0 +1,31 @@
+id: COMP-0010
+name: Registry Views
+purpose: "Shows registered rules and rule sets and links results to the registered versions."
+scope:
+  - "Lists registered rules and shows their versions."
+  - "Shows the detail of a registered rule set."
+  - "Names the bound version of a completed rule set and links to it."
+out_of_scope:
+  - description: "Attestation results that cite a version."
+    owner: COMP-0009
+must_not:
+  - "Show a version that the ledger did not report."
+files:
+  - frontend/src/components/pb-rule-set-chip.ts
+  - frontend/src/components/pb-rule-set-summary.ts
+  - frontend/src/views/registry-version.ts
+  - frontend/src/views/rule-set.ts
+  - frontend/src/views/rule.ts
+  - frontend/src/views/rules.ts
+depends_on:
+  - COMP-0005
+  - COMP-0006
+  - COMP-0008
+  - COMP-0009
+requirements:
+  - REQ-0024
+  - REQ-0025
+  - REQ-0026
+  - REQ-0027
+  - REQ-0028
+  - REQ-0029

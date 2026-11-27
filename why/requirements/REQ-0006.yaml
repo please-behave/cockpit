@@ -1,5 +1,6 @@
 id: REQ-0006
 name: GitHub Sign-In
+area: authentication
 description: >-
   The cockpit uses GitHub's authorization code flow with PKCE and requests no
   scopes. It validates a browser-bound, expiring state before exchanging the

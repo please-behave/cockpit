@@ -1,5 +1,6 @@
 id: REQ-0022
 name: Incremental History Loading
+area: attestations
 description: >-
   The history loads 100 attestations first and a further page of 100 whenever
   the end of the loaded rows comes within one viewport height of the visible

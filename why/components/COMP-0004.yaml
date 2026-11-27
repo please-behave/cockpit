@@ -1,0 +1,24 @@
+id: COMP-0004
+name: Service Entry
+purpose: "Starts the cockpit process from validated configuration."
+scope:
+  - "Reads and validates the environment configuration before listening."
+  - "Initializes structured JSON logging."
+  - "Wires the sign-in, ledger client and web modules into one running service."
+out_of_scope:
+  - description: "Handling requests."
+    owner: COMP-0003
+must_not:
+  - "Log token or session values."
+  - "Start listening with invalid configuration."
+files:
+  - src/lib.rs
+  - src/main.rs
+depends_on:
+  - COMP-0001
+  - COMP-0002
+  - COMP-0003
+requirements:
+  - REQ-0001
+  - REQ-0005
+  - REQ-0008

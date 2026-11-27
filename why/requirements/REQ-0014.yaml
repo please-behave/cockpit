@@ -1,5 +1,6 @@
 id: REQ-0014
 name: Embedded Frontend Assets
+area: operations
 description: >-
   The executable serves content-hashed frontend assets under /assets/ without
   a session, with the correct media type and a public, immutable one-year cache

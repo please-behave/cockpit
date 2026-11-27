@@ -1,5 +1,6 @@
 id: REQ-0033
 name: Repository Page
+area: operations
 description: >-
   A repository opens directly at /repositories/detail with its URL-encoded
   canonical name in the repository query parameter. The page shows the

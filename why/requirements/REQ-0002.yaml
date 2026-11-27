@@ -1,5 +1,6 @@
 id: REQ-0002
 name: Read Reported Attestations
+area: attestations
 description: >-
   The cockpit consumes ledger:CON-0002 and ledger:CON-0003 through the configured
   ledger URL with bounded connection and request times, preserving reported

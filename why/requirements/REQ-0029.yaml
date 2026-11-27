@@ -1,5 +1,6 @@
 id: REQ-0029
 name: Registered Rule Set Detail
+area: registry
 description: >-
   The Rules view links each registered Rule Set to its detail page. The page
   reads CON-0009 and uses the selected version's display name or set ID as its

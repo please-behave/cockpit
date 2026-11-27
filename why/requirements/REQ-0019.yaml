@@ -1,5 +1,6 @@
 id: REQ-0019
 name: Repository Dashboard
+area: operations
 description: >-
   The dashboard answers which repositories need attention and why, and
   provides a link to each repository in the ledger overview (CON-0014).

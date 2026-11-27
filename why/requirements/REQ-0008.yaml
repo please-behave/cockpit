@@ -1,5 +1,6 @@
 id: REQ-0008
 name: Required Sign-In Configuration
+area: authentication
 description: >-
   The cockpit refuses to listen without a valid GitHub OAuth client ID,
   client secret, HTTPS callback URL, cookie key and nonempty allow list of

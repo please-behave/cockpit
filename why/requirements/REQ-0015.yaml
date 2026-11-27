@@ -1,5 +1,6 @@
 id: REQ-0015
 name: Shared Visual Identity
+area: identity
 description: >-
   The application shell and sign-in page use the logo, semantic colors, and
   contrast pairings defined by the shared visual identity. They follow the

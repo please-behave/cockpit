@@ -1,5 +1,6 @@
 id: REQ-0001
 name: Configuration and Health
+area: operations
 description: >-
   The service validates its environment configuration before listening and
   identifies invalid settings in its startup error. GET /healthz returns 200

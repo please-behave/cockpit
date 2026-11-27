@@ -1,0 +1,25 @@
+id: COMP-0002
+name: Ledger Client
+purpose: "Reads reported evidence, registry data, releases and deployments from the ledger API."
+scope:
+  - "Sends authenticated read requests to the ledger and decodes its responses."
+  - "Pages through ledger collections where the browser API needs complete results."
+  - "Classifies a failed connection, timeout or unexpected response as an unavailable ledger."
+out_of_scope:
+  - description: "Deciding which viewer may read."
+    owner: COMP-0001
+  - description: "Shaping responses for the browser."
+    owner: COMP-0003
+must_not:
+  - "Write to the ledger."
+  - "Pass upstream error details on to callers."
+  - "Contact any service other than the ledger."
+files:
+  - src/ledger.rs
+depends_on: []
+requirements:
+  - REQ-0002
+  - REQ-0003
+  - REQ-0011
+  - REQ-0025
+  - REQ-0031
