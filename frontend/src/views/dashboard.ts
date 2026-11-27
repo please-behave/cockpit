@@ -4,6 +4,7 @@ import {
   completedRuleSets, repositoryOverview, type CompletedRuleSet, type RepositoryOverview, type RepositoryOverviewEntry,
 } from '../api/client';
 import '../components/pb-empty-state';
+import '../components/pb-icon';
 import '../components/pb-repository-tile';
 import '../components/pb-time';
 import { compareByName, compareBySeverity, healthStatuses, repositoryHealth, type RepositoryHealth } from '../repository-health';
@@ -80,6 +81,7 @@ export class DashboardView extends CockpitView<DashboardData> {
         font-weight: var(--weight-semibold);
       }
 
+      .counts pb-icon { vertical-align: middle; }
       .counts .passed { color: var(--status-passed); }
       .counts .failed { color: var(--status-failed); }
       .counts .warning { color: var(--status-warning); }
@@ -201,7 +203,7 @@ export class DashboardView extends CockpitView<DashboardData> {
       <div class="banner ${severity}">
         <ul class="counts" aria-label="Repository health" role="list">
           ${healthEntries.map(([health, { icon, label }]) => html`<li class=${health}>
-            <span aria-hidden="true">${icon}</span> ${counts[health]} ${label}
+            <pb-icon name=${icon}></pb-icon> ${counts[health]} ${label}
           </li>`)}
         </ul>
         <fieldset class="sort">

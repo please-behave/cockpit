@@ -119,8 +119,9 @@ test('shows each overview repository once and counts all health categories', asy
   expect(banner.querySelector('fieldset legend')?.textContent).toBe('Sort by');
   const counts = [...banner.querySelectorAll('.counts li')];
   expect(counts.map(count => count.textContent?.trim().replace(/\s+/g, ' ')))
-    .toEqual(['× 4 failed', '▲ 1 warning', '○ 3 unknown', '✓ 3 passed']);
-  expect(counts.every(count => count.querySelector('[aria-hidden=true]'))).toBe(true);
+    .toEqual(['4 failed', '1 warning', '3 unknown', '3 passed']);
+  expect(counts.map(count => count.querySelector('pb-icon')?.getAttribute('name')))
+    .toEqual(['cross', 'warning', 'circle', 'check']);
   expect(banner.querySelector<CockpitTime>('.sync pb-time')?.value).toBe(fixtures.heartbeat.completed_at);
   expect(banner.querySelector('.sync')?.textContent).toContain('(stale)');
 

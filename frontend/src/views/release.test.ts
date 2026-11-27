@@ -96,7 +96,7 @@ test('reports an unknown release', async () => {
 });
 
 test('round-trips a release address containing URL delimiters and rejects incomplete ones', () => {
-  const address = { repository: 'host/org/repo +?&/#%<b>✓', version: 'v1 +?&/#%' };
+  const address = { repository: 'host/org/repo +?&/#%<b>é', version: 'v1 +?&/#%' };
   expect(routeFor(releasePath(address.repository, address.version))).toEqual({ view: 'release', ...address });
   expect(routeFor('/releases/detail?repository=x').view).toBe('not-found');
   expect(routeFor('/releases/detail?repository=x&version=y&extra=1').view).toBe('not-found');

@@ -124,6 +124,9 @@ const mixedResults = [
 const errorResults = [
   result('run-1', 'check', 'ERROR', identity('checks/security', 'no-secrets', '1.0')),
   result('run-2', 'review', 'NOT_RUN', identity('reviews/design', 'design-review', '2.0')),
+  result('run-3', 'check', 'FAIL', identity('checks/license', 'license-file', '2.0')),
+  result('run-4', 'check', 'WARN', identity('checks/markup', 'markup', '1.0')),
+  result('run-5', 'review', 'PASS', identity('reviews/docs', 'docs-review', '1.0')),
 ];
 
 const scrollableResults = Array.from({ length: 36 }, (_, index) => ({

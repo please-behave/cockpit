@@ -99,6 +99,9 @@ test('serves every attestation in the client shape with matching counts', () => 
     }
   }
   expect(statuses.size).toBe(5);
+  const errorDetail = fixtureTargets.details.map(target => body<Attestation>(target))
+    .find(attestation => attestation.overall === 'ERROR');
+  expect(new Set(errorDetail?.results.map(item => item.status))).toEqual(statuses);
   expect(verifications).toEqual(new Set(['verified', 'unverified']));
   const grouped = body<Attestation>(fixtureTargets.details[0]);
   expect(grouped.rule_sets?.map(set => set.id)).toEqual(['baseline', 'security', 'markup', 'unregistered-set']);

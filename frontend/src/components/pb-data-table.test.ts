@@ -121,21 +121,25 @@ test('sorts opt-in columns stably within each group and keeps focus on the heade
   expect(root.querySelector('[aria-sort]')).toBeNull();
   expect(names()).toEqual(['Zulu', 'Alpha', 'Beta', 'Other']);
   const rankButton = rank.querySelector('button')!;
+  expect(rankButton.querySelector('pb-icon')?.getAttribute('name')).toBe('sort');
   rankButton.focus();
 
   await sort(rankButton);
   expect(rank.getAttribute('aria-sort')).toBe('ascending');
+  expect(rankButton.querySelector('pb-icon')?.getAttribute('name')).toBe('sort-ascending');
   expect(root.activeElement).toBe(rankButton);
   expect(names()).toEqual(['Alpha', 'Zulu', 'Beta', 'Other']);
 
   await sort(rankButton);
   expect(rank.getAttribute('aria-sort')).toBe('descending');
+  expect(rankButton.querySelector('pb-icon')?.getAttribute('name')).toBe('sort-descending');
   expect(root.activeElement).toBe(rankButton);
   expect(names()).toEqual(['Zulu', 'Beta', 'Alpha', 'Other']);
 
   await sort(name.querySelector('button')!);
   expect(name.getAttribute('aria-sort')).toBe('ascending');
   expect(rank.hasAttribute('aria-sort')).toBe(false);
+  expect(rankButton.querySelector('pb-icon')?.getAttribute('name')).toBe('sort');
   expect(notes.hasAttribute('aria-sort')).toBe(false);
   expect(names()).toEqual(['Alpha', 'Beta', 'Zulu', 'Other']);
   expect(original.map(row => row.key)).toEqual(['first-tie', 'low', 'second-tie']);

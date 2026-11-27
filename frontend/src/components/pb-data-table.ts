@@ -1,6 +1,7 @@
 import { css, html, LitElement, nothing, type TemplateResult } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 import { linkStyles } from '../styles/links';
+import './pb-icon';
 
 export interface DataTableRow {
   /** Unique within the table and stable across updates. */
@@ -145,10 +146,6 @@ export class DataTable<Row extends DataTableRow = DataTableRow> extends LitEleme
         outline: var(--focus-ring);
         outline-offset: calc(-1 * var(--focus-offset));
       }
-
-      button span::before { content: '↕'; }
-      [aria-sort='ascending'] button span::before { content: '↑'; }
-      [aria-sort='descending'] button span::before { content: '↓'; }
     }
   `;
 
@@ -210,11 +207,15 @@ export class DataTable<Row extends DataTableRow = DataTableRow> extends LitEleme
         <table>
           <caption id="caption">${this.label}</caption>
           <thead>
-            <tr>${columns.map(({ label, mode, part, compare }, index) => html`
-              <th scope="col" class=${mode ?? nothing} part=${part ?? nothing}
-                aria-sort=${compare && this.sort?.index === index ? this.sort.direction : nothing}>${compare
-                  ? html`<button type="button" @click=${() => this.sortBy(index)}>${label}<span aria-hidden="true"></span></button>`
-                  : label}</th>`)}</tr>
+              <tr>${columns.map(({ label, mode, part, compare }, index) => {
+                const direction = compare && this.sort?.index === index ? this.sort.direction : undefined;
+                return html`
+                  <th scope="col" class=${mode ?? nothing} part=${part ?? nothing}
+                    aria-sort=${direction ?? nothing}>${compare
+                      ? html`<button type="button" @click=${() => this.sortBy(index)}>${label}<pb-icon
+                          name=${direction ? `sort-${direction}` : 'sort'}></pb-icon></button>`
+                      : label}</th>`;
+              })}</tr>
           </thead>
           ${this.groups === undefined ? html`<tbody>${rows(this.rows)}</tbody>`
             : repeat(this.groups, group => group.key, group => html`

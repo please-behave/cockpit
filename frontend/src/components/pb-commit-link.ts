@@ -1,6 +1,7 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { commitUrl } from '../commit-link';
 import { linkStyles } from '../styles/links';
+import './pb-icon';
 import './pb-tooltip';
 
 export class CommitLink extends LitElement {
@@ -51,7 +52,7 @@ export class CommitLink extends LitElement {
 
     const link = html`<a href=${url} target="_blank" rel="noopener noreferrer"><code
       aria-hidden=${shortened ? 'true' : nothing}>${label}</code>
-      <span aria-hidden="true">↗</span><span class="assistive">${shortened ? `${this.commit} ` : nothing}(opens in a new tab)</span></a>`;
+      <pb-icon name="external-link"></pb-icon><span class="assistive">${shortened ? `${this.commit} ` : nothing}(opens in a new tab)</span></a>`;
     return shortened ? html`<pb-tooltip external-trigger .description=${this.commit}>${link}</pb-tooltip>` : link;
   }
 }

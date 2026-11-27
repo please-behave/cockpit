@@ -2,6 +2,7 @@ import { css, html, LitElement, nothing } from 'lit';
 import type { RepositoryOverviewEntry } from '../api/client';
 import { healthStatuses, repositoryHealth, type RepositoryHealth } from '../repository-health';
 import { linkStyles } from '../styles/links';
+import './pb-icon';
 import './pb-tooltip';
 
 const previewLimit = 3;
@@ -69,7 +70,7 @@ export class StatTile extends LitElement {
     const matching = this.repositories.filter(entry => repositoryHealth(entry) === this.status);
     const count = matching.length;
     const content = html`
-      <span class=${count ? this.status : nothing} aria-hidden="true">${status.icon}</span>
+      <pb-icon class=${count ? this.status : nothing} name=${status.icon}></pb-icon>
       <span class="count">${count}</span> <span>${status.label}</span>
       ${this.active ? html`<span class="active-label">Current filter</span>` : nothing}
     `;

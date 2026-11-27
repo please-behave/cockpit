@@ -109,7 +109,7 @@ test.each(['light', 'dark'])('detail presents reported results and verification 
   const pill = overall.querySelector<StatusPill>('pb-status-pill')!;
   await pill.updateComplete;
   expect(pill.shadowRoot!.querySelector('.pill span:last-child')?.textContent).toBe('FAIL');
-  expect(pill.shadowRoot!.querySelector('.pill [aria-hidden="true"]')?.textContent).toBe('×');
+  expect(pill.shadowRoot!.querySelector('pb-icon')?.getAttribute('name')).toBe('cross');
   expect(reported.querySelector<CockpitTime>('pb-time')?.value).toBe(receipt);
   expect(facts.querySelector('img, script')).toBeNull();
 

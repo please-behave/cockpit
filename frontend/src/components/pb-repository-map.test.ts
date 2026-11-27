@@ -71,18 +71,18 @@ test('uses the widget frame and orders each supplied repository by severity then
 });
 
 test.each([
-  ['gadget', '×', 'failed', 'Current', 'ERROR'],
-  ['no-records', '×', 'failed', 'Never integrated', 'No evidence'],
-  ['overdue-final', '×', 'failed', 'Overdue (step 4 of 4)', 'PASS'],
-  ['widget', '▲', 'warning', 'Overdue (step 1 of 4)', 'PASS'],
-  ['never-synced', '○', 'unknown', 'Unknown', 'No evidence'],
-  ['elsewhere', '○', 'unknown', 'Unknown · Not managed', 'PASS'],
-  ['pending', '✓', 'passed', 'Pending', 'PASS'],
-  ['return-navigation', '✓', 'passed', 'Current', 'PASS'],
+  ['gadget', 'cross', 'failed', 'Current', 'ERROR'],
+  ['no-records', 'cross', 'failed', 'Never integrated', 'No evidence'],
+  ['overdue-final', 'cross', 'failed', 'Overdue (step 4 of 4)', 'PASS'],
+  ['widget', 'warning', 'warning', 'Overdue (step 1 of 4)', 'PASS'],
+  ['never-synced', 'circle', 'unknown', 'Unknown', 'No evidence'],
+  ['elsewhere', 'circle', 'unknown', 'Unknown · Not managed', 'PASS'],
+  ['pending', 'check', 'passed', 'Pending', 'PASS'],
+  ['return-navigation', 'check', 'passed', 'Current', 'PASS'],
 ])('shows the health symbol, accessible name and preview state for %s', async (name, icon, health, state, verdict) => {
   const { link, preview } = await mountChip(name);
   const { repository } = fixture(name);
-  expect(link.querySelector('[aria-hidden]')?.textContent).toBe(icon);
+  expect(link.querySelector('pb-icon')?.getAttribute('name')).toBe(icon);
   expect(link.querySelector('.short')?.textContent).toBe(name);
   expect(link.getAttribute('aria-label')).toBe(`${repository}, ${health}`);
   expect(link.getAttribute('href')).toBe(repositoryPath(repository));

@@ -87,11 +87,13 @@ test('shows all pages grouped by target with the worst evidence first', async ()
   const missing = facts(root).find(list => list.querySelector('dd')?.textContent === 'v3.0')!;
   expect(missing.querySelector('pb-status-pill')).toHaveProperty('status', 'release not recorded');
   expect(missing.querySelector('dl a, pb-rule-set-chip')).toBeNull();
-  for (const status of ['ERROR', 'FAIL', 'release not recorded', 'No evidence', 'PASS']) {
+  for (const [status, icon] of [
+    ['ERROR', 'error'], ['FAIL', 'cross'], ['release not recorded', 'circle'], ['No evidence', 'dash'], ['PASS', 'check'],
+  ]) {
     const pill = facts(root).map(list => list.querySelector<StatusPill>('pb-status-pill')!).find(pill => pill.status === status)!;
     await pill.updateComplete;
     expect(pill.shadowRoot?.textContent).toContain(status);
-    expect(pill.shadowRoot?.querySelector('[aria-hidden="true"]')?.textContent).toMatch(/^[!×○–✓]$/);
+    expect(pill.shadowRoot?.querySelector('pb-icon')?.getAttribute('name')).toBe(icon);
   }
 });
 

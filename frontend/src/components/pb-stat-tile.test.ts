@@ -21,17 +21,17 @@ afterEach(() => document.body.replaceChildren());
 
 // Verifies REQ-0015 and REQ-0019.
 test.each([
-  ['failed', '×', '4', 'failed', '4 failed repositories'],
-  ['warning', '▲', '1', 'warning', '1 repository with a warning'],
-  ['not-run', '○', '3', 'unknown', '3 unknown repositories'],
-  ['passed', '✓', '3', 'passed', '3 passed repositories'],
+  ['failed', 'cross', '4', 'failed', '4 failed repositories'],
+  ['warning', 'warning', '1', 'warning', '1 repository with a warning'],
+  ['not-run', 'circle', '3', 'unknown', '3 unknown repositories'],
+  ['passed', 'check', '3', 'passed', '3 passed repositories'],
 ] as const)('shows the %s group and links to its filter', async (status, symbol, count, label, name) => {
   const root = await mount(status);
   const link = root.querySelector('a')!;
   expect(link.getAttribute('href')).toBe(`/?status=${status}`);
   expect(link.getAttribute('aria-label')).toBe(name);
   expect(link.hasAttribute('aria-current')).toBe(false);
-  expect(link.querySelector('[aria-hidden]')?.textContent).toBe(symbol);
+  expect(link.querySelector('pb-icon')?.getAttribute('name')).toBe(symbol);
   expect(link.querySelector('.count')?.textContent).toBe(count);
   expect(link.querySelector('.count + span')?.textContent).toBe(label);
 });

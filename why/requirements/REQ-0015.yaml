@@ -54,6 +54,9 @@ description: >-
   semibold current text, a hover outline, and an inset focus ring using system
   colors. Normal text pairings meet 4.5:1 and meaningful boundaries meet 3:1,
   using the browser's system palette in forced-colors mode.
+  Interface icons use shared SVG artwork and inherit the surrounding text
+  color. Icons paired with text are hidden from assistive technology.
+  Standalone icons expose an accessible name.
 rationale: >-
   A consistent, accessible identity helps viewers recognize and navigate the
   cockpit across devices and display preferences.

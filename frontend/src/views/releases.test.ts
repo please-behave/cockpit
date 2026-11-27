@@ -61,7 +61,7 @@ test('lists the latest releases across pages with attention first and escapes st
     .toEqual(['ERROR', 'FAIL', 'No evidence']);
   const noEvidence = facts[2].querySelector<StatusPill>('pb-status-pill')!;
   await noEvidence.updateComplete;
-  expect(noEvidence.shadowRoot?.querySelector('[aria-hidden="true"]')?.textContent).toBe('–');
+  expect(noEvidence.shadowRoot?.querySelector('pb-icon')?.getAttribute('name')).toBe('dash');
   expect(facts[2].querySelector('pb-rule-set-chip')).toBeNull();
 
   const deepLink = rows.find(row => row.querySelector('a')?.textContent === repository)!

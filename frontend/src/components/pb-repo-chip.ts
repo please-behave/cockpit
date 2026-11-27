@@ -5,6 +5,7 @@ import { linkStyles } from '../styles/links';
 import { repositoryPath } from '../views/router';
 import { shortName } from './pb-short-name';
 import { repositoryEvidence, repositoryIdentifiers, repositorySummaryStyles, repositoryVerdict } from './repository-summary';
+import './pb-icon';
 import './pb-tooltip';
 
 export class RepoChip extends LitElement {
@@ -73,7 +74,7 @@ export class RepoChip extends LitElement {
     return html`
       <pb-tooltip external-trigger interactive .description=${name}>
         <a class="chip" data-route href=${repositoryPath(repository)} aria-label=${name}>
-          <span class=${health} aria-hidden="true">${icon}</span>
+          <pb-icon class=${health} name=${icon}></pb-icon>
           <span class="short">${shortName(repository)}</span>
         </a>
         <div class="preview" slot="preview">

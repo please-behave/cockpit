@@ -1,4 +1,5 @@
 import type { RepositoryOverviewEntry } from './api/client';
+import type { IconName } from './components/icons';
 
 export type RepositoryHealth = 'passed' | 'warning' | 'failed' | 'not-run';
 
@@ -13,11 +14,11 @@ export function repositoryHealth(entry: RepositoryOverviewEntry): RepositoryHeal
 }
 
 export const healthStatuses = {
-  failed: { label: 'failed', icon: '×', rank: 0 },
-  warning: { label: 'warning', icon: '▲', rank: 1 },
-  'not-run': { label: 'unknown', icon: '○', rank: 2 },
-  passed: { label: 'passed', icon: '✓', rank: 3 },
-} satisfies Record<RepositoryHealth, { label: string; icon: string; rank: number }>;
+  failed: { label: 'failed', icon: 'cross', rank: 0 },
+  warning: { label: 'warning', icon: 'warning', rank: 1 },
+  'not-run': { label: 'unknown', icon: 'circle', rank: 2 },
+  passed: { label: 'passed', icon: 'check', rank: 3 },
+} satisfies Record<RepositoryHealth, { label: string; icon: IconName; rank: number }>;
 
 export const stateLabels = {
   current: 'Current',

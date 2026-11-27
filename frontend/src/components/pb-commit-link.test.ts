@@ -22,6 +22,7 @@ test('links a verified repository value to the commit in a new tab', async () =>
   expect(root.querySelector('code')!.textContent).toBe('0123456');
   expect(root.querySelector<Tooltip>('pb-tooltip')?.description).toBe('0123456789abcdef');
   expect(link.querySelector('code')?.getAttribute('aria-hidden')).toBe('true');
+  expect(link.querySelector('pb-icon')?.getAttribute('name')).toBe('external-link');
   expect(link.querySelector('.assistive')?.textContent).toBe('0123456789abcdef (opens in a new tab)');
 });
 

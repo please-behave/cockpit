@@ -186,7 +186,7 @@ test('shows long and markup-like repository names as text', async () => {
 });
 
 test('round-trips the canonical name and rejects ambiguous addresses', () => {
-  const repository = 'host/org/repo +?&/#%<b>✓';
+  const repository = 'host/org/repo +?&/#%<b>é';
   expect(routeFor(repositoryPath(repository))).toEqual({ view: 'repository', repository });
   expect(routeFor('/repositories/detail?repository=x&repository=y').view).toBe('not-found');
   expect(routeFor('/repositories/detail?repository=').view).toBe('not-found');

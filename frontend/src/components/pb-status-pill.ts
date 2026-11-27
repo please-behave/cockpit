@@ -1,18 +1,20 @@
 import { css, html, LitElement } from 'lit';
+import type { IconName } from './icons';
+import './pb-icon';
 
-const statuses = new Map([
-  ['PASS', { style: 'passed', symbol: '✓' }],
-  ['FAIL', { style: 'failed', symbol: '×' }],
-  ['ERROR', { style: 'error', symbol: '!' }],
-  ['WARN', { style: 'warning', symbol: '▲' }],
-  ['release not recorded', { style: 'not-run', symbol: '○' }],
-  ['No evidence', { style: 'not-run', symbol: '–' }],
-  ['NOT_RUN', { style: 'not-run', symbol: '–' }],
-  ['Verified', { style: 'passed', symbol: '✓' }],
-  ['Unverified', { style: 'warning', symbol: '▲' }],
-  ['Complete', { style: 'passed', symbol: '✓' }],
-  ['Incomplete', { style: 'warning', symbol: '▲' }],
-  ['API key', { style: 'warning', symbol: '▲' }],
+const statuses = new Map<string, { style: string; icon: IconName }>([
+  ['PASS', { style: 'passed', icon: 'check' }],
+  ['FAIL', { style: 'failed', icon: 'cross' }],
+  ['ERROR', { style: 'error', icon: 'error' }],
+  ['WARN', { style: 'warning', icon: 'warning' }],
+  ['release not recorded', { style: 'not-run', icon: 'circle' }],
+  ['No evidence', { style: 'not-run', icon: 'dash' }],
+  ['NOT_RUN', { style: 'not-run', icon: 'dash' }],
+  ['Verified', { style: 'passed', icon: 'check' }],
+  ['Unverified', { style: 'warning', icon: 'warning' }],
+  ['Complete', { style: 'passed', icon: 'check' }],
+  ['Incomplete', { style: 'warning', icon: 'warning' }],
+  ['API key', { style: 'warning', icon: 'warning' }],
 ]);
 
 export class StatusPill extends LitElement {
@@ -56,7 +58,7 @@ export class StatusPill extends LitElement {
     const status = statuses.get(this.status);
     return html`
       <span class="pill ${status?.style ?? 'unknown'}">
-        <span aria-hidden="true">${status?.symbol ?? '?'}</span>
+        <pb-icon name=${status?.icon ?? 'question'}></pb-icon>
         <span>${this.status}</span>
       </span>
     `;
