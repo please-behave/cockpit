@@ -68,7 +68,7 @@ export class CockpitApp extends LitElement {
 
   private view(route: Route) {
     switch (route.view) {
-      case 'dashboard': return html`<pb-dashboard></pb-dashboard>`;
+      case 'dashboard': return html`<pb-dashboard .search=${route.search}></pb-dashboard>`;
       case 'history': return this.restored ?? html`<pb-history></pb-history>`;
       case 'detail': return this.restored ?? html`<pb-attestation .attestationId=${route.id}
         .origin=${typeof this.origin === 'string' ? this.origin : undefined}></pb-attestation>`;
@@ -93,7 +93,7 @@ export class CockpitApp extends LitElement {
   override render() {
     const route = routeFor(this.path);
     const key = route.view === 'rule' || route.view === 'rule-set'
-      ? `${route.view}?${route.search}` : this.path;
+      ? `${route.view}?${route.search}` : route.view === 'dashboard' ? '/' : this.path;
     return html`
       <pb-app-shell .currentView=${route.view}>
         ${keyed(key, this.view(route))}

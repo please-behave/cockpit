@@ -1,0 +1,22 @@
+id: DEC-0017
+name: Summarize Repository Health with Dashboard Widgets
+context: >-
+  A tile for every repository gives healthy repositories the same area as
+  exceptions. An inventory can contain hundreds of repositories. Viewers need
+  to see what requires attention and still be able to find any repository.
+decision: >-
+  Group the ledger overview into status counts, a Needs attention list and a
+  Repository map. Use the same health grouping in all three widgets. Keep
+  the counts and attention list scoped to the whole overview. The status
+  query parameter filters the map and is shareable. Order the list and map
+  by health severity, then by repository name and platform. Compare names
+  and platforms by lower-cased code points, breaking case-only ties by
+  original code points. Keep evidence, release, deployment and completed
+  Rule Set details in the map preview and repository views. Show the sync
+  status in the toolbar alongside the refresh control.
+rationale: >-
+  Viewers can identify exceptions before inspecting individual repositories.
+  The compact map makes the full inventory and its links available at scale.
+supersedes:
+  - DEC-0012
+  - DEC-0016

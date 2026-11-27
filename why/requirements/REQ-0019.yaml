@@ -1,90 +1,82 @@
 id: REQ-0019
 name: Repository Dashboard
 description: >-
-  The dashboard reads CON-0014 and shows one tile per repository identity
-  returned by the ledger, including repositories without attestations.
-  It labels unmanaged repositories "Not managed". The ledger excludes archived
-  repositories. A tile's owner appears above the shortened repository name,
-  which links to the repository page of REQ-0033. The name and verdict pill
-  share the title row, and the tile follows the name link outside its other
-  controls. The pill shows PASS, FAIL, ERROR or "No evidence" for the newest
-  attestation containing check. When present, that evidence shows the commit
-  shortened to seven characters, with its full value available in a tooltip
-  and accessible description, and the relative ledger receipt time labeled
-  "Reported", with the localized exact time available in a tooltip and
-  accessible description. The tile shows no execution points or rule counts.
+  The dashboard answers which repositories need attention and why, and
+  provides a link to each repository in the ledger overview (CON-0014).
+  Status tiles appear above the Needs attention widget and Repository map.
+  At desktop widths, Needs attention and the map sit side by side. At
+  narrow widths the tiles, Needs attention and the map appear in that order
+  in a single column. An overview without repositories shows an explicit
+  empty state. The toolbar shows the oldest covering sync completion from
+  the ledger as a relative time with its exact local value available in a
+  tooltip and accessible description. It labels the sync stale when
+  applicable, or says "No covering sync has completed." The dashboard follows
+  REQ-0015 in both themes and forced colors, with every status conveyed in
+  text.
 
-  The top stripe shows unknown with status-not-run when the ledger state is
-  unknown. Otherwise it uses status-failed for FAIL or ERROR verdicts and
-  never integrated repositories. For the remaining tiles it uses status-passed
-  for current and pending, status-warning for overdue before the last
-  configured step and status-failed at the last step. Each tile names the
-  repository state. A pending or overdue head has one line with its shortened
-  commit, the time waiting for evidence and the count of observed heads since
-  evidence as information. Pending uses status-allowed and overdue uses
-  status-warning on that line, independently of the stripe. Overdue names the
-  reached step and total step count.
+  Health is unknown (status-not-run) when the ledger state is unknown.
+  Otherwise FAIL or ERROR verdicts and never integrated repositories are
+  failed (status-failed). For the remaining repositories, current and pending
+  are passed (status-passed) and overdue is warning (status-warning) before
+  the last configured step and failed at the last step. The verdict is the
+  overall result of the newest attestation containing check. The overview
+  includes repositories without attestations and the ledger excludes archived
+  repositories.
 
-  A tile uses at most five content rows and omits empty rows. The Rule Set
-  summary of REQ-0028 shares the owner row. When the ledger's overview
-  supplies the newest release or deployment, the tile shows them together
-  in a single summary row. The release version links to REQ-0032. A
-  deployment shows the target name and relative ledger receipt time with
-  an accessible exact time. The target name links to an existing view
-  when that view can address the deployment directly. Otherwise the target
-  name is plain text.
+  Each status tile shows a symbol, count and text label for its health group
+  across the full overview. A nonzero tile links to the dashboard with
+  status=failed, status=warning, status=not-run (unknown) or status=passed
+  in the query. Its accessible name conveys the count and status. Hover,
+  keyboard focus and the first touch tap show the first three matching
+  repository names in input order and "and N more" when more remain. The
+  preview is also the link's accessible description. The next tap follows the
+  link. A zero tile is muted and has no link.
 
-  The banner counts failed, warning, unknown and passed tiles as text with
-  icons, using the highest severity for its stripe. It shows the oldest
-  completion time of the covering syncs from the ledger, whether that time is
-  stale or whether no covering sync has completed. The sort control sits
-  inside the banner and wraps on narrow widths. Sort by severity by default in
-  that order, then by name for ties. Name and last attestation sorts stay
-  available under DEC-0012. The empty overview has an explicit empty state.
-  The dashboard follows REQ-0015 in both themes and forced colors, with every
-  status conveyed in text.
+  The Needs attention widget shows every repository whose health is failed,
+  warning or unknown, ordered by health severity and then by name. Each row
+  shows the health symbol and text label, the shortened repository name
+  linked to its repository page (REQ-0033), and one reason. Unknown health
+  explains that the evidence status is unknown. Never integrated repositories
+  show that state. Otherwise a reported FAIL or ERROR takes precedence over
+  an overdue step and shows the verdict, shortened commit and relative ledger
+  receipt time labeled "Reported". Overdue health without a failing verdict
+  shows the reached and total configured steps. When no repository needs
+  attention, the widget shows an all-clear message and the number checked.
 
-  A repository status tile uses the same health grouping as the repository
-  stripe. It shows a status symbol, count and label. A nonzero tile links to
-  the dashboard with status=failed, status=warning, status=not-run (unknown)
-  or status=passed in the query. Its accessible name conveys the count and
-  status. Hover, keyboard focus and the first touch tap show a tooltip with
-  the first three matching repository names in input order and "and N more"
-  when more remain. The preview is also the link's accessible description.
-  The next tap follows the link. The current filter is visible and exposed to
-  assistive technology. A zero tile is muted and has no link.
+  The Repository map presents one chip per repository identity in a wrapping
+  list ordered by health severity, then name. A recognized status query
+  filters only the map. An absent or unrecognized value shows every
+  repository. The current filter is visible and exposed to assistive
+  technology. The map offers a link to clear it and explains when no
+  repository matches. Each chip links to the repository page, shows the
+  shortened name and a distinct health symbol, and names the full repository
+  and health to assistive technology. Hover, keyboard focus and the first
+  touch tap open the preview. Its controls are keyboard accessible. A second
+  tap follows the repository link, as in REQ-0017.
 
-  The repository map widget presents one chip for each supplied repository
-  identity in a wrapping list ordered by health severity, then name. Each
-  chip links to the repository page, shows the shortened name and a distinct
-  health symbol, and names the full repository and health to assistive
-  technology. Hover, keyboard focus and the first touch tap open a preview
-  with the full name and the same owner, state, verdict, evidence, release,
-  and deployment as the tile, where applicable, plus the direct completed
-  Rule Set links of REQ-0028. Preview controls are keyboard accessible. The
-  second tap on the chip follows its link, as in REQ-0017.
-
-  The Needs attention widget shows every supplied repository whose health is
-  failed, warning or unknown, ordered by health severity and then by name.
-  Each row shows the health symbol and text label, the shortened repository
-  name linked to the repository page, and one reason. Unknown health explains
-  that the evidence status is unknown. Never integrated repositories show
-  that state. Otherwise a reported FAIL or ERROR takes precedence over an
-  overdue step and shows the verdict, shortened commit and relative ledger
-  receipt time labeled "Reported". The commit and receipt time expose their
-  full values as on the repository tile. Overdue health without a failing
-  verdict shows the reached and total configured steps. When no supplied
-  repository needs attention, the widget shows an all-clear message and the
-  number of supplied repositories.
+  The preview names the full repository, owner, health, state and verdict
+  where applicable. It labels unmanaged repositories "Not managed" and
+  shows "No evidence" when there is no check verdict. When present, check
+  evidence shows the shortened commit and relative ledger receipt time
+  labeled "Reported". A pending or overdue head shows its shortened commit,
+  the elapsed wait for evidence and the number of observed heads since
+  evidence. Pending details use status-allowed, and overdue details use
+  status-warning and name the reached and total steps. Commits are shortened
+  to seven characters, with the full value available in a tooltip and
+  accessible description. Reported times expose the exact localized time
+  the same way. When supplied, the latest release version links to REQ-0032
+  and the latest deployment shows its target name and relative ledger receipt
+  time. The target links to the deployment if an existing view can address
+  it directly. The preview also shows the completed Rule Set links of
+  REQ-0028.
 rationale: >-
-  Viewers can identify missing or stale evidence and see the reported check
-  verdict for each repository.
+  Viewers can identify missing or stale evidence and inspect the reported
+  check verdict for each repository, including in large inventories.
 decisions:
   - DEC-0001
   - DEC-0002
   - DEC-0011
-  - DEC-0012
-  - DEC-0016
+  - DEC-0017
   - why:DEC-0009
   - why:DEC-0024
   - why:DEC-0025

@@ -88,6 +88,7 @@ test.each([
   expect(link.getAttribute('href')).toBe(repositoryPath(repository));
   expect(preview.querySelector('.preview-name')?.textContent).toBe(repository);
   expect(preview.querySelector('.owner')?.textContent).toBe('acme');
+  expect(preview.querySelector('.health')?.textContent?.trim()).toBe(health);
   expect(preview.textContent).toContain(state);
   expect(preview.querySelector<StatusPill>('pb-status-pill')?.status).toBe(verdict);
 });

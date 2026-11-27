@@ -1,8 +1,7 @@
-import { css, html, nothing, type TemplateResult } from 'lit';
+import { css, html, nothing } from 'lit';
 import type { RepositoryOverviewEntry } from '../api/client';
 import { stateLabels } from '../repository-health';
 import { releasePath } from '../views/router';
-import { ownerName } from './pb-short-name';
 import './pb-commit-link';
 import './pb-relative-time';
 import './pb-status-pill';
@@ -17,27 +16,8 @@ export const repositorySummaryStyles = css`
       font-size: var(--type-meta);
       line-height: var(--line-meta);
     }
-
-    .identifiers {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      gap: var(--space-2);
-    }
-
-    .identifiers pb-rule-set-summary {
-      flex: none;
-    }
   }
 `;
-
-export function repositoryIdentifiers(repository: string, sets: TemplateResult | typeof nothing) {
-  const owner = ownerName(repository);
-  return owner || sets !== nothing ? html`<div class="identifiers">
-    ${owner ? html`<span class="owner">${owner}</span>` : nothing}
-    ${sets}
-  </div>` : nothing;
-}
 
 export function repositoryVerdict(entry: RepositoryOverviewEntry) {
   return html`<pb-status-pill .status=${entry.latest_check?.overall ?? 'No evidence'}></pb-status-pill>`;

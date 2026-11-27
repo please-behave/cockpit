@@ -1,11 +1,23 @@
 import { reviewTargets } from './fixtures.mjs';
 
 const tableRows = 'tbody > tr:has(td)';
+const dashboardEntries = 'pb-stat-tile, li:has(> .reason), li:has(> pb-repo-chip)';
 const repositoryEntries = `.sets > li, ${tableRows}`;
 
 // Select the primary repeated entries in each view. Selectors also cover open shadow roots.
 export const reviewCases = [
-  ['Dashboard', '/', 'pb-dashboard', '.tiles > li', 'Repository tiles'],
+  ['Dashboard', '/', 'pb-dashboard', dashboardEntries, 'Status tiles, attention rows and repository chips'],
+  ['Dashboard (large)', '/?preview=dashboard-large', 'pb-dashboard', dashboardEntries,
+    'Status tiles, attention rows and repository chips'],
+  ['Dashboard (filtered)', '/?status=failed', 'pb-dashboard', dashboardEntries,
+    'Status tiles, attention rows and matching repository chips'],
+  ['Dashboard (all clear)', '/?preview=dashboard-clear', 'pb-dashboard', dashboardEntries,
+    'Status tiles and repository chips'],
+  ['Dashboard (no matches)', '/?preview=dashboard-clear&status=failed', 'pb-dashboard', dashboardEntries,
+    'Status tiles with an empty filtered map'],
+  ['Dashboard (unsynced)', '/?preview=dashboard-unsynced', 'pb-dashboard', dashboardEntries,
+    'Status tiles, attention rows and repository chips'],
+  ['Dashboard (empty)', '/?preview=dashboard-empty', 'pb-dashboard', 'pb-empty-state', 'Empty state'],
   ['Attestations', '/attestations', 'pb-history', tableRows, 'Attestation rows'],
   ['Attestation detail', reviewTargets.attestation.slice(3), 'pb-attestation', tableRows, 'Rule result rows'],
   ['Releases', '/releases', 'pb-releases', tableRows, 'Release rows'],

@@ -1,12 +1,17 @@
+import { render } from 'lit';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { ApiError, completedRuleSets, repositoryOverview, type RepositoryOverview, type RepositoryOverviewEntry } from '../api/client';
 import type { ErrorState } from '../components/pb-error-state';
-import type { RepositoryTile } from '../components/pb-repository-tile';
-import type { CockpitTime } from '../components/pb-time';
+import type { NeedsAttention } from '../components/pb-needs-attention';
+import type { RepoChip } from '../components/pb-repo-chip';
+import type { RepositoryMap } from '../components/pb-repository-map';
+import type { RuleSetChip } from '../components/pb-rule-set-chip';
+import type { StatTile } from '../components/pb-stat-tile';
+import type { RelativeTime } from '../components/pb-relative-time';
 import { fixtureTargets, respond } from '../../../tools/preview/fixtures.mjs';
-import type { RuleSetSummary } from '../components/pb-rule-set-summary';
+import type { RefreshState } from './cockpit-view';
 import { DashboardView } from './dashboard';
-import { repositoryPath } from './router';
+import { ruleSetPath } from './router';
 
 vi.mock(import('../api/client'), async original => ({
   ...await original(),
@@ -39,46 +44,47 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-async function mount() {
+async function mount(search = '') {
   const view = new DashboardView();
+  view.search = search;
   document.body.append(view);
-  await vi.waitFor(() => expect(view.shadowRoot!.querySelector('.tiles, pb-empty-state, pb-error-state')).not.toBeNull());
+  await vi.waitFor(() => expect(view.shadowRoot!.querySelector('.widgets, pb-empty-state, pb-error-state')).not.toBeNull());
   await view.updateComplete;
   return view;
 }
 
-const tiles = (view: DashboardView) =>
-  [...view.shadowRoot!.querySelectorAll<RepositoryTile>('ul.tiles > li > pb-repository-tile')];
-const names = (view: DashboardView) => tiles(view).map(tile => tile.entry!.repository);
+const map = (view: DashboardView) => view.shadowRoot!.querySelector<RepositoryMap>('pb-repository-map')!;
+const chips = (view: DashboardView) => [...map(view).shadowRoot!.querySelectorAll<RepoChip>('pb-repo-chip')];
+const names = (view: DashboardView) => chips(view).map(chip => chip.entry!.repository);
+const tiles = (view: DashboardView) => [...view.shadowRoot!.querySelectorAll<StatTile>('pb-stat-tile')];
 
 // Verifies REQ-0028.
-test('passes the completed sets and repository link to the summary and clears it on refresh', async () => {
+test('passes completed sets to the matching map preview and clears them on refresh', async () => {
   const set = { source: 'github.com/acme/rules', path: 'sets/security', id: 'security', version: '1.0', name: 'Security' };
-  const sets = [set, { ...set, id: 'licensing', name: 'Licensing' }];
   overview.mockResolvedValue(repositories(entry('a/one'), entry('a/two')));
-  completed.mockResolvedValue([{ repository: 'a/one', sets }]);
+  completed.mockResolvedValue([{ repository: 'a/one', sets: [set] }]);
 
   const view = await mount();
-  const [one, two] = tiles(view);
-  expect(one.entry!.repository).toBe('a/one');
-  const summary = one.shadowRoot!.querySelector<RuleSetSummary>('pb-rule-set-summary')!;
-  expect(summary.sets).toEqual(sets);
-  expect(summary.href).toBe(repositoryPath('a/one'));
-  expect(two.shadowRoot!.querySelector('pb-rule-set-summary')).toBeNull();
+  const [one, two] = chips(view);
+  const link = one.shadowRoot!.querySelector<RuleSetChip>('pb-rule-set-chip')!;
+  expect(link.href).toBe(ruleSetPath(set, set.version));
+  expect(two.shadowRoot!.querySelector('pb-rule-set-chip')).toBeNull();
 
   completed.mockResolvedValue([]);
   view.refresh();
   await vi.waitFor(() => {
     expect(completed).toHaveBeenCalledTimes(2);
-    expect(tiles(view).every(tile => tile.shadowRoot!.querySelector('pb-rule-set-summary') === null)).toBe(true);
+    expect(one.shadowRoot!.querySelector('pb-rule-set-chip')).toBeNull();
   });
 });
 
 // Verifies REQ-0019.
-test('has a loading state, then an explicit empty state without header and tiles', async () => {
+test('shows loading and then the empty state, with sync status available to the toolbar', async () => {
   let complete!: (data: RepositoryOverview) => void;
   overview.mockReturnValue(new Promise<RepositoryOverview>(resolve => { complete = resolve; }));
   const view = new DashboardView();
+  const toolbar = document.createElement('div');
+  view.addEventListener('refresh-state', event => render((event as CustomEvent<RefreshState>).detail.toolbar, toolbar));
   document.body.append(view);
   await view.updateComplete;
   const root = view.shadowRoot!;
@@ -90,82 +96,55 @@ test('has a loading state, then an explicit empty state without header and tiles
   await vi.waitFor(() => expect(root.querySelector('pb-empty-state')).not.toBeNull());
   expect(root.querySelector('pb-empty-state')!.getAttribute('message'))
     .toBe('The ledger has no repositories to show.');
-  expect(root.querySelector('[role=status], .tiles, .summary, fieldset')).toBeNull();
+  expect(root.querySelector('[role=status], .widgets')).toBeNull();
+  expect(toolbar.textContent).toBe('No covering sync has completed.');
 });
 
-test('shows each overview repository once and counts all health categories', async () => {
+test('counts the overview and composes the widgets in reading order', async () => {
   overview.mockResolvedValue(fixtures);
-  completed.mockResolvedValue([{
-    repository: 'github.com/acme/archived',
-    sets: [{ source: 'source', path: '', id: 'archived', version: '1.0', name: 'Archived' }],
-  }]);
   const view = await mount();
   const root = view.shadowRoot!;
-  const banner = root.querySelector('.banner')!;
-  expect(banner.classList.contains('failed')).toBe(true);
-  expect(banner.querySelector('fieldset legend')?.textContent).toBe('Sort by');
-  const counts = [...banner.querySelectorAll('.counts li')];
-  expect(counts.map(count => count.textContent?.trim().replace(/\s+/g, ' ')))
-    .toEqual(['4 failed', '1 warning', '3 unknown', '3 passed']);
-  expect(counts.map(count => count.querySelector('pb-icon')?.getAttribute('name')))
-    .toEqual(['cross', 'warning', 'circle', 'check']);
-  expect(banner.querySelector<CockpitTime>('.sync pb-time')?.value).toBe(fixtures.heartbeat.completed_at);
-  expect(banner.querySelector('.sync')?.textContent).toContain('(stale)');
-
-  expect(names(view).filter(name => name === 'github.com/acme/widget')).toHaveLength(1);
+  expect([...root.querySelector('.widgets')!.children].map(node => node.localName)).toEqual([
+    'pb-widget', 'pb-needs-attention', 'pb-repository-map',
+  ]);
+  const counts = tiles(view).map(tile => tile.shadowRoot!.querySelector('.tile')!.textContent!.trim().replace(/\s+/g, ' '));
+  expect(counts).toEqual(['4 failed', '1 warning', '3 unknown', '3 passed']);
+  expect(names(view)).toHaveLength(fixtures.repositories.length);
   expect(names(view)).toHaveLength(new Set(names(view)).size);
   expect(names(view)).not.toContain('github.com/acme/archived');
-  expect(root.querySelector('.tiles')?.getAttribute('aria-label')).toBe('Repositories');
 });
 
-test('sorts by severity by default, with time and name available through the URL', async () => {
-  overview.mockResolvedValue(repositories(
-    { ...entry('a/zeta', '2026-11-20T00:00:00Z'), state: 'never_integrated', latest_check: null },
-    entry('a/beta', '2026-11-22T00:00:00Z'),
-    entry('a/alpha', '2026-11-21T00:00:00Z'),
-  ));
-  const view = await mount();
-  expect(names(view)).toEqual(['a/zeta', 'a/alpha', 'a/beta']);
-  expect(view.shadowRoot!.querySelector('.sync')?.textContent?.trim()).toBe('No covering sync has completed.');
-  const radios = [...view.shadowRoot!.querySelectorAll<HTMLInputElement>('input[type=radio]')];
-  expect(radios.map(radio => radio.checked)).toEqual([true, false, false]);
-
-  const entries = window.history.length;
-  radios[1].click();
-  await view.updateComplete;
-  expect(window.location.search).toBe('?sort=time');
-  expect(names(view)).toEqual(['a/beta', 'a/alpha', 'a/zeta']);
-  radios[2].click();
-  await view.updateComplete;
-  expect(window.location.search).toBe('?sort=name');
-  expect(window.history.length).toBe(entries);
-  expect(names(view)).toEqual(['a/alpha', 'a/beta', 'a/zeta']);
-
-  radios[0].click();
-  await view.updateComplete;
-  expect(window.location.search).toBe('');
-  expect(names(view)[0]).toBe('a/zeta');
-
-  view.remove();
-  window.history.replaceState(null, '', '/?sort=name');
-  const reloaded = await mount();
-  expect(names(reloaded)[0]).toBe('a/alpha');
-  expect([...reloaded.shadowRoot!.querySelectorAll<HTMLInputElement>('input[type=radio]')].map(radio => radio.checked))
-    .toEqual([false, false, true]);
-
-  reloaded.remove();
-  window.history.replaceState(null, '', '/?sort=bogus');
-  expect(names(await mount())[0]).toBe('a/zeta');
+test.each([
+  ['failed', 4], ['warning', 1], ['not-run', 3], ['passed', 3], ['bogus', 11],
+])('filters only the map for status=%s', async (status, count) => {
+  overview.mockResolvedValue(fixtures);
+  const view = await mount(`?status=${status}`);
+  expect(chips(view)).toHaveLength(count);
+  const attention = view.shadowRoot!.querySelector<NeedsAttention>('pb-needs-attention')!;
+  expect(attention.repositories).toBe(fixtures.repositories);
+  expect(tiles(view).every(tile => tile.repositories === fixtures.repositories)).toBe(true);
+  expect(tiles(view).find(tile => tile.active)?.status).toBe(status === 'bogus' ? undefined : status);
 });
 
-test('compares names ignoring case, with code points as tie-break', async () => {
-  window.history.replaceState(null, '', '/?sort=name');
-  overview.mockResolvedValue(repositories(...[
-    'a/b', 'a/B', 'a/', 'Zed', 'alpha', 'Beta', 'foo', 'Foo', 'zz-ä', 'zz-z', 'zz-😀',
-  ].map(name => entry(name))));
-  expect(names(await mount())).toEqual([
-    'a/', 'a/B', 'a/b', 'alpha', 'Beta', 'Foo', 'foo', 'Zed', 'zz-z', 'zz-ä', 'zz-😀',
-  ]);
+test('explains an empty filtered map and offers a clear link', async () => {
+  overview.mockResolvedValue(repositories(entry('a/one')));
+  const view = await mount('?status=failed');
+  expect(chips(view)).toHaveLength(0);
+  expect(map(view).shadowRoot!.querySelector('p')?.textContent).toBe('No repositories match this status.');
+  expect(map(view).link).toEqual({ href: '/', label: 'Clear status filter' });
+  const [failed] = tiles(view);
+  expect(failed.shadowRoot!.querySelector('a')).toBeNull();
+  expect(failed.shadowRoot!.textContent).toContain('Current filter');
+});
+
+test('shows the covering sync and stale state in the toolbar template', async () => {
+  overview.mockResolvedValue(fixtures);
+  const view = new DashboardView();
+  const toolbar = document.createElement('div');
+  view.addEventListener('refresh-state', event => render((event as CustomEvent<RefreshState>).detail.toolbar, toolbar));
+  document.body.append(view);
+  await vi.waitFor(() => expect(toolbar.textContent).toContain('(stale)'));
+  expect(toolbar.querySelector<RelativeTime>('pb-relative-time')?.value).toBe(fixtures.heartbeat.completed_at);
 });
 
 // Verifies REQ-0003.
@@ -189,13 +168,13 @@ function setVisibility(state: 'visible' | 'hidden') {
 }
 
 // Verifies REQ-0020.
-test('refreshes every 5 minutes while visible, keeps focus, sort and tiles, and keys tiles', async () => {
+test('refreshes every 5 minutes while visible, keeps focus and the active filter on a keyed map chip', async () => {
   vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] });
   const reports = [entry('a/one'), entry('a/two')];
   overview.mockResolvedValue(repositories(...reports));
-  const view = await mount();
-  const [firstTile] = tiles(view);
-  const link = firstTile.shadowRoot!.querySelector<HTMLAnchorElement>('a.repository')!;
+  const view = await mount('?status=passed');
+  const [firstChip] = chips(view);
+  const link = firstChip.shadowRoot!.querySelector<HTMLAnchorElement>('a.chip')!;
   link.focus();
   expect(overview).toHaveBeenCalledTimes(1);
 
@@ -203,21 +182,21 @@ test('refreshes every 5 minutes while visible, keeps focus, sort and tiles, and 
     ...reports[1], latest_check: { ...reports[1].latest_check!, id: 'new', overall: 'FAIL' },
   }));
   await vi.advanceTimersByTimeAsync(300_000);
-  await vi.waitFor(() => expect(names(view)).toEqual(['a/two', 'a/one']));
+  await vi.waitFor(() => expect(names(view)).toEqual(['a/one']));
   expect(overview).toHaveBeenCalledTimes(2);
-  expect(tiles(view)[1]).toBe(firstTile);
-  expect(view.shadowRoot!.activeElement).toBe(firstTile);
-  expect(firstTile.shadowRoot!.activeElement).toBe(link);
-  expect(window.location.search).toBe('');
+  expect(chips(view)[0]).toBe(firstChip);
+  expect(map(view).shadowRoot!.activeElement).toBe(firstChip);
+  expect(firstChip.shadowRoot!.activeElement).toBe(link);
+  expect(view.search).toBe('?status=passed');
   expect(view.shadowRoot!.querySelector('[role=status]')).toBeNull();
 
   overview.mockRejectedValue(new ApiError('ledger_unavailable'));
   await vi.advanceTimersByTimeAsync(300_000);
   await vi.waitFor(() => expect(view.shadowRoot!.querySelector('[role=status]')?.textContent).toContain('could not be refreshed'));
-  expect(tiles(view)).toHaveLength(2);
+  expect(chips(view)).toHaveLength(1);
   expect(view.shadowRoot!.querySelector('pb-error-state')).toBeNull();
-  expect(view.shadowRoot!.activeElement).toBe(firstTile);
-  expect(firstTile.shadowRoot!.activeElement).toBe(link);
+  expect(map(view).shadowRoot!.activeElement).toBe(firstChip);
+  expect(firstChip.shadowRoot!.activeElement).toBe(link);
 
   overview.mockResolvedValue(repositories(...reports));
   await vi.advanceTimersByTimeAsync(300_000);

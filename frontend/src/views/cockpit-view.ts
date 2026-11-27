@@ -5,7 +5,12 @@ import { linkStyles } from '../styles/links';
 
 const refreshInterval = 300_000;
 
-export type RefreshState = { view: Element & { refresh(): void }; updatedAt: Date; busy: boolean };
+export type RefreshState = {
+  view: Element & { refresh(): void };
+  updatedAt: Date;
+  busy: boolean;
+  toolbar?: TemplateResult;
+};
 
 export abstract class CockpitView<T = never> extends LitElement {
   static override styles: CSSResultGroup = css`
@@ -66,6 +71,7 @@ export abstract class CockpitView<T = never> extends LitElement {
   protected abstract heading(data?: T): string;
   protected abstract content(data?: T): TemplateResult;
   protected read?(signal: AbortSignal, refresh: boolean): Promise<T>;
+  protected toolbar?(data: T): TemplateResult;
 
   override connectedCallback() {
     super.connectedCallback();
@@ -160,14 +166,14 @@ export abstract class CockpitView<T = never> extends LitElement {
   }
 
   private announceRefresh() {
-    const { updatedAt, refreshing, announced } = this;
-    if (!this.refreshable || !updatedAt) return;
+    const { data, updatedAt, refreshing, announced } = this;
+    if (!this.refreshable || !updatedAt || data === undefined) return;
     if (announced?.updatedAt === updatedAt && announced.refreshing === refreshing) return;
     this.announced = { updatedAt, refreshing };
     this.dispatchEvent(new CustomEvent<RefreshState>('refresh-state', {
       bubbles: true,
       composed: true,
-      detail: { view: this, updatedAt, busy: refreshing },
+      detail: { view: this, updatedAt, busy: refreshing, toolbar: this.toolbar?.(data) },
     }));
   }
 

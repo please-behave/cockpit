@@ -441,3 +441,23 @@ test('serves repository health, evidence and covering syncs in the client shape'
     }
   }
 });
+
+test('serves dashboard cases for large, all-clear, unsynced and empty overviews', () => {
+  const overview = (suffix: string) =>
+    body<RepositoryOverview>(`${fixtureTargets.repositoryOverview}?preview=dashboard-${suffix}`);
+  const large = overview('large');
+  expect(large.repositories.length).toBeGreaterThan(100);
+  expect(new Set(large.repositories.map(entry => entry.repository)).size).toBe(large.repositories.length);
+  expect(new Set(large.repositories.map(repositoryHealth))).toEqual(new Set(['failed', 'warning', 'not-run', 'passed']));
+
+  const clear = overview('clear');
+  expect(clear.heartbeat).toMatchObject({ stale: false, completed_at: expect.any(String) });
+  expect(clear.repositories.length).toBeGreaterThan(0);
+  expect(clear.repositories.every(entry => repositoryHealth(entry) === 'passed')).toBe(true);
+
+  const unsynced = overview('unsynced');
+  expect(unsynced.heartbeat.completed_at).toBeNull();
+  expect(unsynced.repositories.length).toBeGreaterThan(0);
+  expect(unsynced.repositories.every(entry => entry.heartbeat_completed_at === null)).toBe(true);
+  expect(overview('empty').repositories).toEqual([]);
+});

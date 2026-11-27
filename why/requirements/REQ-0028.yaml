@@ -3,14 +3,10 @@ name: Completed Rule Sets on the Dashboard
 description: >-
   On each dashboard load and refresh, the Cockpit reads completed shared Rule
   Sets by repository through CON-0006 alongside the repository overview.
-  Each tile shows one chip with the count of completed sets for its
-  repository and links it to the repository page of REQ-0033. Hover,
-  keyboard focus and the first touch tap reveal an interactive preview
-  with one link per set. A second tap on the count follows the repository
-  link. The preview stays open while the pointer or keyboard focus is on
-  the trigger or preview. It closes on Escape or when both are left, with
-  no time-based dismissal. The repository map preview shows those links
-  directly without a nested Rule Set preview. Each linked chip names the
+  The Repository map preview in REQ-0019 shows one direct link per set for
+  the repository. The preview stays open while the pointer or keyboard focus
+  is on the trigger or preview. It closes on Escape or when both are left,
+  with no time-based dismissal. Each linked chip names the
   bound version, makes the full name available, and links to that version
   on the Rule Set detail page of REQ-0029. Names render as escaped text.
   Repositories without completed sets show no Rule Set chips. The chips

@@ -3,9 +3,9 @@ import type { CompletedRuleSet, RepositoryOverviewEntry } from '../api/client';
 import { healthStatuses, repositoryHealth } from '../repository-health';
 import { linkStyles } from '../styles/links';
 import { repositoryPath } from '../views/router';
-import { shortName } from './pb-short-name';
+import { ownerName, shortName } from './pb-short-name';
 import { completedRuleSetChips, ruleSetListStyles } from './pb-rule-set-summary';
-import { repositoryEvidence, repositoryIdentifiers, repositorySummaryStyles, repositoryVerdict } from './repository-summary';
+import { repositoryEvidence, repositorySummaryStyles, repositoryVerdict } from './repository-summary';
 import './pb-icon';
 import './pb-tooltip';
 
@@ -57,6 +57,7 @@ export class RepoChip extends LitElement {
       }
 
       .preview-name { font-weight: var(--weight-semibold); }
+      .health { text-transform: capitalize; }
     }
   `];
 
@@ -71,6 +72,7 @@ export class RepoChip extends LitElement {
     const health = repositoryHealth(entry);
     const { icon, label } = healthStatuses[health];
     const name = `${repository}, ${label}`;
+    const owner = ownerName(repository);
 
     return html`
       <pb-tooltip external-trigger interactive .description=${name}>
@@ -80,7 +82,8 @@ export class RepoChip extends LitElement {
         </a>
         <div class="preview" slot="preview">
           <span class="preview-name">${repository}</span>
-          ${repositoryIdentifiers(repository, nothing)}
+          ${owner ? html`<span class="owner">${owner}</span>` : nothing}
+          <span class="health ${health}"><pb-icon name=${icon}></pb-icon> ${label}</span>
           ${completedRuleSetChips(completedSets ?? [])}
           <div>${repositoryVerdict(entry)}</div>
           ${repositoryEvidence(entry)}

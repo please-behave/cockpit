@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { attestationPage, getAttestation, repositoryOverview, type RepositoryOverview } from '../api/client';
+import { fixtureTargets, respond } from '../../../tools/preview/fixtures.mjs';
 import { CockpitApp } from './app';
 import type { DetailView } from '../views/detail';
 import type { DashboardView } from '../views/dashboard';
@@ -83,7 +84,7 @@ test('updates the header links for direct routes, link clicks, and history trave
     ['/deployments', [links[3]]],
     ['/rules/detail', [links[4]]],
     ['/attestations', [links[1]]],
-    ['/?sort=name', [links[0]]],
+    ['/?status=failed', [links[0]]],
     ['/future/view', []],
   ] as const) {
     window.history.pushState(null, '', path);
@@ -256,6 +257,39 @@ async function mountAt(path: string) {
 }
 
 const status = (shell: CockpitAppShell) => shell.shadowRoot!.querySelector('pb-refresh-status');
+
+// Verifies REQ-0019.
+test('follows and clears a status filter on the same dashboard without reading again', async () => {
+  vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+  const overview = respond(fixtureTargets.repositoryOverview)!.body as RepositoryOverview;
+  vi.mocked(repositoryOverview).mockResolvedValueOnce(overview);
+  const { app, shell } = await mountAt('/');
+  const view = app.shadowRoot!.querySelector<DashboardView>('pb-dashboard')!;
+  const root = view.shadowRoot!;
+  await vi.waitFor(() => expect(shell.shadowRoot!.querySelector('.toolbar .sync')?.textContent)
+    .toMatch(/Oldest covering sync.*stale/s));
+  await vi.waitFor(() => expect(root.querySelector('pb-stat-tile')?.shadowRoot?.querySelector('a')).toBeTruthy());
+  const failed = root.querySelector('pb-stat-tile')!.shadowRoot!.querySelector('a')!;
+  const map = root.querySelector('pb-repository-map')!;
+  const chipCount = () => map.shadowRoot!.querySelectorAll('pb-repo-chip').length;
+
+  failed.click();
+  await vi.waitFor(() => expect(chipCount()).toBe(4));
+  expect(window.location.search).toBe('?status=failed');
+  expect(failed.getAttribute('aria-current')).toBe('true');
+
+  const section = map.shadowRoot!.querySelector('pb-widget')!.shadowRoot!.querySelector('pb-section')!;
+  const clear = section.shadowRoot!.querySelector('a')!;
+  clear.click();
+  await vi.waitFor(() => expect(chipCount()).toBe(overview.repositories.length));
+  expect(window.location.search).toBe('');
+  expect(repositoryOverview).toHaveBeenCalledTimes(1);
+
+  window.history.back();
+  await vi.waitFor(() => expect(chipCount()).toBe(4));
+  expect(app.shadowRoot!.querySelector('pb-dashboard')).toBe(view);
+  expect(repositoryOverview).toHaveBeenCalledTimes(1);
+});
 
 // Verifies REQ-0020.
 test.each([

@@ -8,7 +8,7 @@ afterEach(() => {
 });
 
 test('recognizes the dashboard, history, detail, malformed identifier and unknown pages', () => {
-  expect(routeFor('/')).toEqual({ view: 'dashboard' });
+  expect(routeFor('/')).toEqual({ view: 'dashboard', search: '' });
   expect(routeFor('/attestations')).toEqual({ view: 'history' });
   expect(routeFor('/attestations/')).toEqual({ view: 'not-found' });
   expect(routeFor('/attestations/%7B123%7D')).toEqual({ view: 'detail', id: '{123}' });

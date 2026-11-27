@@ -566,6 +566,34 @@ const repositoryOverview = {
     .sort((a, b) => a.repository < b.repository ? -1 : 1),
 };
 
+const extraRepositories = Array.from({ length: 120 }, (_, index) => {
+  const name = index === 0 ? `${'long-repository-name-'.repeat(10)}dashboard` : `service-${index + 1}`;
+  const stateIndex = index % 12;
+  const [, state, overall, step] = repositoryFixtures[stateIndex < 5 ? stateIndex : 0];
+  return repositoryEntry([`github.com/acme/${name}`, state, overall, step], repositoryFixtures.length + index);
+});
+
+const dashboardOverviews = {
+  'dashboard-large': {
+    ...repositoryOverview,
+    repositories: [...repositoryOverview.repositories, ...extraRepositories]
+      .sort((left, right) => compare(left.repository, right.repository)),
+  },
+  'dashboard-clear': {
+    heartbeat: { completed_at: oldestSync, stale: false },
+    repositories: repositoryOverview.repositories.filter(entry =>
+      entry.latest_check?.overall === 'PASS' && (entry.state === 'current' || entry.state === 'pending')),
+  },
+  'dashboard-unsynced': {
+    heartbeat: { completed_at: null, stale: true },
+    repositories: repositoryOverview.repositories.filter(entry => entry.heartbeat_completed_at === null),
+  },
+  'dashboard-empty': {
+    heartbeat: { completed_at: null, stale: true },
+    repositories: [],
+  },
+};
+
 function ruleDetail(params) {
   const [source, path, id] = ['source', 'path', 'id'].map(name => params.get(name));
   if (source === null || path === null || id === null) return code(400, 'invalid_rule_identity');
@@ -578,6 +606,8 @@ export function respond(target) {
   const url = new URL(target, 'http://preview.invalid');
   const { pathname, searchParams } = url;
   if (pathname === '/v0/repositories/overview') {
+    const preview = searchParams.get('preview');
+    if (Object.hasOwn(dashboardOverviews, preview)) return json(200, dashboardOverviews[preview]);
     if (searchParams.get('preview') === 'repository-map') {
       const longName = repositoryEntry([`github.com/acme/${'long-repository-name-'.repeat(10)}map`, 'current', 'PASS'],
         repositoryFixtures.length);

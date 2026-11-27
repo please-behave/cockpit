@@ -17,9 +17,10 @@ description: >-
   button reads immediately, shows that it is working, accepts no further
   request meanwhile and restarts the 5-minute interval. A refresh replaces
   content in place and keeps the keyboard focus, the scroll position and the
-  dashboard's sort choice.
-  A failed refresh keeps the data and shows a notice. Tiles are identified by
-  repository key and platform from CON-0014.
+  dashboard's active status filter. Repository rows and chips are identified
+  by repository key (the repository and platform from CON-0014). If a
+  focused control disappears, return focus to the dashboard heading. A
+  failed refresh keeps the data and shows a notice.
 rationale: >-
   The views stay current without a reload and without interrupting the viewer,
   who can see how old the data is and read again on demand.

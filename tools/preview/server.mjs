@@ -28,7 +28,8 @@ async function send(response, status, type, body) {
 }
 
 async function serve(request, response) {
-  const { pathname } = new URL(request.url, `http://${host}`);
+  const url = new URL(request.url, `http://${host}`);
+  const { pathname } = url;
   if (pathname === '/preview/review-cases.json') {
     return send(response, 200, 'application/json', JSON.stringify(reviewCases));
   }
@@ -38,7 +39,13 @@ async function serve(request, response) {
     return send(response, 200, type, await readFile(join(import.meta.dirname, file)));
   }
 
-  const fixture = respond(request.url);
+  // The dashboard uses the real API address. Its preview page chooses the fixture.
+  if (pathname === '/v0/repositories/overview' && request.headers.referer && !url.searchParams.has('preview')) {
+    const referrer = new URL(request.headers.referer);
+    const preview = referrer.searchParams.get('preview');
+    if (referrer.pathname === '/' && preview) url.searchParams.set('preview', preview);
+  }
+  const fixture = respond(url);
   if (fixture) {
     if (fixture.delay) await setTimeout(fixture.delay);
     return send(response, fixture.status, 'application/json', JSON.stringify(fixture.body));

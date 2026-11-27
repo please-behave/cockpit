@@ -3,12 +3,14 @@ import { repeat } from 'lit/directives/repeat.js';
 import type { CompletedRuleSet, RepositoryOverviewEntry } from '../api/client';
 import { compareBySeverity } from '../repository-health';
 import './pb-repo-chip';
+import type { SectionLink } from './pb-section';
 import './pb-widget';
 
 export class RepositoryMap extends LitElement {
   static override properties = {
     repositories: { attribute: false },
     setsByRepository: { attribute: false },
+    link: { attribute: false },
   };
 
   static override styles = css`
@@ -31,6 +33,7 @@ export class RepositoryMap extends LitElement {
     }
   `;
 
+  declare link?: SectionLink;
   declare repositories: readonly RepositoryOverviewEntry[];
   declare setsByRepository: ReadonlyMap<string, readonly CompletedRuleSet[]>;
 
@@ -43,7 +46,7 @@ export class RepositoryMap extends LitElement {
   override render() {
     const sorted = [...this.repositories].sort(compareBySeverity);
     return html`
-      <pb-widget heading="Repository map">
+      <pb-widget heading="Repository map" .link=${this.link}>
         ${sorted.length ? html`
           <ul role="list">
             ${repeat(sorted, entry => JSON.stringify([entry.repository, entry.platform]), entry => html`
@@ -51,7 +54,7 @@ export class RepositoryMap extends LitElement {
                 .completedSets=${this.setsByRepository.get(entry.repository)}></pb-repo-chip></li>
             `)}
           </ul>
-        ` : html`<p>No repositories</p>`}
+        ` : html`<p>${this.link ? 'No repositories match this status.' : 'No repositories'}</p>`}
       </pb-widget>
     `;
   }

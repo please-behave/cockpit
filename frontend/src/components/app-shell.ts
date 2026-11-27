@@ -121,6 +121,18 @@ export class CockpitAppShell extends LitElement {
         display: flex;
         align-items: center;
         gap: var(--space-2);
+        color: var(--text-muted);
+        font-size: var(--type-meta);
+        line-height: var(--line-meta);
+      }
+
+      @media (max-width: 32rem) {
+        .toolbar {
+          grid-template-rows: minmax(var(--target-min-size), auto) minmax(var(--space-8), auto);
+        }
+
+        .view-controls { grid-column: 1 / -1; }
+        pb-refresh-status { grid-column: 2; grid-row: 2; }
       }
 
       main {
@@ -179,11 +191,8 @@ export class CockpitAppShell extends LitElement {
     return html`<span class="tab-label" data-label=${label}><span>${label}</span></span>`;
   }
 
-  private refreshStatus() {
-    const state = this.refreshState;
-    if (!state?.view.isConnected || (this.currentView !== 'dashboard' && this.currentView !== 'history')) {
-      return nothing;
-    }
+  private refreshStatus(state: RefreshState | undefined) {
+    if (!state) return nothing;
     return html`
       <pb-refresh-status .updatedAt=${state.updatedAt} .busy=${state.busy}
         @refresh=${() => state.view.refresh()}></pb-refresh-status>
@@ -191,6 +200,7 @@ export class CockpitAppShell extends LitElement {
   }
 
   override render() {
+    const refresh = this.refreshState?.view.isConnected ? this.refreshState : undefined;
     const wide = ['dashboard', 'history', 'releases', 'deployments', 'rules'].includes(this.currentView);
     return html`
       <a class="skip-link" href="#main-content" @click=${this.skipToMain}>Skip to content</a>
@@ -222,8 +232,8 @@ export class CockpitAppShell extends LitElement {
         </div>
       </header>
       <div class="toolbar">
-        <slot class="view-controls" name="toolbar"></slot>
-        ${this.refreshStatus()}
+        <slot class="view-controls" name="toolbar">${refresh?.toolbar}</slot>
+        ${this.refreshStatus(refresh)}
       </div>
       <main id="main-content" class=${wide ? 'wide' : nothing} tabindex="-1"><slot></slot></main>
     `;

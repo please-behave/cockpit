@@ -10,6 +10,7 @@ const previewLimit = 3;
 export class StatTile extends LitElement {
   static override properties = {
     status: { type: String },
+    href: { type: String },
     repositories: { attribute: false },
     active: { type: Boolean },
   };
@@ -55,6 +56,7 @@ export class StatTile extends LitElement {
   `];
 
   declare status: RepositoryHealth;
+  declare href?: string;
   declare repositories: readonly RepositoryOverviewEntry[];
   declare active: boolean;
 
@@ -87,7 +89,7 @@ export class StatTile extends LitElement {
     const preview = remaining > 0 ? `${names} and ${remaining} more` : names;
     return html`
       <pb-tooltip external-trigger .description=${preview}>
-        <a class="tile ${this.active ? 'active' : ''}" data-route href=${`/?status=${this.status}`}
+        <a class="tile ${this.active ? 'active' : ''}" data-route href=${this.href ?? `/?status=${this.status}`}
           aria-label=${name} aria-current=${this.active ? 'true' : nothing}
           aria-describedby="preview">${content}</a>
       </pb-tooltip>

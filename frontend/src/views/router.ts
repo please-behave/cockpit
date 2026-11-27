@@ -1,7 +1,7 @@
 import type { RuleIdentity } from '../api/client';
 
 export type Route =
-  | { view: 'dashboard' }
+  | { view: 'dashboard'; search: string }
   | { view: 'history' }
   | { view: 'releases' }
   | { view: 'deployments' }
@@ -45,7 +45,7 @@ export function routeFor(location: string): Route {
   const query = location.indexOf('?');
   const path = query === -1 ? location : location.slice(0, query);
   const search = query === -1 ? '' : location.slice(query);
-  if (path === '/') return { view: 'dashboard' };
+  if (path === '/') return { view: 'dashboard', search };
   if (path === '/attestations') return { view: 'history' };
   if (path === '/releases') return { view: 'releases' };
   if (path === '/deployments') return { view: 'deployments' };

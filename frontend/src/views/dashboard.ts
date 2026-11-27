@@ -1,152 +1,59 @@
-import { css, html, nothing, type CSSResult, type PropertyValues } from 'lit';
-import { repeat } from 'lit/directives/repeat.js';
-import {
-  completedRuleSets, repositoryOverview, type CompletedRuleSet, type RepositoryOverview, type RepositoryOverviewEntry,
-} from '../api/client';
+import { css, html, type CSSResult, type LitElement, type PropertyValues } from 'lit';
+import { completedRuleSets, repositoryOverview, type CompletedRuleSet, type RepositoryOverview } from '../api/client';
 import '../components/pb-empty-state';
-import '../components/pb-icon';
-import '../components/pb-repository-tile';
-import '../components/pb-time';
-import { compareByName, compareBySeverity, healthStatuses, repositoryHealth, type RepositoryHealth } from '../repository-health';
+import '../components/pb-needs-attention';
+import '../components/pb-repository-map';
+import '../components/pb-stat-tile';
+import '../components/pb-relative-time';
+import '../components/pb-widget';
+import { healthStatuses, repositoryHealth, type RepositoryHealth } from '../repository-health';
 import { CockpitView } from './cockpit-view';
-
-type Sort = 'severity' | 'time' | 'name';
 
 interface DashboardData extends RepositoryOverview {
   setsByRepository: ReadonlyMap<string, CompletedRuleSet[]>;
 }
 
-const sortOptions: readonly { value: Sort; label: string }[] = [
-  { value: 'severity', label: 'Severity' },
-  { value: 'time', label: 'Last attestation' },
-  { value: 'name', label: 'Name' },
-];
-
-function receivedAt(entry: RepositoryOverviewEntry): number {
-  const time = Date.parse(entry.latest_check?.received_at ?? '');
-  return Number.isNaN(time) ? -Infinity : time;
-}
-
-function compareByTime(left: RepositoryOverviewEntry, right: RepositoryOverviewEntry): number {
-  const leftTime = receivedAt(left);
-  const rightTime = receivedAt(right);
-  if (leftTime === rightTime) return compareByName(left, right);
-  return leftTime < rightTime ? 1 : -1;
-}
-
-const comparators = { severity: compareBySeverity, time: compareByTime, name: compareByName };
-
-function sortFromLocation(): Sort {
-  const sort = new URLSearchParams(window.location.search).get('sort');
-  return sort === 'name' || sort === 'time' ? sort : 'severity';
-}
-
-function tileKey(entry: RepositoryOverviewEntry) {
-  return JSON.stringify([entry.repository, entry.platform]);
-}
+const statuses = Object.keys(healthStatuses) as RepositoryHealth[];
 
 export class DashboardView extends CockpitView<DashboardData> {
-  static override properties = { sort: { state: true } };
+  static override properties = { search: { attribute: false } };
 
   static override styles = [CockpitView.styles as CSSResult, css`
     @layer components {
-      .banner {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: var(--space-4);
-        margin-block-end: var(--space-6);
-        padding: var(--panel-padding) var(--space-6);
-        border: 1px solid var(--panel-border);
-        border-inline-start: 0.5rem solid var(--border);
-        border-radius: var(--radius-panel);
-        background: var(--panel-surface);
-      }
+      :host { overflow-anchor: none; }
 
-      .banner.passed { border-inline-start-color: var(--status-passed); }
-      .banner.failed { border-inline-start-color: var(--status-failed); }
-      .banner.warning { border-inline-start-color: var(--status-warning); }
-      .banner.not-run { border-inline-start-color: var(--status-not-run); }
-
-      .counts {
-        display: flex;
-        flex-wrap: wrap;
-        column-gap: var(--space-4);
-        row-gap: var(--space-1);
-        margin: 0;
-        padding: 0;
-        list-style: none;
-        font-size: var(--type-heading);
-        line-height: var(--line-heading);
-        font-weight: var(--weight-semibold);
-      }
-
-      .counts pb-icon { vertical-align: middle; }
-      .counts .passed { color: var(--status-passed); }
-      .counts .failed { color: var(--status-failed); }
-      .counts .warning { color: var(--status-warning); }
-      .counts .not-run { color: var(--status-not-run); }
-
-      .sync {
-        flex-basis: 100%;
-        margin: 0;
-        color: var(--text-muted);
-        overflow-wrap: anywhere;
-      }
-
-      .sort {
-        margin: 0;
-        margin-inline-start: auto;
-        min-inline-size: 0;
-        padding: 0;
-        border: 0;
-        text-align: end;
-      }
-
-      .sort legend {
-        float: inline-start;
-        padding: 0;
-        margin-inline-end: var(--space-3);
-      }
-
-      .sort label {
-        display: inline-block;
-        min-inline-size: var(--target-min-size);
-        line-height: max(var(--target-min-size), 1em * var(--line-data));
-      }
-
-      .sort label + label {
-        margin-inline-start: var(--space-3);
-      }
-
-      @media (max-width: 24rem) {
-        .sort legend {
-          float: none;
-          margin-inline: auto 0;
-          margin-block-end: var(--space-1);
-        }
-      }
-
-      .tiles {
-        margin: 0;
-        padding: 0;
-        list-style: none;
+      .widgets {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+        grid-template-columns: minmax(0, 1fr);
+        align-items: start;
         gap: var(--space-4);
       }
 
-      .tiles > li {
+      .status-tiles {
         display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-2);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      @media (min-width: 36rem) {
+        .status-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      }
+
+      @media (min-width: 56rem) {
+        .widgets { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
+        .status { grid-column: 1 / -1; }
       }
     }
   `];
 
-  declare sort: Sort;
+  declare search: string;
 
   constructor() {
     super();
-    this.sort = sortFromLocation();
+    this.search = '';
   }
 
   protected override async read(signal: AbortSignal): Promise<DashboardData> {
@@ -165,63 +72,63 @@ export class DashboardView extends CockpitView<DashboardData> {
   protected override get headingVisible() { return false; }
   protected override readonly refreshable = true;
 
+  protected override toolbar(data: DashboardData) {
+    const { completed_at, stale } = data.heartbeat;
+    return html`<span class="sync">${completed_at
+      ? html`Oldest covering sync <pb-relative-time .value=${completed_at}></pb-relative-time>${stale ? ' (stale)' : ''}`
+      : 'No covering sync has completed.'}</span>`;
+  }
+
   protected override content(data?: DashboardData) {
-    return html`${data === undefined ? nothing : this.results(data)}`;
-  }
-
-  protected override update(changed: PropertyValues) {
-    // Lit can move a tile when its health changes. Keep focus on the same control.
-    let focused = this.shadowRoot?.activeElement;
-    while (focused?.shadowRoot?.activeElement) focused = focused.shadowRoot.activeElement;
-    super.update(changed);
-    if (focused instanceof HTMLElement && focused.isConnected && !this.shadowRoot?.activeElement) {
-      focused.focus({ preventScroll: true });
-    }
-  }
-
-  private changeSort(event: Event) {
-    this.sort = (event.target as HTMLInputElement).value as Sort;
-    const url = new URL(window.location.href);
-    if (this.sort === 'severity') url.searchParams.delete('sort');
-    else url.searchParams.set('sort', this.sort);
-    window.history.replaceState(window.history.state, '', url);
-  }
-
-  private results({ heartbeat, repositories, setsByRepository }: DashboardData) {
+    if (!data) return html``;
+    const { repositories, setsByRepository } = data;
     if (repositories.length === 0) {
       return html`<pb-empty-state heading="No repositories"
         message="The ledger has no repositories to show."></pb-empty-state>`;
     }
 
-    const counts: Record<RepositoryHealth, number> = { failed: 0, warning: 0, 'not-run': 0, passed: 0 };
-    for (const entry of repositories) counts[repositoryHealth(entry)]++;
-    const healthEntries = Object.entries(healthStatuses) as [RepositoryHealth, typeof healthStatuses[RepositoryHealth]][];
-    const severity = healthEntries.find(([health]) => counts[health] > 0)?.[0];
-    const sorted = [...repositories].sort(comparators[this.sort]);
+    const requested = new URLSearchParams(this.search).get('status');
+    const filter = statuses.find(status => status === requested);
+    const matching = filter ? repositories.filter(entry => repositoryHealth(entry) === filter) : repositories;
+    const clearFilter = filter ? { href: this.filterPath(), label: 'Clear status filter' } : undefined;
 
     return html`
-      <div class="banner ${severity}">
-        <ul class="counts" aria-label="Repository health" role="list">
-          ${healthEntries.map(([health, { icon, label }]) => html`<li class=${health}>
-            <pb-icon name=${icon}></pb-icon> ${counts[health]} ${label}
-          </li>`)}
-        </ul>
-        <fieldset class="sort">
-          <legend>Sort by</legend>
-          ${sortOptions.map(option => html`<label><input type="radio" name="sort" .value=${option.value}
-            ?checked=${this.sort === option.value} @change=${this.changeSort}> ${option.label}</label>`)}
-        </fieldset>
-        <p class="sync">${heartbeat.completed_at
-          ? html`Oldest covering sync <pb-time .value=${heartbeat.completed_at}></pb-time>${heartbeat.stale ? ' (stale)' : ''}`
-          : 'No covering sync has completed.'}</p>
+      <div class="widgets">
+        <pb-widget class="status" heading="Repository health">
+          <ul class="status-tiles" role="list">
+            ${statuses.map(status => html`<li><pb-stat-tile .status=${status}
+              .repositories=${repositories} .active=${status === filter}
+              .href=${this.filterPath(status)}></pb-stat-tile></li>`)}
+          </ul>
+        </pb-widget>
+        <pb-needs-attention .repositories=${repositories}></pb-needs-attention>
+        <pb-repository-map .repositories=${matching} .setsByRepository=${setsByRepository}
+          .link=${clearFilter}></pb-repository-map>
       </div>
-      <ul class="tiles" aria-label="Repositories" role="list">
-        ${repeat(sorted, tileKey, entry => html`
-          <li><pb-repository-tile .entry=${entry}
-            .completedSets=${setsByRepository.get(entry.repository)}></pb-repository-tile></li>
-        `)}
-      </ul>
     `;
+  }
+
+  private filterPath(status?: RepositoryHealth) {
+    const params = new URLSearchParams(this.search);
+    if (status) params.set('status', status);
+    else params.delete('status');
+    return params.size ? `/?${params}` : '/';
+  }
+
+  protected override update(changed: PropertyValues) {
+    let focused = this.shadowRoot?.activeElement;
+    while (focused?.shadowRoot?.activeElement) focused = focused.shadowRoot.activeElement;
+    super.update(changed);
+    if (focused instanceof HTMLElement) void this.restoreFocus(focused);
+  }
+
+  private async restoreFocus(focused: HTMLElement) {
+    // The keyed lists update after the dashboard and may move a focused repository.
+    const widgets = this.renderRoot.querySelectorAll<LitElement>('pb-stat-tile, pb-needs-attention, pb-repository-map');
+    await Promise.all(Array.from(widgets, widget => widget.updateComplete));
+    if (!this.isConnected || document.activeElement !== document.body) return;
+    const target = focused.isConnected ? focused : this.renderRoot.querySelector('h1');
+    target?.focus({ preventScroll: true });
   }
 }
 
