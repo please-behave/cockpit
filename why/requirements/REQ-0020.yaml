@@ -1,7 +1,8 @@
 id: REQ-0020
 name: Dashboard and History Refresh
 description: >-
-  While the browser tab is visible, the dashboard reads CON-0014 and the
+  While the browser tab is visible, the dashboard reads CON-0014 together
+  with the newest ten entries of CON-0003, CON-0010 and CON-0013, and the
   attestation history reads CON-0003 every 5 minutes and when the tab becomes visible
   after it was hidden for longer than that. They do nothing while the tab is
   hidden. The registered rules, the rule detail and the attestation detail do

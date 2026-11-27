@@ -264,6 +264,14 @@ export function attestationPage(
   return read(`/v0/attestations${suffix}`, signal, 'invalid_query');
 }
 
+export function newestReleases(limit: number, signal: AbortSignal): Promise<ReleaseSummary[]> {
+  return read(`/v0/releases/latest?${new URLSearchParams({ limit: String(limit) })}`, signal, 'invalid_query');
+}
+
+export function newestDeployments(limit: number, signal: AbortSignal): Promise<Deployment[]> {
+  return read(`/v0/deployments?${new URLSearchParams({ limit: String(limit) })}`, signal, 'invalid_query');
+}
+
 const releasePageSize = 100;
 
 export async function releases(repository: string | null, signal: AbortSignal): Promise<ReleaseSummary[]> {

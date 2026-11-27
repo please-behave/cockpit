@@ -461,3 +461,19 @@ test('serves dashboard cases for large, all-clear, unsynced and empty overviews'
   expect(unsynced.repositories.every(entry => entry.heartbeat_completed_at === null)).toBe(true);
   expect(overview('empty').repositories).toEqual([]);
 });
+
+test('serves the activity feed reads in the client shape with ties across kinds and empty or failing variants', () => {
+  const reads = [fixtureTargets.history, fixtureTargets.releases, fixtureTargets.deployments]
+    .map(target => `${target}?limit=10`);
+  const [attestations, releases, deployments] = reads.map(target => body<{ received_at: string }[]>(target));
+  expect([attestations, releases, deployments].map(page => page.length)).toEqual([10, 10, 10]);
+  const times = [attestations, releases, deployments].map(page => new Set(page.map(entry => entry.received_at)));
+  expect(times[0].intersection(times[2]).size).toBeGreaterThan(0);
+  expect(times[0].intersection(times[1]).size).toBeGreaterThan(0);
+
+  for (const target of reads) {
+    expect(respond(`${target}&preview=dashboard-no-activity`)).toEqual({ status: 200, body: [] });
+  }
+  expect(respond(`${reads[1]}&preview=dashboard-activity-failed`)!.status).toBe(503);
+  expect(respond(`${reads[0]}&preview=dashboard-activity-failed`)!.status).toBe(200);
+});

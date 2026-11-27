@@ -1,6 +1,10 @@
 import { render } from 'lit';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
-import { ApiError, completedRuleSets, repositoryOverview, type RepositoryOverview, type RepositoryOverviewEntry } from '../api/client';
+import {
+  ApiError, attestationPage, completedRuleSets, newestDeployments, newestReleases, repositoryOverview,
+  type Deployment, type ReleaseSummary, type RepositoryOverview, type RepositoryOverviewEntry, type Summary,
+} from '../api/client';
+import type { ActivityFeed } from '../components/pb-activity-feed';
 import type { ErrorState } from '../components/pb-error-state';
 import type { NeedsAttention } from '../components/pb-needs-attention';
 import type { RepoChip } from '../components/pb-repo-chip';
@@ -17,10 +21,16 @@ vi.mock(import('../api/client'), async original => ({
   ...await original(),
   repositoryOverview: vi.fn(),
   completedRuleSets: vi.fn(),
+  attestationPage: vi.fn(),
+  newestReleases: vi.fn(),
+  newestDeployments: vi.fn(),
 }));
 
 const overview = vi.mocked(repositoryOverview);
 const completed = vi.mocked(completedRuleSets);
+const attestations = vi.mocked(attestationPage);
+const releases = vi.mocked(newestReleases);
+const deployments = vi.mocked(newestDeployments);
 const fixtures = respond(fixtureTargets.repositoryOverview)!.body as RepositoryOverview;
 
 function entry(repository: string, received_at = '2026-11-22T11:18:19Z'): RepositoryOverviewEntry {
@@ -35,6 +45,9 @@ function repositories(...entries: RepositoryOverviewEntry[]): RepositoryOverview
 beforeEach(() => {
   window.history.replaceState(null, '', '/');
   completed.mockResolvedValue([]);
+  attestations.mockResolvedValue([]);
+  releases.mockResolvedValue([]);
+  deployments.mockResolvedValue([]);
 });
 
 afterEach(() => {
@@ -105,13 +118,75 @@ test('counts the overview and composes the widgets in reading order', async () =
   const view = await mount();
   const root = view.shadowRoot!;
   expect([...root.querySelector('.widgets')!.children].map(node => node.localName)).toEqual([
-    'pb-widget', 'pb-needs-attention', 'pb-repository-map',
+    'pb-widget', 'pb-needs-attention', 'pb-activity-feed', 'pb-repository-map',
   ]);
   const counts = tiles(view).map(tile => tile.shadowRoot!.querySelector('.tile')!.textContent!.trim().replace(/\s+/g, ' '));
   expect(counts).toEqual(['4 failed', '1 warning', '3 unknown', '3 passed']);
   expect(names(view)).toHaveLength(fixtures.repositories.length);
   expect(names(view)).toHaveLength(new Set(names(view)).size);
   expect(names(view)).not.toContain('github.com/acme/archived');
+});
+
+const activityFixtures = {
+  attestations: respond('/v0/attestations?limit=10')!.body as Summary[],
+  releases: respond('/v0/releases/latest?limit=10')!.body as ReleaseSummary[],
+  deployments: respond('/v0/deployments?limit=10')!.body as Deployment[],
+};
+
+const feed = (view: DashboardView) => view.shadowRoot!.querySelector<ActivityFeed>('pb-activity-feed')!;
+const feedRows = (view: DashboardView) => [...feed(view).shadowRoot!.querySelectorAll('li')]
+  .map(row => row.textContent!.replace(/\s+/g, ' ').trim());
+
+// Verifies REQ-0019 and REQ-0020.
+test('reads the three kinds with a small limit together with the overview and merges them', async () => {
+  overview.mockResolvedValue(fixtures);
+  attestations.mockResolvedValue(activityFixtures.attestations.slice(0, 10));
+  releases.mockResolvedValue(activityFixtures.releases.slice(0, 10));
+  deployments.mockResolvedValue(activityFixtures.deployments.slice(0, 10));
+  const view = await mount();
+  await feed(view).updateComplete;
+
+  expect(attestations).toHaveBeenCalledWith({ limit: 10 }, expect.any(AbortSignal));
+  expect(releases).toHaveBeenCalledWith(10, expect.any(AbortSignal));
+  expect(deployments).toHaveBeenCalledWith(10, expect.any(AbortSignal));
+  expect(feed(view).entries).toHaveLength(10);
+  expect(feed(view).failed).toEqual([]);
+  const times = feed(view).entries.map(entry => Date.parse(entry.receivedAt));
+  expect(times).toEqual([...times].sort((left, right) => right - left));
+});
+
+test('shows the other kinds and a notice when one read fails, and keeps the entries of a failing refresh', async () => {
+  overview.mockResolvedValue(fixtures);
+  attestations.mockResolvedValue(activityFixtures.attestations.slice(0, 3));
+  releases.mockRejectedValue(new ApiError('ledger_unavailable'));
+  deployments.mockResolvedValue(activityFixtures.deployments.slice(0, 3));
+  const view = await mount();
+  await feed(view).updateComplete;
+  expect(feed(view).entries).toHaveLength(6);
+  expect(feed(view).entries.some(entry => entry.kind === 'release')).toBe(false);
+  expect(feed(view).failed).toEqual(['release']);
+  expect(feed(view).shadowRoot!.querySelector('[role=status]')?.textContent)
+    .toBe('Could not read the latest releases. The feed may be incomplete or outdated.');
+
+  releases.mockResolvedValue(activityFixtures.releases.slice(0, 2));
+  view.refresh();
+  await vi.waitFor(() => expect(feed(view).entries.filter(entry => entry.kind === 'release')).toHaveLength(2));
+  expect(feed(view).failed).toEqual([]);
+
+  releases.mockRejectedValue(new ApiError('timeout'));
+  deployments.mockRejectedValue(new ApiError('timeout'));
+  view.refresh();
+  await vi.waitFor(() => expect(feed(view).failed).toEqual(['release', 'deployment']));
+  expect(feed(view).entries).toHaveLength(8);
+  expect(feedRows(view)).toHaveLength(8);
+});
+
+test('shows an empty feed as a message without a notice', async () => {
+  overview.mockResolvedValue(fixtures);
+  const view = await mount();
+  await feed(view).updateComplete;
+  expect(feed(view).shadowRoot!.querySelector('p')?.textContent).toBe('No attestations, releases or deployments have been received.');
+  expect(feed(view).shadowRoot!.querySelector('[role=status]')).toBeNull();
 });
 
 test.each([

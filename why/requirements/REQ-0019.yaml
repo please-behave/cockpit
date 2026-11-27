@@ -3,10 +3,11 @@ name: Repository Dashboard
 description: >-
   The dashboard answers which repositories need attention and why, and
   provides a link to each repository in the ledger overview (CON-0014).
-  Status tiles appear above the Needs attention widget and Repository map.
-  At desktop widths, Needs attention and the map sit side by side. At
-  narrow widths the tiles, Needs attention and the map appear in that order
-  in a single column. An overview without repositories shows an explicit
+  Status tiles appear above the Needs attention widget, the Recent activity
+  widget and the Repository map. At desktop widths, the map sits beside
+  Needs attention and Recent activity. At narrow widths the tiles, Needs
+  attention, Recent activity and the map appear in that order in a single
+  column. An overview without repositories shows an explicit
   empty state. The toolbar shows the oldest covering sync completion from
   the ledger as a relative time with its exact local value available in a
   tooltip and accessible description. It labels the sync stale when
@@ -69,6 +70,18 @@ description: >-
   time. The target links to the deployment if an existing view can address
   it directly. The preview also shows the completed Rule Set links of
   REQ-0028.
+  The Recent activity widget merges the newest attestations (CON-0003),
+  releases (CON-0010) and deployments (CON-0013) by ledger receipt time,
+  newest first, into at most ten entries. Entries with the same receipt time
+  appear in the order attestation, release, deployment and then by
+  identifier. Each entry shows the kind as symbol and text, the shortened
+  repository linked to its repository page (REQ-0033), the key fact (the
+  verdict of an attestation, the version of a release or the target name of
+  a deployment) and the relative receipt time with the exact localized time
+  available as an accessible description. An empty feed says so. When a read
+  fails, the widget keeps the entries last received for that kind and names
+  the kinds it could not read.
+
 rationale: >-
   Viewers can identify missing or stale evidence and inspect the reported
   check verdict for each repository, including in large inventories.
@@ -77,6 +90,7 @@ decisions:
   - DEC-0002
   - DEC-0011
   - DEC-0017
+  - DEC-0018
   - why:DEC-0009
   - why:DEC-0024
   - why:DEC-0025

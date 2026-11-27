@@ -1,0 +1,16 @@
+id: DEC-0018
+name: Merge Recent Activity in the Browser
+context: >-
+  The dashboard shows state but not what has just happened. The ledger
+  offers newest-first reads of attestations, releases and deployments but no
+  combined read.
+decision: >-
+  Read the newest few entries of each kind with the existing endpoints,
+  together with the overview, and merge them by receipt time in the
+  browser. Read each kind independently. A failed read keeps the entries last
+  received for its kind and leaves the other kinds and the overview
+  unaffected. Add no endpoint until the ledger needs to offer a combined
+  read for other consumers.
+rationale: >-
+  Viewers see recent events without a new contract. A failing read of one
+  kind does not hide the others.

@@ -601,10 +601,23 @@ function ruleDetail(params) {
   return versions ? json(200, versions) : code(404, 'rule_not_found');
 }
 
+const activityReads = new Set(['/v0/attestations', '/v0/releases/latest', '/v0/deployments']);
+
+function activityPreview(pathname, searchParams) {
+  if (!activityReads.has(pathname) || !searchParams.has('limit')) return undefined;
+  const preview = searchParams.get('preview');
+  searchParams.delete('preview');
+  if (preview === 'dashboard-no-activity') return json(200, []);
+  if (preview === 'dashboard-activity-failed' && pathname === '/v0/releases/latest') return code(503, 'ledger_unavailable');
+  return undefined;
+}
+
 /** Answers a read API request path with the status and JSON body of the fixture, or undefined for other paths. */
 export function respond(target) {
   const url = new URL(target, 'http://preview.invalid');
   const { pathname, searchParams } = url;
+  const activity = activityPreview(pathname, searchParams);
+  if (activity) return activity;
   if (pathname === '/v0/repositories/overview') {
     const preview = searchParams.get('preview');
     if (Object.hasOwn(dashboardOverviews, preview)) return json(200, dashboardOverviews[preview]);

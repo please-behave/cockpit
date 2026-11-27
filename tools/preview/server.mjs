@@ -27,6 +27,8 @@ async function send(response, status, type, body) {
   response.end(body);
 }
 
+const dashboardReads = new Set(['/v0/repositories/overview', '/v0/attestations', '/v0/releases/latest', '/v0/deployments']);
+
 async function serve(request, response) {
   const url = new URL(request.url, `http://${host}`);
   const { pathname } = url;
@@ -40,7 +42,7 @@ async function serve(request, response) {
   }
 
   // The dashboard uses the real API address. Its preview page chooses the fixture.
-  if (pathname === '/v0/repositories/overview' && request.headers.referer && !url.searchParams.has('preview')) {
+  if (dashboardReads.has(pathname) && request.headers.referer && !url.searchParams.has('preview')) {
     const referrer = new URL(request.headers.referer);
     const preview = referrer.searchParams.get('preview');
     if (referrer.pathname === '/' && preview) url.searchParams.set('preview', preview);

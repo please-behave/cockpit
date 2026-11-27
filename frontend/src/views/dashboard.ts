@@ -1,5 +1,13 @@
 import { css, html, type CSSResult, type LitElement, type PropertyValues } from 'lit';
-import { completedRuleSets, repositoryOverview, type CompletedRuleSet, type RepositoryOverview } from '../api/client';
+import {
+  activityKinds, activityLimit, attestationActivity, deploymentActivity, mergeActivity, releaseActivity,
+  type ActivityEntry, type ActivityKind,
+} from '../activity';
+import {
+  attestationPage, completedRuleSets, newestDeployments, newestReleases, repositoryOverview,
+  type CompletedRuleSet, type RepositoryOverview,
+} from '../api/client';
+import '../components/pb-activity-feed';
 import '../components/pb-empty-state';
 import '../components/pb-needs-attention';
 import '../components/pb-repository-map';
@@ -11,6 +19,8 @@ import { CockpitView } from './cockpit-view';
 
 interface DashboardData extends RepositoryOverview {
   setsByRepository: ReadonlyMap<string, CompletedRuleSet[]>;
+  activity: ActivityEntry[];
+  activityFailed: ActivityKind[];
 }
 
 const statuses = Object.keys(healthStatuses) as RepositoryHealth[];
@@ -45,6 +55,7 @@ export class DashboardView extends CockpitView<DashboardData> {
       @media (min-width: 56rem) {
         .widgets { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
         .status { grid-column: 1 / -1; }
+        pb-repository-map { grid-column: 2; grid-row: 2 / span 2; }
       }
     }
   `];
@@ -56,13 +67,38 @@ export class DashboardView extends CockpitView<DashboardData> {
     this.search = '';
   }
 
+  private readonly recent = new Map<ActivityKind, ActivityEntry[]>();
+
   protected override async read(signal: AbortSignal): Promise<DashboardData> {
-    const [overview, completed] = await Promise.all([
+    const [overview, completed, activity] = await Promise.all([
       repositoryOverview(signal),
       completedRuleSets(signal),
+      this.readActivity(signal),
     ]);
     const setsByRepository = new Map(completed.map(({ repository, sets }) => [repository, sets]));
-    return { ...overview, setsByRepository };
+    return { ...overview, setsByRepository, ...activity };
+  }
+
+  /** A failed read keeps the entries of its kind from the last successful read. */
+  private async readActivity(signal: AbortSignal) {
+    const reads: Record<ActivityKind, () => Promise<ActivityEntry[]>> = {
+      attestation: async () => (await attestationPage({ limit: activityLimit }, signal)).map(attestationActivity),
+      release: async () => (await newestReleases(activityLimit, signal)).map(releaseActivity),
+      deployment: async () => (await newestDeployments(activityLimit, signal)).map(deploymentActivity),
+    };
+    const failed = new Set<ActivityKind>();
+    await Promise.all(activityKinds.map(async kind => {
+      try {
+        const entries = await reads[kind]();
+        if (!signal.aborted) this.recent.set(kind, entries);
+      } catch {
+        failed.add(kind);
+      }
+    }));
+    return {
+      activity: mergeActivity([...this.recent.values()].flat()),
+      activityFailed: activityKinds.filter(kind => failed.has(kind)),
+    };
   }
 
   protected override heading() {
@@ -81,7 +117,7 @@ export class DashboardView extends CockpitView<DashboardData> {
 
   protected override content(data?: DashboardData) {
     if (!data) return html``;
-    const { repositories, setsByRepository } = data;
+    const { repositories, setsByRepository, activity, activityFailed } = data;
     if (repositories.length === 0) {
       return html`<pb-empty-state heading="No repositories"
         message="The ledger has no repositories to show."></pb-empty-state>`;
@@ -102,6 +138,7 @@ export class DashboardView extends CockpitView<DashboardData> {
           </ul>
         </pb-widget>
         <pb-needs-attention .repositories=${repositories}></pb-needs-attention>
+        <pb-activity-feed .entries=${activity} .failed=${activityFailed}></pb-activity-feed>
         <pb-repository-map .repositories=${matching} .setsByRepository=${setsByRepository}
           .link=${clearFilter}></pb-repository-map>
       </div>
@@ -124,7 +161,7 @@ export class DashboardView extends CockpitView<DashboardData> {
 
   private async restoreFocus(focused: HTMLElement) {
     // The keyed lists update after the dashboard and may move a focused repository.
-    const widgets = this.renderRoot.querySelectorAll<LitElement>('pb-stat-tile, pb-needs-attention, pb-repository-map');
+    const widgets = this.renderRoot.querySelectorAll<LitElement>('pb-stat-tile, pb-needs-attention, pb-activity-feed, pb-repository-map');
     await Promise.all(Array.from(widgets, widget => widget.updateComplete));
     if (!this.isConnected || document.activeElement !== document.body) return;
     const target = focused.isConnected ? focused : this.renderRoot.querySelector('h1');
