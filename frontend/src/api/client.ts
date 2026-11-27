@@ -43,6 +43,7 @@ export interface Attestation extends Summary {
   results: {
     id: string;
     name?: string;
+    description?: string;
     kind: 'check' | 'review' | 'integrity';
     status: Overall | 'NOT_RUN' | 'WARN';
     verification: Verification;
@@ -62,6 +63,7 @@ export interface RuleIdentity {
 
 export interface BoundRuleSet extends RuleIdentity {
   version: string;
+  description?: string;
   execution_points: string[];
 }
 

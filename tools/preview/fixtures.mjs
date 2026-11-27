@@ -99,6 +99,7 @@ function result(id, kind, status, ruleIdentity, verification = { status: 'verifi
     id, kind, status, verification,
     ...(ruleIdentity ? { rule: ruleIdentity } : {}),
     ...(registration?.name ? { name: registration.name } : {}),
+    ...(registration?.description ? { description: registration.description } : {}),
   };
 }
 
@@ -276,7 +277,15 @@ const setHistories = sets.map(({ registration, members, description }) => {
 
 const fixtureBindings = [baselineSet, securitySet, markupSet,
   { source: ruleSource, path: 'sets/missing', id: 'unregistered-set', version: '1.0' },
-].map(({ source, path, id, version }) => ({ source, path, id, version, execution_points: ['deploy'] }));
+].map(({ source, path, id, version }) => {
+  const registration = setHistories.flat().find(set =>
+    set.source === source && set.path === path && set.id === id && set.version === version,
+  );
+  return {
+    source, path, id, version, execution_points: ['deploy'],
+    ...(registration?.description ? { description: registration.description } : {}),
+  };
+});
 details.get(history[0].id).rule_sets = fixtureBindings;
 details.get(history[1].id).rule_sets = [];
 

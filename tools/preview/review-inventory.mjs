@@ -97,12 +97,8 @@ function collectFormats(element, add) {
     add('Time formats', 'Local date and short time in version selector', text.split(' · ')[1]);
   } else if (type === 'Rule' || type === 'Rule Set') {
     const text = label(element);
-    const registered = new URL(element.href).searchParams.get('version');
     const version = text.match(versionNumber)?.[0];
-    const standalone = element.nextElementSibling?.matches('[part="rule-version"]')
-      && label(element.nextElementSibling) === registered;
-    add('Version formats', `${type} · ${standalone ? 'separate line' : versionFormat(text, version)}`,
-      standalone ? `${text} / ${registered}` : text);
+    add('Version formats', `${type} · ${versionFormat(text, version)}`, text);
   } else if (type === 'Release' || (element.localName === 'h1' && host?.matches('pb-release'))
       || element.matches('[part="deployment-reference"] span[tabindex="0"]')) {
     const text = label(element);

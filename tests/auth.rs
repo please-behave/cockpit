@@ -948,6 +948,7 @@ async fn browser_api_preserves_ledger_json_and_distinguishes_identifier_errors()
         {
             "id": "z/review", "kind": "review", "status": "WARN",
             "name": "<b>Registered review</b>",
+            "description": "<img src=x> Rule description",
             "verification": {"status": "verified"},
             "rule": {"source": "github.com/org/rules", "path": ".please/reviews/example", "id": "example", "version": "1.2"}
         },
@@ -961,6 +962,10 @@ async fn browser_api_preserves_ledger_json_and_distinguishes_identifier_errors()
             "rule": {"source": "github.com/org/rules", "path": ".please/checks/example", "id": "example", "version": "2.0"}
         }
     ]);
+    attestation["rule_sets"] = json!([{
+        "source": "github.com/org/rules", "path": "sets/baseline", "id": "baseline",
+        "version": "2.0", "execution_points": ["release"], "description": "<b>Rule Set description</b>"
+    }]);
     attestation["additional_reported_field"] = json!(["second", "first"]);
     let detail = serde_json::to_string_pretty(&attestation).unwrap();
     let ledger_latest = latest.clone();

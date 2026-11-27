@@ -27,7 +27,13 @@ description: >-
   every value in CON-0002. Results with a registered
   version show the link described by REQ-0027. Other results show the plain
   local rule ID, or the run-scoped result ID when no rule identity was
-  reported. A link at the top returns to the
+  reported. The result row shows the rule label on one line where it fits.
+  Its reported version and a short teaser of the description from CON-0002
+  appear in a popup. Bound Rule Set chips show a popup when a binding has
+  a description and show the version in the chip label. Teasers are plain
+  text and end with an ellipsis when shortened. Popups open on hover,
+  keyboard focus and tap, stay open while hovered or while focus is inside,
+  and leave the detail links reachable. A link at the top returns to the
   dashboard or the attestations page, whichever the viewer opened the detail
   from. The router keeps that origin in the navigation
   state of the history entry, so it survives a reload, and the link goes back

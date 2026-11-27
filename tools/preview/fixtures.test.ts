@@ -93,6 +93,7 @@ test('serves every attestation in the client shape with matching counts', () => 
       expect([binding.source, binding.path, binding.id].every(isString)).toBe(true);
       expect(binding.version).toMatch(/^\d+\.\d+$/);
       expect(binding.execution_points.every(isString)).toBe(true);
+      if (binding.description !== undefined) expect(binding.description).toSatisfy(isString);
     }
     expect(attestation.results.filter(item => item.status === 'WARN')).toHaveLength(attestation.warn_count);
     expect(attestation.results.filter(item => item.status === 'NOT_RUN')).toHaveLength(attestation.not_run_count);
@@ -100,6 +101,7 @@ test('serves every attestation in the client shape with matching counts', () => 
       expect(['check', 'review', 'integrity']).toContain(item.kind);
       expect(['PASS', 'FAIL', 'ERROR', 'NOT_RUN', 'WARN']).toContain(item.status);
       if (item.name !== undefined) expect(item.name).toSatisfy(isString);
+      if (item.description !== undefined) expect(item.description).toSatisfy(isString);
       statuses.add(item.status);
       verifications.add(item.verification.status);
       if (item.verification.status === 'unverified') expect(['unregistered', 'mismatch']).toContain(item.verification.reason);
@@ -113,10 +115,16 @@ test('serves every attestation in the client shape with matching counts', () => 
   expect(verifications).toEqual(new Set(['verified', 'unverified']));
   const grouped = body<Attestation>(fixtureTargets.details[0]);
   expect(grouped.rule_sets?.map(set => set.id)).toEqual(['baseline', 'security', 'markup', 'unregistered-set']);
+  expect(grouped.rule_sets?.map(set => set.description)).toEqual([
+    'Common repository checks and reviews.', undefined, 'Registered description <img src=x onerror=alert(1)>', undefined,
+  ]);
   expect(body<Attestation>(fixtureTargets.details[1]).rule_sets).toEqual([]);
   expect(body<Attestation>(fixtureTargets.details[2])).not.toHaveProperty('rule_sets');
   const mixed = grouped.results;
   expect(mixed.find(item => item.id === 'run-5')?.name).toBe('License file present (older)');
+  expect(mixed.find(item => item.id === 'run-5')?.description).toBe('The repository contains a license file.');
+  expect(mixed.find(item => item.id === 'run-2')).not.toHaveProperty('description');
+  expect(mixed.find(item => item.id === 'run-6')).not.toHaveProperty('description');
   expect(mixed.find(item => item.id === 'run-6')).not.toHaveProperty('name');
   expect(mixed.find(item => item.id === 'run-9')?.name).toContain('<img');
   const scrollable = body<Summary[]>(fixtureTargets.latest).find(summary =>

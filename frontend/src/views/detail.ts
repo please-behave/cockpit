@@ -13,6 +13,7 @@ import '../components/pb-rule-set-chip';
 import { shortName } from '../components/pb-short-name';
 import '../components/pb-status-pill';
 import '../components/pb-time';
+import '../components/pb-tooltip';
 import {
   explainValue, kindExplanations, overallExplanations, statusExplanations, verificationExplanations,
 } from '../components/value-explanations';
@@ -46,14 +47,26 @@ function ruleLabel(result: Result) {
   return hasRegisteredVersion(result) && result.name ? result.name : result.rule?.id ?? result.id;
 }
 
+const teaserLimit = 160;
+
+function teaser(description?: string) {
+  const text = description?.trim().replace(/\s+/g, ' ');
+  if (!text) return undefined;
+  const characters = Array.from(text);
+  return characters.length > teaserLimit ? characters.slice(0, teaserLimit - 1).join('').trimEnd() + '…' : text;
+}
+
 function ruleCell(result: Result) {
   const label = ruleLabel(result);
   const { rule } = result;
-  if (!rule?.version || !hasRegisteredVersion(result)) return label;
-  return html`
-    <a data-route href=${rulePath(rule, rule.version)}>${label}</a>
-    <div part="rule-version" class="muted regular"><code>${rule.version}</code></div>
-  `;
+  if (!rule?.version) return label;
+  const version = `Version ${rule.version}`;
+  const description = teaser(result.description);
+  const popup = description ? `${version} · ${description}` : version;
+  return html`<pb-tooltip external-trigger .description=${popup}>${hasRegisteredVersion(result)
+    ? html`<a data-route href=${rulePath(rule, rule.version)} aria-description=${popup}>${label}</a>`
+    : html`<span tabindex="0" aria-description=${popup}>${label}</span>`
+  }</pb-tooltip>`;
 }
 
 type ResultGroup = DataTableGroup<ResultRow> & { rows: ResultRow[] };
@@ -72,8 +85,8 @@ function resultGroups({ attestation, sets }: Detail): ResultGroup[] {
   const groups = sets.map(({ binding, registration }) => {
     const group: ResultGroup = {
       key: versionKey(binding),
-      heading: html`<pb-rule-set-chip .label=${`${registration?.name || binding.id} · ${binding.version}`}
-        .href=${ruleSetPath(binding, binding.version)}></pb-rule-set-chip>`,
+      heading: html`<pb-rule-set-chip wrap .label=${`${registration?.name || binding.id} · ${binding.version}`}
+        .description=${teaser(binding.description)} .href=${ruleSetPath(binding, binding.version)}></pb-rule-set-chip>`,
       rows: [],
     };
     for (const member of registration?.members ?? []) {
@@ -113,6 +126,10 @@ export class DetailView extends CockpitView<Detail> {
     @layer components {
       pb-fact-strip {
         margin-block-end: var(--space-6);
+      }
+
+      pb-data-table {
+        --rule-set-chip-inline-size: max-content;
       }
 
       pb-data-table::part(rule-name) {

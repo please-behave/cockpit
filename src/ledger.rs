@@ -57,6 +57,7 @@ pub struct BoundRuleSet {
     pub path: String,
     pub id: String,
     pub version: String,
+    pub description: Option<String>,
     pub execution_points: Vec<String>,
 }
 
@@ -72,6 +73,7 @@ pub enum Overall {
 pub struct ReportedResult {
     pub id: String,
     pub name: Option<String>,
+    pub description: Option<String>,
     pub kind: ResultKind,
     pub status: ReportedStatus,
     pub verification: Verification,

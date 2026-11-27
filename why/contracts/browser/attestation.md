@@ -10,7 +10,8 @@ the ledger's `received_at` timestamp, which follows
 Each binding in `rule_sets` contains the set's `source`, `path`, `id`, `version` and
 `execution_points`, including bindings whose set version is unregistered.
 Older responses can omit the array. The ledger returns an empty array when
-it has no bindings for an attestation.
+it has no bindings for an attestation. A binding's optional `description` is
+the stored description of the matching registered Rule Set version.
 
 Each result carries the ledger's `verification` object. The status is
 `verified` or `unverified`. An unverified result includes the ledger's reason,
@@ -19,7 +20,11 @@ rule version and is separate from the reported outcome in the result's `status`.
 When the ledger includes a `rule` object, it carries the source, path, and local
 rule ID, plus the version if reported. The result's top-level `id` is the
 run-scoped identifier. The optional top-level `name` is untrusted text from
-the matching registered rule version, when that registration has a name.
+the matching registered rule version, when that registration has a name. The
+optional top-level `description` comes from the same registration, independent
+of whether its digest matches the result. Both kinds of description are passed
+through in full, omitted when the matching registration has no description or
+is absent, and must be rendered as untrusted text.
 
 The [session, headers and errors](latest.md#session-headers-and-errors) apply
 to this endpoint. An authorized request can also receive these responses.

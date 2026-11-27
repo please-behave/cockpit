@@ -50,6 +50,7 @@ export class RuleSetChip extends LitElement {
     @layer components {
       :host {
         display: block;
+        inline-size: var(--rule-set-chip-inline-size, auto);
         max-inline-size: min(100%, 16rem);
       }
 

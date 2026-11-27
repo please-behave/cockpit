@@ -64,6 +64,12 @@ async function expectExplanation(container: Element, description: string) {
     .toBe(description);
 }
 
+async function popupFor(trigger: Element) {
+  const tooltip = trigger.closest<Tooltip>('pb-tooltip')!;
+  await tooltip.updateComplete;
+  return tooltip.shadowRoot!.querySelector<HTMLElement>('[role="tooltip"]')!;
+}
+
 // Verifies REQ-0004, REQ-0010, REQ-0016, REQ-0017, REQ-0018, REQ-0024 and REQ-0027.
 test.each(['light', 'dark'])('detail presents reported results and verification in the %s theme', async theme => {
   document.documentElement.setAttribute('data-theme', theme);
@@ -76,14 +82,15 @@ test.each(['light', 'dark'])('detail presents reported results and verification 
     id: 'review',
   };
   const registeredName = '<img src=x onerror=alert(1)> <script>bad</script>';
+  const longDescription = '✅'.repeat(158) + '😀' + 'x'.repeat(20);
   detail.mockResolvedValue({
     ...value,
     results: [
-      { id: 'z/review', name: registeredName, kind: 'review', status: 'FAIL',
+      { id: 'z/review', name: registeredName, description: 'Check <img src=x> output.', kind: 'review', status: 'FAIL',
         rule: { ...rule, version: '1.2' }, verification: { status: 'verified' } },
       { id: 'a/rule', kind: 'integrity', status: 'NOT_RUN',
         verification: { status: 'unverified', reason: 'unregistered' } },
-      { id: 'a/rule', name: 'Earlier review', kind: 'check', status: 'PASS',
+      { id: 'a/rule', name: 'Earlier review', description: longDescription, kind: 'check', status: 'PASS',
         rule: { ...rule, version: '2.0' }, verification: { status: 'unverified', reason: 'mismatch' } },
       { id: 'unknown-version', kind: 'review', status: 'WARN',
         rule: { ...rule, version: '3.0' }, verification: { status: 'unverified', reason: 'unregistered' } },
@@ -140,12 +147,25 @@ test.each(['light', 'dark'])('detail presents reported results and verification 
   expect(rows.map(row => row.cells[2].querySelector<StatusPill>('pb-status-pill')?.status)).toEqual([
     'FAIL', 'NOT_RUN', 'PASS', 'WARN', 'PASS',
   ]);
-  expect(rows.map(row => row.cells[0].textContent!.trim().replace(/\s*\n\s*/g, ' ')))
-    .toEqual([`${registeredName} 1.2`, 'a/rule', 'Earlier review 2.0', 'review', 'review 1.0']);
+  expect(rows.map(row => row.cells[0].textContent?.trim()))
+    .toEqual([registeredName, 'a/rule', 'Earlier review', 'review', 'review']);
   expect(rows.map(row => row.cells[0].querySelector('a')?.textContent))
     .toEqual([registeredName, undefined, 'Earlier review', undefined, 'review']);
-  expect(rows.map(row => row.cells[0].querySelector('a + [part="rule-version"]')?.textContent))
-    .toEqual(['1.2', undefined, '2.0', undefined, '1.0']);
+  const triggers = rows.map(row => row.cells[0].querySelector<HTMLElement>('[aria-description]'));
+  const popups = await Promise.all(triggers.map(trigger => trigger && popupFor(trigger)));
+  expect(popups.map(popup => popup?.textContent?.trim())).toEqual([
+    'Version 1.2 · Check <img src=x> output.', undefined,
+    `Version 2.0 · ${'✅'.repeat(158)}😀…`, 'Version 3.0', 'Version 1.0',
+  ]);
+  expect(popups[0]?.querySelector('img')).toBeNull();
+  const ruleLink = triggers[0]!;
+  const rulePopup = popups[0]!;
+  expect(rulePopup.hidden).toBe(true);
+  ruleLink.focus();
+  expect(rulePopup.hidden).toBe(false);
+  expect(ruleLink.matches(':focus-visible')).toBe(true);
+  ruleLink.blur();
+  expect(rulePopup.hidden).toBe(true);
   expect(rows.map(row => {
     const link = row.cells[0].querySelector('a');
     return link ? Object.fromEntries(new URL(link.href).searchParams) : null;
@@ -218,15 +238,16 @@ test.each([
 test('groups results by the exact bound versions, preserving both binding and result order', async () => {
   const value = summary('id', 'FAIL', 'github.com/acme/widget');
   const source = 'github.com/team/catalog';
-  const first = { source, path: 'sets/first & policy', id: 'first', version: '1.0', execution_points: ['check'] };
-  const second = { ...first, path: 'sets/second', id: 'second', version: '2.0' };
-  const missing = { ...first, path: 'sets/missing', id: 'missing' };
+  const binding = { source, version: '1.0', execution_points: ['check'] };
+  const first = { ...binding, path: 'sets/first & policy', id: 'first', description: 'First <b>set</b>.' };
+  const second = { ...binding, path: 'sets/second', id: 'second', version: '2.0' };
+  const missing = { ...binding, path: 'sets/missing', id: 'missing' };
   const rule = { source, path: 'rules/license', id: 'license', version: '1.0' };
   const sibling = { ...rule, path: 'rules/build' };
   const makeResult = (name: string, rule?: Attestation['results'][number]['rule']): Attestation['results'][number] =>
     ({ id: name, name, rule, kind: 'check', status: 'PASS', verification: { status: 'verified' } });
-  const makeSet = (binding: typeof first, name: string, members: (typeof rule)[]) => ({
-    ...binding, name, members: members.map(member => ({ ...member, digest: 'digest', enabled: true })),
+  const makeSet = (binding: typeof second, name: string, members: (typeof rule)[]) => ({
+    ...binding, name, description: 'Registry description', members: members.map(member => ({ ...member, digest: 'digest', enabled: true })),
     digest: 'digest', commit: value.commit, registered_at: receipt,
   });
   detail.mockResolvedValue({
@@ -260,6 +281,31 @@ test('groups results by the exact bound versions, preserving both binding and re
   const links = chips.map(chip => chip.shadowRoot!.querySelector('a')!);
   expect(links.map(link => link.textContent)).toEqual(['Second · 2.0', '<b>First</b> · 1.0', 'missing · 1.0']);
   expect(chips[1].shadowRoot!.querySelector('b')).toBeNull();
+  expect(links.map(link => link.getAttribute('aria-description'))).toEqual([null, 'First <b>set</b>.', null]);
+  expect(links.map(link => Boolean(link.closest('pb-tooltip')))).toEqual([false, true, false]);
+  const setPopup = await popupFor(links[1]);
+  expect(setPopup.textContent?.trim()).toBe('First <b>set</b>.');
+  expect(setPopup.querySelector('b')).toBeNull();
+
+  const prevented: boolean[] = [];
+  const follow = (event: Event) => {
+    prevented.push(event.defaultPrevented);
+    event.preventDefault();
+  };
+  document.addEventListener('click', follow);
+  try {
+    const tap = () => links[1].dispatchEvent(new PointerEvent('click', {
+      pointerType: 'touch', bubbles: true, composed: true, cancelable: true,
+    }));
+    expect(setPopup.hidden).toBe(true);
+    tap();
+    expect(prevented).toEqual([true]);
+    expect(setPopup.hidden).toBe(false);
+    tap();
+    expect(prevented).toEqual([true, false]);
+  } finally {
+    document.removeEventListener('click', follow);
+  }
   expect(links.map(link => Object.fromEntries(new URL(link.href).searchParams)))
     .toEqual([second, first, missing].map(({ source, path, id, version }) => ({ source, path, id, version })));
   expect(headers.slice(3).map(header => header.textContent)).toEqual(['Local rules', 'Unassigned']);

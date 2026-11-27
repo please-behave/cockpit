@@ -88,6 +88,10 @@
           "path": { "type": "string" },
           "id": { "type": "string", "description": "The Rule Set's local ID." },
           "version": { "type": "string" },
+          "description": {
+            "type": "string",
+            "description": "Untrusted text from the matching registered Rule Set version, when available."
+          },
           "execution_points": {
             "type": "array",
             "items": { "type": "string" }
@@ -112,6 +116,10 @@
           "name": {
             "type": "string",
             "description": "The stored name of the matching registered rule version, when available."
+          },
+          "description": {
+            "type": "string",
+            "description": "Untrusted text from the matching registered rule version, when available."
           },
           "kind": {
             "enum": [

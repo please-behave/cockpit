@@ -1,6 +1,7 @@
 id: API-0001
 name: Browser Read
 version: 0
+# Attestation results and Rule Set bindings may include optional descriptions.
 contracts:
   - id: CON-0001
     name: Latest Attestations
