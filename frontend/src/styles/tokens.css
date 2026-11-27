@@ -22,6 +22,7 @@
     --badge-surface: var(--accent-surface);
     --badge-border: var(--border);
     --panel-surface: var(--surface-raised);
+    --panel-surface-prominent: var(--accent-surface);
     --panel-border: var(--border-subtle);
 
     --chip-check-surface: light-dark(#DCF3F0, #12312F);
@@ -148,6 +149,7 @@
       --rule-set-surface: Canvas;
       --rule-set-text: CanvasText;
       --panel-surface: Canvas;
+      --panel-surface-prominent: Canvas;
       --focus-ring: 0.125rem solid Highlight;
     }
   }

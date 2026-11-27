@@ -117,9 +117,15 @@ test('counts the overview and composes the widgets in reading order', async () =
   overview.mockResolvedValue(fixtures);
   const view = await mount();
   const root = view.shadowRoot!;
-  expect([...root.querySelector('.widgets')!.children].map(node => node.localName)).toEqual([
-    'pb-widget', 'pb-needs-attention', 'pb-activity-feed', 'pb-repository-map',
+  const columns = root.querySelector('.widgets')!.children;
+  expect(Array.from(columns, column => Array.from(column.children, node => node.localName))).toEqual([
+    ['pb-widget', 'pb-needs-attention'],
+    ['pb-activity-feed', 'pb-repository-map'],
   ]);
+  const health = columns[0].firstElementChild!;
+  expect(health.getAttribute('heading')).toBe('Repository health');
+  expect(health.hasAttribute('prominent')).toBe(true);
+  expect(health.querySelectorAll('ul > li > pb-stat-tile')).toHaveLength(4);
   const counts = tiles(view).map(tile => tile.shadowRoot!.querySelector('.tile')!.textContent!.trim().replace(/\s+/g, ' '));
   expect(counts).toEqual(['4 failed', '1 warning', '3 unknown', '3 passed']);
   expect(names(view)).toHaveLength(fixtures.repositories.length);

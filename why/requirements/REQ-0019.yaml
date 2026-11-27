@@ -4,17 +4,20 @@ area: operations
 description: >-
   The dashboard answers which repositories need attention and why, and
   provides a link to each repository in the ledger overview (CON-0014).
-  Status tiles appear above the Needs attention widget, the Recent activity
-  widget and the Repository map. At desktop widths, the map sits beside
-  Needs attention and Recent activity. At narrow widths the tiles, Needs
-  attention, Recent activity and the map appear in that order in a single
-  column. An overview without repositories shows an explicit
-  empty state. The toolbar shows the oldest covering sync completion from
-  the ledger as a relative time with its exact local value available in a
-  tooltip and accessible description. It labels the sync stale when
-  applicable, or says "No covering sync has completed." The dashboard follows
-  REQ-0015 in both themes and forced colors, with every status conveyed in
-  text.
+  The Repository health widget presents four compact status rows in a single
+  column. At desktop widths Repository health and Needs attention stack beside
+  a second column containing Recent activity and the Repository map. At
+  narrow widths Repository health, Needs attention, Recent activity and the
+  map appear in that order in a single column. At every width the Repository
+  health widget uses the palette's blue accent surface for a stronger
+  background than the other widgets in both themes. In forced colors it uses
+  the system canvas and a thicker border. An overview without repositories
+  shows an explicit empty state. The toolbar shows the oldest covering sync
+  completion from the ledger as a relative time with its exact local value
+  available in a tooltip and accessible description. It labels the sync
+  stale when applicable, or says "No covering sync has completed." The
+  dashboard follows REQ-0015 in both themes and forced colors, with every
+  status conveyed in text.
 
   Health is unknown (status-not-run) when the ledger state is unknown.
   Otherwise FAIL or ERROR verdicts and never integrated repositories are

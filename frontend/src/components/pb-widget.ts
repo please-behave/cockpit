@@ -39,8 +39,13 @@ export class Widget extends LitElement {
         border-inline-start: var(--space-1) solid var(--accent-fill);
       }
 
+      :host([prominent]) section {
+        background: var(--panel-surface-prominent);
+      }
+
       @media (forced-colors: active) {
         :host([accent]) section { border-inline-start-color: var(--border); }
+        :host([prominent]) section { border-width: 2px; }
       }
 
       .heading:focus-visible, ::slotted(:focus-visible) {

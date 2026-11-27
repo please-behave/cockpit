@@ -109,7 +109,9 @@ test('declared token pairings meet the shared contrast minimums in both themes a
       assert.ok(ratio >= minimum, `${theme} ${foreground} on ${background}: ${ratio.toFixed(2)} < ${minimum}`);
     }
 
-    for (const surface of ['surface', 'surface-raised', 'surface-hover', 'badge-surface', 'panel-surface']) {
+    for (const surface of [
+      'surface', 'surface-raised', 'surface-hover', 'badge-surface', 'panel-surface', 'panel-surface-prominent',
+    ]) {
       for (const text of textTokens) assertContrast(text, surface, 4.5);
       for (const boundary of ['border', 'accent-focus', 'accent-fill']) assertContrast(boundary, surface, 3);
     }
@@ -147,6 +149,7 @@ test('declared token pairings meet the shared contrast minimums in both themes a
     ['badge-surface', 'Canvas'],
     ['badge-border', 'CanvasText'],
     ['panel-surface', 'Canvas'],
+    ['panel-surface-prominent', 'Canvas'],
     ['border', 'CanvasText'],
     ['border-subtle', 'CanvasText'],
     ...['check', 'review', 'blocking', 'neutral'].flatMap(tone => [

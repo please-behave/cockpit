@@ -32,7 +32,7 @@ export class DashboardView extends CockpitView<DashboardData> {
     @layer components {
       :host { overflow-anchor: none; }
 
-      .widgets {
+      .widgets, .widget-column {
         display: grid;
         grid-template-columns: minmax(0, 1fr);
         align-items: start;
@@ -41,21 +41,17 @@ export class DashboardView extends CockpitView<DashboardData> {
 
       .status-tiles {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: minmax(0, 1fr);
+        inline-size: fit-content;
+        max-inline-size: 100%;
         gap: var(--space-2);
         margin: 0;
         padding: 0;
         list-style: none;
       }
 
-      @media (min-width: 36rem) {
-        .status-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-      }
-
       @media (min-width: 56rem) {
-        .widgets { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
-        .status { grid-column: 1 / -1; }
-        pb-repository-map { grid-column: 2; grid-row: 2 / span 2; }
+        .widgets { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       }
     }
   `];
@@ -129,17 +125,21 @@ export class DashboardView extends CockpitView<DashboardData> {
 
     return html`
       <div class="widgets">
-        <pb-widget class="status" heading="Repository health">
-          <ul class="status-tiles" role="list">
-            ${statuses.map(status => html`<li><pb-stat-tile .status=${status}
-              .repositories=${repositories} .active=${status === filter}
-              .href=${this.filterPath(status)}></pb-stat-tile></li>`)}
-          </ul>
-        </pb-widget>
-        <pb-needs-attention .repositories=${repositories}></pb-needs-attention>
-        <pb-activity-feed .entries=${activity} .failed=${activityFailed}></pb-activity-feed>
-        <pb-repository-map .repositories=${repositories} .filter=${filter} .setsByRepository=${setsByRepository}
-          .link=${clearFilter}></pb-repository-map>
+        <div class="widget-column">
+          <pb-widget heading="Repository health" prominent>
+            <ul class="status-tiles" role="list">
+              ${statuses.map(status => html`<li><pb-stat-tile .status=${status}
+                .repositories=${repositories} .active=${status === filter}
+                .href=${this.filterPath(status)}></pb-stat-tile></li>`)}
+            </ul>
+          </pb-widget>
+          <pb-needs-attention .repositories=${repositories}></pb-needs-attention>
+        </div>
+        <div class="widget-column">
+          <pb-activity-feed .entries=${activity} .failed=${activityFailed}></pb-activity-feed>
+          <pb-repository-map .repositories=${repositories} .filter=${filter} .setsByRepository=${setsByRepository}
+            .link=${clearFilter}></pb-repository-map>
+        </div>
       </div>
     `;
   }
