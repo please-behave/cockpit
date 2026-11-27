@@ -16,7 +16,6 @@ export type RefreshState = {
   busy: boolean;
   interval: number;
   cycleStart: number;
-  toolbar?: TemplateResult;
 };
 
 export abstract class CockpitView<T = never> extends LitElement {
@@ -83,7 +82,6 @@ export abstract class CockpitView<T = never> extends LitElement {
   protected abstract heading(data?: T): string;
   protected abstract content(data?: T): TemplateResult;
   protected read?(signal: AbortSignal, refresh: boolean): Promise<T>;
-  protected toolbar?(data: T): TemplateResult;
 
   override connectedCallback() {
     super.connectedCallback();
@@ -216,7 +214,7 @@ export abstract class CockpitView<T = never> extends LitElement {
     this.dispatchEvent(new CustomEvent<RefreshState>('refresh-state', {
       bubbles: true,
       composed: true,
-      detail: { view: this, updatedAt, busy: refreshing, interval, cycleStart, toolbar: this.toolbar?.(data) },
+      detail: { view: this, updatedAt, busy: refreshing, interval, cycleStart },
     }));
   }
 

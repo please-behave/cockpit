@@ -405,6 +405,21 @@ test('serves a single organization across platforms for the dashboard preview', 
   expect(new Set(repositories.map(entry => entry.platform))).toEqual(new Set(['github', null]));
 });
 
+test('serves populated dashboard fixtures for fresh, stale and missing syncs', () => {
+  const path = fixtureTargets.repositoryOverview;
+  for (const [query, stale, synced] of [
+    ['', true, true],
+    ['?preview=dashboard-clear', false, true],
+    ['?preview=dashboard-unsynced', true, false],
+  ] as const) {
+    const { heartbeat, repositories } = body<RepositoryOverview>(path + query);
+    expect(repositories.length).toBeGreaterThan(0);
+    expect(heartbeat.stale).toBe(stale);
+    expect(heartbeat.completed_at).toBe(repositories.flatMap(entry => entry.heartbeat_completed_at ?? []).sort()[0] ?? null);
+    expect(heartbeat.completed_at !== null).toBe(synced);
+  }
+});
+
 test('serves needs-attention fixtures with an unbroken name and a populated all-clear overview', () => {
   const path = fixtureTargets.repositoryOverview;
   const { repositories } = body<RepositoryOverview>(path + '?preview=needs-attention');

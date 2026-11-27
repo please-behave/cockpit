@@ -1,4 +1,4 @@
-import { css, html, type CSSResult, type LitElement, type PropertyValues } from 'lit';
+import { css, html, nothing, type CSSResult, type LitElement, type PropertyValues } from 'lit';
 import {
   activityKinds, activityLimit, attestationActivity, deploymentActivity, mergeActivity, releaseActivity,
   type ActivityEntry, type ActivityKind,
@@ -9,6 +9,7 @@ import {
 } from '../api/client';
 import '../components/pb-activity-feed';
 import '../components/pb-empty-state';
+import '../components/pb-icon';
 import '../components/pb-needs-attention';
 import '../components/pb-repository-map';
 import '../components/pb-stat-tile';
@@ -49,6 +50,8 @@ export class DashboardView extends CockpitView<DashboardData> {
         padding: 0;
         list-style: none;
       }
+
+      .sync-stale { color: var(--status-warning); }
 
       @media (min-width: 56rem) {
         .widgets { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -104,35 +107,44 @@ export class DashboardView extends CockpitView<DashboardData> {
   protected override get headingVisible() { return false; }
   protected override readonly refreshable = true;
 
-  protected override toolbar(data: DashboardData) {
-    const { completed_at, stale } = data.heartbeat;
-    return html`<span class="sync">${completed_at
-      ? html`Oldest covering sync <pb-relative-time .value=${completed_at}></pb-relative-time>${stale ? ' (stale)' : ''}`
-      : 'No covering sync has completed.'}</span>`;
+  private syncStatus({ completed_at, stale }: RepositoryOverview['heartbeat']) {
+    if (!completed_at) return html`<div class="meta sync">The repository list has not been synced yet.</div>`;
+
+    return html`<div class="meta sync">
+      Repository list synced <pb-relative-time .value=${completed_at}></pb-relative-time>${stale ? html`
+        <span class="sync-stale"><pb-icon name="warning"></pb-icon> stale</span>
+        <div>Statuses may be outdated</div>
+      ` : nothing}
+    </div>`;
   }
 
   protected override content(data?: DashboardData) {
     if (!data) return html``;
     const { repositories, setsByRepository, activity, activityFailed } = data;
-    if (repositories.length === 0) {
-      return html`<pb-empty-state heading="No repositories"
-        message="The ledger has no repositories to show."></pb-empty-state>`;
-    }
-
     const requested = new URLSearchParams(this.search).get('status');
     const filter = statuses.find(status => status === requested);
     const clearFilter = filter ? { href: this.filterPath(), label: 'Clear status filter' } : undefined;
+    const health = html`<pb-widget heading="Repository health" prominent>
+      ${repositories.length ? html`<ul class="status-tiles" role="list">
+        ${statuses.map(status => html`<li><pb-stat-tile .status=${status}
+          .repositories=${repositories} .active=${status === filter}
+          .href=${this.filterPath(status)}></pb-stat-tile></li>`)}
+      </ul>` : nothing}
+      ${this.syncStatus(data.heartbeat)}
+    </pb-widget>`;
+
+    if (repositories.length === 0) {
+      return html`<div class="widget-column">
+        ${health}
+        <pb-empty-state heading="No repositories"
+          message="The ledger has no repositories to show."></pb-empty-state>
+      </div>`;
+    }
 
     return html`
       <div class="widgets">
         <div class="widget-column">
-          <pb-widget heading="Repository health" prominent>
-            <ul class="status-tiles" role="list">
-              ${statuses.map(status => html`<li><pb-stat-tile .status=${status}
-                .repositories=${repositories} .active=${status === filter}
-                .href=${this.filterPath(status)}></pb-stat-tile></li>`)}
-            </ul>
-          </pb-widget>
+          ${health}
           <pb-needs-attention .repositories=${repositories}></pb-needs-attention>
         </div>
         <div class="widget-column">

@@ -309,8 +309,8 @@ test('follows and clears a status filter on the same dashboard without reading a
   const { app, shell } = await mountAt('/');
   const view = app.shadowRoot!.querySelector<DashboardView>('pb-dashboard')!;
   const root = view.shadowRoot!;
-  await vi.waitFor(() => expect(shell.shadowRoot!.querySelector('.toolbar .sync')?.textContent)
-    .toMatch(/Oldest covering sync.*stale/s));
+  await vi.waitFor(() => expect(status(shell)).not.toBeNull());
+  expect(shell.shadowRoot!.querySelector('.toolbar')?.textContent?.trim()).toBe('');
   await vi.waitFor(() => expect(root.querySelector('pb-stat-tile')?.shadowRoot?.querySelector('a')).toBeTruthy());
   const failed = root.querySelector('pb-stat-tile')!.shadowRoot!.querySelector('a')!;
   const map = root.querySelector('pb-repository-map')!;

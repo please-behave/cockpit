@@ -12,12 +12,15 @@ description: >-
   health widget uses the palette's blue accent surface for a stronger
   background than the other widgets in both themes. In forced colors it uses
   the system canvas and a thicker border. An overview without repositories
-  shows an explicit empty state. The toolbar shows the oldest covering sync
-  completion from the ledger as a relative time with its exact local value
-  available in a tooltip and accessible description. It labels the sync
-  stale when applicable, or says "No covering sync has completed." The
-  dashboard follows REQ-0015 in both themes and forced colors, with every
-  status conveyed in text.
+  shows an explicit empty state alongside the Repository health widget.
+  The widget shows the oldest covering sync completion from the ledger as
+  "Repository list synced" followed by the relative time. The exact local
+  time is available in a tooltip and accessible description. When the
+  heartbeat is stale, the widget shows a warning symbol, the word "stale"
+  and the note "Statuses may be outdated". Without a completed heartbeat it
+  says "The repository list has not been synced yet." The toolbar contains
+  the refresh control described in REQ-0020. The dashboard follows REQ-0015
+  in both themes and forced colors, with every status conveyed in text.
 
   Health is unknown (status-not-run) when the ledger state is unknown.
   Otherwise FAIL or ERROR verdicts and never integrated repositories are
@@ -107,7 +110,7 @@ decisions:
   - DEC-0002
   - DEC-0011
   - DEC-0018
-  - DEC-0020
+  - DEC-0021
   - why:DEC-0009
   - why:DEC-0024
   - why:DEC-0025

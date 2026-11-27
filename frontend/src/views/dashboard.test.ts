@@ -1,4 +1,3 @@
-import { render } from 'lit';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import {
   ApiError, attestationPage, completedRuleSets, newestDeployments, newestReleases, repositoryOverview,
@@ -12,6 +11,8 @@ import type { RepositoryMap } from '../components/pb-repository-map';
 import type { RuleSetChip } from '../components/pb-rule-set-chip';
 import type { StatTile } from '../components/pb-stat-tile';
 import type { RelativeTime } from '../components/pb-relative-time';
+import { formatTime } from '../components/pb-time';
+import type { Tooltip } from '../components/pb-tooltip';
 import { fixtureTargets, respond } from '../../../tools/preview/fixtures.mjs';
 import type { RefreshState } from './cockpit-view';
 import { DashboardView } from './dashboard';
@@ -92,12 +93,10 @@ test('passes completed sets to the matching map preview and clears them on refre
 });
 
 // Verifies REQ-0019.
-test('shows loading and then the empty state, with sync status available to the toolbar', async () => {
+test('shows loading and then the empty state and missing sync status', async () => {
   let complete!: (data: RepositoryOverview) => void;
   overview.mockReturnValue(new Promise<RepositoryOverview>(resolve => { complete = resolve; }));
   const view = new DashboardView();
-  const toolbar = document.createElement('div');
-  view.addEventListener('refresh-state', event => render((event as CustomEvent<RefreshState>).detail.toolbar, toolbar));
   document.body.append(view);
   await view.updateComplete;
   const root = view.shadowRoot!;
@@ -110,7 +109,8 @@ test('shows loading and then the empty state, with sync status available to the 
   expect(root.querySelector('pb-empty-state')!.getAttribute('message'))
     .toBe('The ledger has no repositories to show.');
   expect(root.querySelector('[role=status], .widgets')).toBeNull();
-  expect(toolbar.textContent).toBe('No covering sync has completed.');
+  expect(root.querySelector('pb-widget[heading="Repository health"] .sync')?.textContent)
+    .toBe('The repository list has not been synced yet.');
 });
 
 test('counts the overview and composes the widgets in reading order', async () => {
@@ -237,14 +237,42 @@ test.each([
     .toBe(`/?preview=${fixture}&status=${status}`);
 });
 
-test('shows the covering sync and stale state in the toolbar template', async () => {
-  overview.mockResolvedValue(fixtures);
-  const view = new DashboardView();
-  const toolbar = document.createElement('div');
-  view.addEventListener('refresh-state', event => render((event as CustomEvent<RefreshState>).detail.toolbar, toolbar));
-  document.body.append(view);
-  await vi.waitFor(() => expect(toolbar.textContent).toContain('(stale)'));
-  expect(toolbar.querySelector<RelativeTime>('pb-relative-time')?.value).toBe(fixtures.heartbeat.completed_at);
+// Verifies REQ-0019.
+test.each([
+  ['', true, '2 days ago'],
+  ['?preview=dashboard-clear', false, '25 minutes ago'],
+] as const)('shows the completed sync time for fixture %j', async (query, stale, relative) => {
+  const fixture = respond(fixtureTargets.repositoryOverview + query)!.body as RepositoryOverview;
+  const completedAt = new Date(fixture.heartbeat.completed_at!);
+  vi.setSystemTime(new Date(completedAt.getTime() + (stale ? 2 * 86_400_000 : 25 * 60_000)));
+  overview.mockResolvedValue(fixture);
+
+  const view = await mount();
+  const sync = view.shadowRoot!.querySelector('pb-widget[heading="Repository health"] .sync')!;
+  expect(sync.textContent).toContain('Repository list synced');
+  expect(sync.textContent?.includes('Statuses may be outdated')).toBe(stale);
+  expect(sync.querySelector('.sync-stale')?.textContent?.trim()).toBe(stale ? 'stale' : undefined);
+  expect(sync.querySelector('pb-icon[name="warning"]') !== null).toBe(stale);
+
+  const time = sync.querySelector<RelativeTime>('pb-relative-time')!;
+  await time.updateComplete;
+  expect(time.shadowRoot!.querySelector('time')?.textContent).toBe(relative);
+  expect(time.shadowRoot!.querySelector('time')?.dateTime).toBe(fixture.heartbeat.completed_at);
+  const tooltip = time.shadowRoot!.querySelector<Tooltip>('pb-tooltip')!;
+  await tooltip.updateComplete;
+  expect(tooltip.shadowRoot!.querySelector('button')?.getAttribute('aria-describedby')).toBe('description');
+  expect(tooltip.shadowRoot!.querySelector('[role="tooltip"]')?.textContent?.trim()).toBe(formatTime(completedAt));
+});
+
+// Verifies REQ-0019.
+test('shows when the listed repositories have no completed sync', async () => {
+  overview.mockResolvedValue(respond(fixtureTargets.repositoryOverview + '?preview=dashboard-unsynced')!.body as RepositoryOverview);
+
+  const view = await mount();
+  const sync = view.shadowRoot!.querySelector('pb-widget[heading="Repository health"] .sync')!;
+  expect(tiles(view)).toHaveLength(4);
+  expect(sync.textContent).toBe('The repository list has not been synced yet.');
+  expect(sync.querySelector('pb-relative-time, pb-icon')).toBeNull();
 });
 
 // Verifies REQ-0003.

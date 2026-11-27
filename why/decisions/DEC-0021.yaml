@@ -1,0 +1,36 @@
+id: DEC-0021
+name: Qualify Repository Health with Sync Status
+context: >-
+  The dashboard toolbar showed the oldest covering collector heartbeat
+  beside the refresh control. The ledger derives repository status from
+  collector heartbeats, so a stale heartbeat can make repository status
+  unknown. The toolbar separated that explanation from the counts it qualifies.
+decision: >-
+  Show the oldest covering sync completion in the Repository health widget
+  as the relative age of the repository list, with the exact local time
+  available as a tooltip and accessible description. Show a warning and
+  explain that statuses may be outdated when the heartbeat is stale.
+  Explicitly say when the repository list has never been synced. The
+  dashboard toolbar holds the refresh control.
+
+  Keep status counts, Needs attention and the Repository map based on the
+  same health groups. Status counts and Needs attention cover the full
+  overview. Keep the global attention order by severity, canonical repository
+  name and platform, and display the organization beside each repository's
+  details. Group map chips by the owner segment of their repository
+  identifiers. Show organization headings and health counts when the
+  overview has multiple organizations. Order sections by worst health and
+  organization name, and chips within each section by severity, shortened
+  repository name and platform. Compare text by lower-cased code points,
+  breaking case-only ties by original code points. Keep the shareable status
+  query scoped to the map and hide sections with no matching chips. Compute
+  section counts and severity from the full overview. Keep evidence, release,
+  deployment and completed Rule Set details in the map preview and
+  repository views.
+rationale: >-
+  Placing the sync age and warning beside the status counts helps viewers
+  judge whether the repository statuses are current. Organization headings
+  explain the ordering and distinguish equal repository names. Health counts
+  retain the context for each visible organization when the map is filtered.
+supersedes:
+  - DEC-0020

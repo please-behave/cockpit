@@ -289,7 +289,7 @@ export class CockpitAppShell extends LitElement {
         </div>
       </header>
       <div class="toolbar">
-        <slot class="view-controls" name="toolbar">${refresh?.toolbar}</slot>
+        <slot class="view-controls" name="toolbar"></slot>
         ${this.refreshStatus(refresh)}
       </div>
       <main id="main-content" class=${wide ? 'wide' : nothing} tabindex="-1"><slot></slot></main>
