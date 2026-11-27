@@ -73,7 +73,8 @@ test.each([repositoryPath(repository), '/releases/repository?repository=github.c
     const filteredHistory = '/v0/attestations?limit=100&repository=github.com%2Facme%2Freturn-navigation';
     const expected = respond(filteredHistory)!.body as Summary[];
     expect(history.rows.map(row => row.key)).toEqual(expected.map(summary => summary.id));
-    expect(history.shadowRoot?.querySelector('tbody a')?.getAttribute('href')).toBe(`/attestations/${expected[0].id}`);
+    expect(history.shadowRoot?.querySelector('tbody pb-time')?.shadowRoot?.querySelector('a')?.getAttribute('href'))
+      .toBe(`/attestations/${expected[0].id}`);
     expect(fetch.mock.calls.map(([target]) => target)).toEqual([
       '/v0/releases?limit=100&repository=github.com%2Facme%2Freturn-navigation',
       '/v0/attestations/latest',
@@ -150,7 +151,7 @@ test('shows every overlapping execution-point combination separately', async () 
   const { root } = await open(repositoryPath('github.com/acme/widget'));
   const latest = root.querySelector<DataTable>('pb-data-table')!;
   const links = [...latest.shadowRoot!.querySelectorAll('tbody tr')].map(row =>
-    [row.querySelector('th')?.textContent, row.querySelector('a')?.getAttribute('href')]);
+    [row.querySelector('th')?.textContent, row.querySelector('pb-time')?.shadowRoot?.querySelector('a')?.getAttribute('href')]);
   expect(links).toEqual([
     ['deploy', '/attestations/00000000-0000-4000-8000-000000000082'],
     ['build', '/attestations/00000000-0000-4000-8000-000000000081'],

@@ -71,8 +71,8 @@ async function tableRoot(view: HistoryView) {
 }
 
 const hrefs = (view: HistoryView) => [...view.shadowRoot!.querySelectorAll('pb-data-table')]
-  .flatMap(table => [...table.shadowRoot!.querySelectorAll('tbody td:first-child a[data-route]')])
-  .map(link => link.getAttribute('href'));
+  .flatMap(table => [...table.shadowRoot!.querySelectorAll<CockpitTime>('tbody td:first-child pb-time')])
+  .map(time => time.shadowRoot?.querySelector('a[data-route]')?.getAttribute('href'));
 
 async function rowCount(view: HistoryView) {
   const root = await tableRoot(view);
@@ -126,7 +126,11 @@ test('shows one row per attestation with its columns, links and tooltips', async
   expect(timestamp.dateTime).toBe(report.received_at);
   expect(timestamp.hasAttribute('title')).toBe(false);
 
-  expect(time.closest('a')?.getAttribute('href')).toBe('/attestations/first%3Fquery');
+  const reported = timestamp.closest('a[data-route]')!;
+  expect(reported.getAttribute('href')).toBe('/attestations/first%3Fquery');
+  const exactTime = reported.getAttribute('aria-description');
+  expect(exactTime).toContain('2026-11-22T12:00:00.000Z (UTC)');
+  expect(reported.parentElement).toMatchObject({ localName: 'pb-tooltip', externalTrigger: true, description: exactTime });
   const link = first.querySelector<HTMLAnchorElement>('pb-tooltip > a[data-route]')!;
   expect(link.getAttribute('href')).toBe('/repositories/detail?repository=github.com%2Facme%2Fwidget');
   expect(link.querySelector<ShortName>('pb-short-name')!.value).toBe('github.com/acme/widget');

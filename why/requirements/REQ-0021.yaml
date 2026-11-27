@@ -4,7 +4,7 @@ area: attestations
 description: >-
   The attestations page lists every attestation the ledger holds, one row per
   attestation, loaded through CON-0003 and shown newest first as the ledger
-  returns them. A row shows the exact ledger receipt time with its time zone
+  returns them. A row shows the localized ledger receipt time by DEC-0022
   in the "Reported" column as a link to the attestation, the shortened repository
   name with the full value in a tooltip on its link to the repository page of
   REQ-0033, the first seven characters of the commit and the overall status.
@@ -27,3 +27,4 @@ decisions:
   - DEC-0008
   - DEC-0009
   - DEC-0011
+  - DEC-0022

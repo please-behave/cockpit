@@ -1,0 +1,18 @@
+id: DEC-0022
+name: Show Local Timestamps with Exact Details on Demand
+context: >-
+  Shared decision why:DEC-0027 converts UTC instants to the viewer's local
+  time zone for display. Repeating the zone in every timestamp takes space
+  in tables and detail views.
+decision: >-
+  Display absolute timestamps in the browser's locale and local time zone
+  with a medium date and medium time. Keep relative and elapsed time labels.
+  Make the exact local time, including seconds and its time zone label,
+  and the UTC value available in a tooltip and as an accessible description.
+  Preserve the original timestamp in the time element's datetime attribute.
+  Show unparseable values as plain text.
+rationale: >-
+  Shorter timestamps are easier to scan. The local time zone and UTC value
+  let viewers identify and correlate the instant when they need it.
+supersedes:
+  - DEC-0007

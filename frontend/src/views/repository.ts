@@ -46,8 +46,8 @@ function attestationRow(summary: Summary) {
     summary,
     cells: [
       summary.execution_points.join(', ') || 'No execution points',
-      html`<a data-route href=${`/attestations/${encodeURIComponent(summary.id)}`}>
-        <pb-time .value=${summary.received_at}></pb-time></a>`,
+      html`<pb-time .href=${`/attestations/${encodeURIComponent(summary.id)}`}
+        .value=${summary.received_at}></pb-time>`,
       html`<pb-commit-link .repository=${summary.repository} .commit=${summary.commit}></pb-commit-link>`,
       html`<pb-status-pill .status=${summary.overall}></pb-status-pill>`,
     ] as const,

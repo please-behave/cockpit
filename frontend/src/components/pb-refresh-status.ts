@@ -1,7 +1,7 @@
 import { css, html, LitElement, svg, type PropertyValues } from 'lit';
 import { keyed } from 'lit/directives/keyed.js';
 import { defaultRefreshInterval, refreshIntervalLabel, refreshIntervals } from '../refresh-interval';
-import { formatTime } from './pb-time';
+import { describeTime } from './pb-time';
 import { relativeTime } from './pb-relative-time';
 import './pb-tooltip';
 
@@ -211,7 +211,7 @@ export class RefreshStatus extends LitElement {
 
   override render() {
     return html`
-      <pb-tooltip .description=${formatTime(this.updatedAt)}><time
+      <pb-tooltip .description=${describeTime(this.updatedAt)}><time
         datetime=${this.updatedAt.toISOString()}>${updatedText(this.updatedAt, new Date())}</time></pb-tooltip>
       <span class="controls">
         <pb-tooltip external-trigger description="Refresh">

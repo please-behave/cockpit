@@ -182,8 +182,8 @@ export class HistoryView extends CockpitView<Summary[]> {
     const rows = this.loaded.map(summary => ({
       key: summary.id,
       cells: [
-        html`<a data-route href=${`/attestations/${encodeURIComponent(summary.id)}`}>
-          <pb-time .value=${summary.received_at}></pb-time></a>`,
+        html`<pb-time .href=${`/attestations/${encodeURIComponent(summary.id)}`}
+          .value=${summary.received_at}></pb-time>`,
         html`<pb-tooltip external-trigger .description=${summary.repository}>
           <a data-route href=${repositoryPath(summary.repository)}>
             <pb-short-name .value=${summary.repository}></pb-short-name></a>

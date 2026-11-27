@@ -186,6 +186,8 @@ for (let number = total; number >= 1; number -= 1) {
     ? newest[latestIndex]
     : { ...newest[number % newest.length], minutesAgo: latestIndex * 20 };
   const summary = summarize(entry, uuid(number), now - entry.minutesAgo * 60_000);
+  // Exercise precision beyond milliseconds in the exact timestamp tooltip.
+  if (number === total) summary.received_at = summary.received_at.replace(/Z$/, '123Z');
   history.push(summary);
   details.set(summary.id, { ...summary, results: entry.results });
 }

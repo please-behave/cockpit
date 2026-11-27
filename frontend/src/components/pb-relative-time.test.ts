@@ -1,6 +1,6 @@
 import { afterEach, expect, test, vi } from 'vitest';
 import { relativeTime, RelativeTime } from './pb-relative-time';
-import { formatTime } from './pb-time';
+import { describeTime } from './pb-time';
 import type { Tooltip } from './pb-tooltip';
 
 afterEach(() => {
@@ -38,7 +38,8 @@ test('keeps the text current without new data and stops when removed', async () 
   expect(read().dateTime).toBe('2026-11-22T12:00:00Z');
   expect(read().hasAttribute('title')).toBe(false);
   const tooltip = element.shadowRoot!.querySelector<Tooltip>('pb-tooltip')!;
-  expect(tooltip.description).toBe(formatTime(new Date(element.value)));
+  expect(tooltip.description).toBe(describeTime(new Date(element.value), element.value));
+  expect(tooltip.description).toContain('2026-11-22T12:00:00.000Z (UTC)');
   expect(tooltip.hint).toBe(false);
 
   await vi.advanceTimersByTimeAsync(60_000);

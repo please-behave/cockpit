@@ -40,4 +40,4 @@ rationale: >-
   who can see how old the data is and read again on demand.
 decisions:
   - DEC-0001
-  - DEC-0007
+  - DEC-0022

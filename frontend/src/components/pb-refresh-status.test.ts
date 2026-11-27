@@ -1,6 +1,6 @@
 import { afterEach, expect, test, vi } from 'vitest';
 import { RefreshStatus, updatedText } from './pb-refresh-status';
-import { formatTime } from './pb-time';
+import { describeTime } from './pb-time';
 import type { Tooltip } from './pb-tooltip';
 
 afterEach(() => {
@@ -37,7 +37,8 @@ test('shows the age with the exact time, a named button, and no live region', as
   const status = await mount(new Date());
   const root = status.shadowRoot!;
   expect(root.querySelector('time')?.textContent).toBe('Updated a few seconds ago');
-  expect(root.querySelector<Tooltip>('pb-tooltip')!.description).toBe(formatTime(status.updatedAt));
+  expect(root.querySelector<Tooltip>('pb-tooltip')!.description).toBe(describeTime(status.updatedAt));
+  expect(root.querySelector<Tooltip>('pb-tooltip')!.description).toContain(`${status.updatedAt.toISOString()} (UTC)`);
   expect(root.querySelector('button')?.getAttribute('aria-label')).toBe('Refresh');
   expect(root.querySelector('[aria-live], [role=status], [role=alert]')).toBeNull();
 });

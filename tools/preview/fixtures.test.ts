@@ -73,6 +73,7 @@ test('pages the history newest first with limit and before', () => {
   const first = body<Summary[]>(fixtureTargets.history);
   first.forEach(expectSummary);
   expect(first).toHaveLength(100);
+  expect(first[0].received_at).toMatch(/\.\d{6}Z$/);
   const next = body<Summary[]>(`${fixtureTargets.history}?before=${first.at(-1)!.id}`);
   expect(next.length).toBeGreaterThan(0);
   expect(next.length).toBeLessThan(100);

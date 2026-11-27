@@ -11,7 +11,7 @@ import type { RepositoryMap } from '../components/pb-repository-map';
 import type { RuleSetChip } from '../components/pb-rule-set-chip';
 import type { StatTile } from '../components/pb-stat-tile';
 import type { RelativeTime } from '../components/pb-relative-time';
-import { formatTime } from '../components/pb-time';
+import { describeTime } from '../components/pb-time';
 import type { Tooltip } from '../components/pb-tooltip';
 import { fixtureTargets, respond } from '../../../tools/preview/fixtures.mjs';
 import type { RefreshState } from './cockpit-view';
@@ -261,7 +261,8 @@ test.each([
   const tooltip = time.shadowRoot!.querySelector<Tooltip>('pb-tooltip')!;
   await tooltip.updateComplete;
   expect(tooltip.shadowRoot!.querySelector('button')?.getAttribute('aria-describedby')).toBe('description');
-  expect(tooltip.shadowRoot!.querySelector('[role="tooltip"]')?.textContent?.trim()).toBe(formatTime(completedAt));
+  expect(tooltip.shadowRoot!.querySelector('[role="tooltip"]')?.textContent?.trim())
+    .toBe(describeTime(completedAt, fixture.heartbeat.completed_at!));
 });
 
 // Verifies REQ-0019.

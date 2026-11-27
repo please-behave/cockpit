@@ -1,5 +1,5 @@
 import { css, html, LitElement } from 'lit';
-import { formatTime } from './pb-time';
+import { describeTime } from './pb-time';
 import './pb-tooltip';
 
 const tick = 30_000;
@@ -51,7 +51,7 @@ export class RelativeTime extends LitElement {
     const date = new Date(this.value);
     if (Number.isNaN(date.getTime())) return html`<span>${this.value}</span>`;
 
-    return html`<pb-tooltip .description=${formatTime(date)}><time
+    return html`<pb-tooltip .description=${describeTime(date, this.value)}><time
       datetime=${this.value}>${relativeTime(date, new Date(), this.duration)}</time></pb-tooltip>`;
   }
 }
