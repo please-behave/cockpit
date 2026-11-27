@@ -1,4 +1,5 @@
 import { css, html, type CSSResult } from 'lit';
+import { repeat } from 'lit/directives/repeat.js';
 import { deployments, type Deployment } from '../api/client';
 import '../components/pb-empty-state';
 import { CockpitView } from './cockpit-view';
@@ -27,7 +28,7 @@ function groupDeployments(entries: Deployment[], groupBy: GroupBy) {
 export class DeploymentsView extends CockpitView<Deployment[]> {
   static override styles = [CockpitView.styles as CSSResult, deploymentTableStyles, css`
     @layer components {
-      :host { overflow-wrap: anywhere; }
+      :host { overflow-wrap: anywhere; overflow-anchor: none; }
 
       .controls {
         display: grid;
@@ -58,15 +59,19 @@ export class DeploymentsView extends CockpitView<Deployment[]> {
 
   private groupBy: GroupBy = 'target';
   private target = '';
+  private selectedTargetLabel = '';
   private repository = '';
   private evidence = '';
 
+  protected override readonly refreshable = true;
   protected override get headingVisible() { return false; }
   protected override heading() { return 'Deployments'; }
   protected override read(signal: AbortSignal) { return deployments(signal); }
 
   private change(event: Event, field: 'groupBy' | 'target' | 'repository' | 'evidence') {
-    const value = (event.currentTarget as HTMLSelectElement).value;
+    const select = event.currentTarget as HTMLSelectElement;
+    const { value } = select;
+    if (field === 'target') this.selectedTargetLabel = select.selectedOptions[0]?.textContent ?? '';
     if (field === 'groupBy') this.groupBy = value === 'repository' ? 'repository' : 'target';
     else this[field] = value;
     this.requestUpdate();
@@ -75,6 +80,9 @@ export class DeploymentsView extends CockpitView<Deployment[]> {
   private controls(entries: Deployment[]) {
     const targets = new Map(entries.map(({ target }) => [targetKey(target), targetLabel(target)]));
     const repositories = new Set(entries.map(entry => entry.repository));
+    // An active filter can outlive the matching deployment.
+    if (this.target && !targets.has(this.target)) targets.set(this.target, this.selectedTargetLabel);
+    if (this.repository) repositories.add(this.repository);
     return html`
       <div class="controls panel" role="group" aria-label="Group and filter deployments">
         <label>Group by
@@ -86,14 +94,14 @@ export class DeploymentsView extends CockpitView<Deployment[]> {
         <label>Target
           <select @change=${(event: Event) => this.change(event, 'target')}>
             <option value="">All targets</option>
-            ${[...targets].sort((a, b) => a[1].localeCompare(b[1])).map(([key, label]) =>
+            ${repeat([...targets].sort((a, b) => a[1].localeCompare(b[1])), ([key]) => key, ([key, label]) =>
               html`<option value=${key}>${label}</option>`)}
           </select>
         </label>
         <label>Repository
           <select @change=${(event: Event) => this.change(event, 'repository')}>
             <option value="">All repositories</option>
-            ${[...repositories].sort((a, b) => a.localeCompare(b)).map(repository =>
+            ${repeat([...repositories].sort((a, b) => a.localeCompare(b)), repository => repository, repository =>
               html`<option value=${repository}>${repository}</option>`)}
           </select>
         </label>
@@ -108,9 +116,7 @@ export class DeploymentsView extends CockpitView<Deployment[]> {
 
   protected override content(entries?: Deployment[]) {
     if (!entries) return html``;
-    if (entries.length === 0) return html`<pb-empty-state heading="No deployments"
-      message="No deployment has been recorded yet."></pb-empty-state>`;
-
+    const hasSelection = this.groupBy !== 'target' || this.target || this.repository || this.evidence;
     const matching = entries.filter(entry =>
       (!this.target || targetKey(entry.target) === this.target) &&
       (!this.repository || entry.repository === this.repository) &&
@@ -119,10 +125,11 @@ export class DeploymentsView extends CockpitView<Deployment[]> {
       || targetLabel(a.target).localeCompare(targetLabel(b.target)));
     const groups = groupDeployments(matching, this.groupBy);
     return html`
-      ${this.controls(entries)}
+      ${entries.length || hasSelection ? this.controls(entries) : ''}
       <p class="assistive" role="status">${matching.length} matching ${matching.length === 1 ? 'deployment' : 'deployments'}</p>
       ${groups.length > 0 ? groupedDeploymentTable(groups, this.groupBy) : html`
-        <pb-empty-state heading="No matching deployments" message="Try changing the filters."></pb-empty-state>`}
+        <pb-empty-state heading=${entries.length ? 'No matching deployments' : 'No deployments'}
+          message=${entries.length ? 'Try changing the filters.' : 'No deployment has been recorded yet.'}></pb-empty-state>`}
     `;
   }
 }

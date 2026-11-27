@@ -23,6 +23,7 @@ depends_on:
   - COMP-0008
   - COMP-0009
 requirements:
+  - REQ-0020
   - REQ-0024
   - REQ-0025
   - REQ-0026

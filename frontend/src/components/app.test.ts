@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import { attestationPage, getAttestation, repositoryOverview, type RepositoryOverview } from '../api/client';
+import {
+  attestationPage, deployments, getAttestation, registeredRules, releases, repositoryOverview, type RepositoryOverview,
+} from '../api/client';
 import { fixtureTargets, respond } from '../../../tools/preview/fixtures.mjs';
 import { CockpitApp } from './app';
 import type { DetailView } from '../views/detail';
@@ -336,14 +338,18 @@ test('follows and clears a status filter on the same dashboard without reading a
 test.each([
   ['/', repositoryOverview],
   ['/attestations', attestationPage],
+  ['/releases', releases],
+  ['/deployments', deployments],
+  ['/rules', registeredRules],
 ] as const)('reserves a toolbar below the header on %s before data arrives', async (path, read) => {
   let complete!: () => void;
-  if (read === repositoryOverview) {
-    vi.mocked(read).mockReturnValueOnce(new Promise(resolve => {
+  if (path === '/') {
+    vi.mocked(repositoryOverview).mockReturnValueOnce(new Promise(resolve => {
       complete = () => resolve({ heartbeat: { completed_at: null, stale: true }, repositories: [] });
     }));
   } else {
-    vi.mocked(attestationPage).mockReturnValueOnce(new Promise(resolve => { complete = () => resolve([]); }));
+    const pending = new Promise<[]>(resolve => { complete = () => resolve([]); });
+    vi.mocked(read as (...args: never[]) => Promise<unknown[]>).mockReturnValueOnce(pending);
   }
   const { shell } = await mountAt(path);
   await shell.updateComplete;
@@ -359,8 +365,19 @@ test.each([
 });
 
 // Verifies REQ-0020.
-test.each(['/rules', '/attestations/example', '/missing'])('reserves a toolbar without refresh status on %s', async path => {
+test.each([
+  fixtureTargets.details[0].slice(3),
+  fixtureTargets.releaseDetails[0].slice(3),
+  '/repositories/detail' + fixtureTargets.releaseHistory.slice('/v0/releases'.length),
+  fixtureTargets.ruleDetails[0].slice(3),
+  fixtureTargets.ruleSetDetails[0].slice(3),
+  '/missing',
+])('reserves a toolbar without refresh status on %s', async path => {
   vi.mocked(getAttestation).mockReturnValue(new Promise(() => {}));
+  vi.stubGlobal('fetch', vi.fn(async (target: string) => {
+    const fixture = respond(target)!;
+    return Response.json(fixture.body, { status: fixture.status });
+  }));
   const { shell } = await mountAt(path);
   await shell.updateComplete;
   const root = shell.shadowRoot!;

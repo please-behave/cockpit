@@ -70,11 +70,14 @@ export function releaseTable(entries: ReleaseSummary[], label: 'Releases' | 'Rel
 export class ReleasesView extends CockpitView<ReleaseSummary[]> {
   static override styles = [CockpitView.styles as CSSResult, css`
     @layer components {
+      :host { overflow-anchor: none; }
+
       pb-data-table::part(repository) { min-inline-size: 16ch; }
       pb-data-table::part(newest-version) { inline-size: 20%; min-inline-size: 14ch; }
     }
   `];
 
+  protected override readonly refreshable = true;
   protected override get headingVisible() { return false; }
 
   protected override heading() {

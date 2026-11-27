@@ -56,6 +56,8 @@ async function readPages<T extends RegistryCursor>(
 export class RulesView extends CockpitView<Registry> {
   static override styles = [CockpitView.styles as CSSResult, css`
     @layer components {
+      :host { overflow-anchor: none; }
+
       .filters {
         display: grid;
         grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr));
@@ -111,6 +113,7 @@ export class RulesView extends CockpitView<Registry> {
     }
   `];
 
+  protected override readonly refreshable = true;
   protected override get headingVisible() { return false; }
   private query = '';
   private kind = '';

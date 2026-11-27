@@ -151,7 +151,7 @@ export abstract class CockpitView<T = never> extends LitElement {
 
   /** A refresh keeps the data on screen and reports a failure as a notice. */
   async load(refresh = false) {
-    if (!this.read || !this.isConnected) return;
+    if (!this.read || !this.isConnected || (refresh && this.request)) return;
     this.dispose();
     const request = new AbortController();
     this.request = request;
@@ -161,6 +161,7 @@ export abstract class CockpitView<T = never> extends LitElement {
     try {
       const data = await this.read(request.signal, this.refreshing);
       if (!request.signal.aborted) {
+        if (this.refreshing) this.keepRefreshFocus();
         this.data = data;
         this.stale = false;
         this.updatedAt = new Date();
@@ -180,6 +181,20 @@ export abstract class CockpitView<T = never> extends LitElement {
         this.requestUpdate();
       }
     }
+  }
+
+  private keepRefreshFocus() {
+    let focused = this.shadowRoot?.activeElement;
+    while (focused?.shadowRoot?.activeElement) focused = focused.shadowRoot.activeElement;
+    if (!(focused instanceof HTMLElement)) return;
+    const target = focused;
+    // Wait for the view and its keyed list to render before restoring a moved control.
+    this.requestUpdate();
+    void this.updateComplete.then(() => {
+      if (target.isConnected && this.ownerDocument.activeElement === this.ownerDocument.body) {
+        target.focus({ preventScroll: true });
+      }
+    });
   }
 
   dispose() {

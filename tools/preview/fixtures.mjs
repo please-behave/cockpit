@@ -642,10 +642,21 @@ function volumeResponse(pathname, searchParams, { options, invalid }) {
   return response && options.delay ? { ...response, delay: options.delay } : response;
 }
 
+const refreshReads = new Set([
+  '/v0/repositories/overview', '/v0/attestations', '/v0/attestations/latest',
+  '/v0/releases/latest', '/v0/deployments', '/v0/rules', '/v0/rule-sets', '/v0/rule-sets/compliance',
+]);
+
 /** Answers a read API request path with the status and JSON body of the fixture, or undefined for other paths. */
 export function respond(target) {
   const url = new URL(target, 'http://preview.invalid');
-  const { pathname, searchParams } = url;
+  const slow = refreshReads.has(url.pathname) && url.searchParams.get('preview') === 'slow-refresh';
+  if (slow) url.searchParams.delete('preview');
+  const response = fixtureResponse(url);
+  return slow && response ? { ...response, delay: 750 } : response;
+}
+
+function fixtureResponse({ pathname, searchParams }) {
   if (previewLists.has(pathname)) {
     const preview = searchParams.get('preview');
     if (preview === 'empty') return json(200, []);
@@ -685,13 +696,10 @@ export function respond(target) {
         repositories: repositoryOverview.repositories.filter(entry => entry.repository !== 'github.com/acme/widget'),
       });
     }
-    const response = json(200, repositoryOverview);
-    return searchParams.get('preview') === 'slow-refresh' ? { ...response, delay: 750 } : response;
+    return json(200, repositoryOverview);
   }
   if (pathname === '/v0/attestations/latest' || pathname === '/v0/attestations') {
-    const response = pathname.endsWith('/latest') ? json(200, latest) : attestations(searchParams);
-    // Keep the initial loading and busy refresh states visible for browser review.
-    return searchParams.get('preview') === 'slow-refresh' ? { ...response, delay: 750 } : response;
+    return pathname.endsWith('/latest') ? json(200, latest) : attestations(searchParams);
   }
   if (pathname === '/v0/releases/latest' || pathname === '/v0/releases') {
     return releasePage(searchParams, pathname.endsWith('/latest'));

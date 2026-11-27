@@ -2,12 +2,15 @@ id: REQ-0020
 name: Overview Refresh
 area: operations
 description: >-
-  While the browser tab is visible, the dashboard reads CON-0014 together
-  with the newest ten entries of CON-0003, CON-0010 and CON-0013, and the
-  attestation history reads CON-0003 at the viewer's refresh interval and when the tab
-  becomes visible after it was hidden for longer than that interval. They do nothing while the tab is
-  hidden. The registered rules, the rule detail and the attestation detail do
-  do not refresh. Every view reserves the toolbar row below the header from the
+  The dashboard, Attestations, Releases, Deployments and the registered Rules
+  list refresh while the browser tab is visible. Each repeats its own reads
+  at the viewer's refresh interval and when the tab becomes visible after
+  being hidden for longer than that interval. The dashboard reads CON-0014
+  together with the newest ten entries of CON-0003, CON-0010 and CON-0013.
+  Attestations reads CON-0003, Releases reads CON-0010, Deployments reads
+  CON-0013, and the Rules list reads CON-0004, CON-0007 and CON-0008.
+  Overview pages make no refresh reads while the tab is hidden. Detail pages have no
+  refresh control. Every view reserves the toolbar row below the header from the
   first render. After a successful read, refreshable views show a status line
   at the end of that row, with a refresh button
   named "Refresh", a small interval menu next to it and the text "Updated a few seconds ago", "Updated 1 minute
@@ -26,12 +29,12 @@ description: >-
   in the accent color towards the next refresh and empties after it, at every
   interval. It is decorative, uses no other animation and advances in steps
   when reduced motion is requested. Nothing else blinks or moves because of
-  the interval. A refresh replaces
-  content in place and keeps the keyboard focus, the scroll position and the
+  the interval. A refresh replaces content in place and keeps keyboard
+  focus, scroll position, the list's sort order and loaded pages, and the
   dashboard's active status filter. Repository rows and chips are identified
   by repository key (the repository and platform from CON-0014). If a
-  focused control disappears, return focus to the dashboard heading. A
-  failed refresh keeps the data and shows a notice.
+  focused dashboard control disappears, return focus to the dashboard
+  heading. A failed refresh keeps the data and shows a notice.
 rationale: >-
   The views stay current without a reload and without interrupting the viewer,
   who can see how old the data is and read again on demand.

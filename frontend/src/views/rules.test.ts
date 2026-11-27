@@ -2,6 +2,7 @@ import { afterEach, expect, test, vi } from 'vitest';
 import {
   rulePageSize, type RegisteredRule, type RegisteredRuleSet, type RuleSetCompliance,
 } from '../api/client';
+import { CockpitApp } from '../components/app';
 import type { DataTable } from '../components/pb-data-table';
 import { RulesView } from './rules';
 
@@ -79,7 +80,62 @@ async function filter(view: RulesView, control: HTMLInputElement | HTMLSelectEle
 
 afterEach(() => {
   document.body.replaceChildren();
+  window.history.replaceState(null, '', '/');
   vi.unstubAllGlobals();
+});
+
+// Verifies REQ-0020.
+test('refreshes the registry and compliance together while preserving order and expanded rule batches', async () => {
+  const members = Array.from({ length: 25 }, (_, index) => ({
+    ...check, id: `rule-${index}`, name: `Check ${index}`, owner: 'Initial owner',
+  }));
+  let owner = 'Initial owner';
+  let fail = false;
+  const fetch = vi.fn(async (path: string) => {
+    switch (new URL(path, window.location.origin).pathname) {
+      case '/v0/rules': return Response.json(members.map(rule => ({ ...rule, owner })));
+      case '/v0/rule-sets': return Response.json([baseline]);
+      case '/v0/rule-sets/compliance':
+        return fail ? Response.json({}, { status: 503 }) : Response.json([success]);
+      default: throw new Error(`Unexpected request ${path}`);
+    }
+  });
+  vi.stubGlobal('fetch', fetch);
+  window.history.replaceState(null, '', '/rules');
+  const app = new CockpitApp();
+  document.body.append(app);
+  await app.updateComplete;
+  const view = app.shadowRoot!.querySelector<RulesView>('pb-rules')!;
+  const root = await loaded(view);
+  const search = root.querySelector('input')!;
+  await filter(view, search, 'Check');
+  const group = groups(root)[0];
+  expect(group.open).toBe(true);
+  expect(ruleNames(group)).toHaveLength(20);
+  group.querySelector('button.more')!.dispatchEvent(new Event('click'));
+  await view.updateComplete;
+  const order = members.map(rule => rule.id);
+  expect(ruleNames(group)).toEqual(order);
+  const table = group.querySelector<DataTable>('pb-data-table')!;
+  const refresh = app.shadowRoot!.querySelector('pb-app-shell')!.shadowRoot!
+    .querySelector('pb-refresh-status')!.shadowRoot!.querySelector('button')!;
+
+  owner = 'Updated owner';
+  refresh.click();
+  await vi.waitFor(() => expect(table.rows[0].cells[1]).toBe(owner));
+  expect(ruleNames(group)).toEqual(order);
+  expect(groups(root)[0]).toBe(group);
+  expect(group.open).toBe(true);
+  expect(search.value).toBe('Check');
+
+  owner = 'Unconfirmed owner';
+  fail = true;
+  refresh.click();
+  await vi.waitFor(() => expect(root.textContent).toContain('Showing the last data received'));
+  expect(table.rows[0].cells[1]).toBe('Updated owner');
+  expect(ruleNames(group)).toEqual(order);
+  const requests = fetch.mock.calls.map(([path]) => path);
+  expect(requests).toEqual([...requests.slice(0, 3), ...requests.slice(0, 3), ...requests.slice(0, 3)]);
 });
 
 // Verifies REQ-0004, REQ-0015, REQ-0025 and REQ-0026.

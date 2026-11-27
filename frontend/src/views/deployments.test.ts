@@ -1,6 +1,7 @@
 // Verifies REQ-0004, REQ-0015, REQ-0016 and REQ-0034.
 import { afterEach, expect, test, vi } from 'vitest';
 import { CockpitApp } from '../components/app';
+import type { Deployment } from '../api/client';
 import type { DataTable } from '../components/pb-data-table';
 import type { RuleSetSummary } from '../components/pb-rule-set-summary';
 import type { RelativeTime } from '../components/pb-relative-time';
@@ -165,6 +166,52 @@ test('follows a recorded version link to its release detail', async () => {
   await app.updateComplete;
   expect(window.location.pathname + window.location.search).toBe(path);
   expect(app.shadowRoot!.querySelector('pb-release')).not.toBeNull();
+});
+
+// Verifies REQ-0020.
+test('refreshes every deployment page while keeping grouping, filters and evidence order', async () => {
+  let version = '2.0';
+  let fail = false;
+  const fetch = vi.fn(async (path: string) => {
+    const { body, status } = respond(path)!;
+    const query = new URL(path, window.location.origin).searchParams;
+    if (fail && query.has('before')) return Response.json({}, { status: 503 });
+    const entries = (body as Deployment[]).map(entry =>
+      entry.repository === repository && entry.version === '2.0' ? { ...entry, version } : entry);
+    return Response.json(entries, { status });
+  });
+  vi.stubGlobal('fetch', fetch);
+  const { app, view, root } = await open();
+  await vi.waitFor(() => expect(rows(root)).toHaveLength(115));
+  const [grouping, target] = root.querySelectorAll('select');
+  grouping.value = 'repository';
+  grouping.dispatchEvent(new Event('change'));
+  target.value = production;
+  target.dispatchEvent(new Event('change'));
+  await view.updateComplete;
+  await table(root)!.updateComplete;
+  const grid = table(root)!.shadowRoot!;
+  const order = statuses(root);
+  expect(order).toEqual(['ERROR', 'FAIL', 'No evidence', 'PASS']);
+
+  version = '2.1';
+  const refresh = app.shadowRoot!.querySelector('pb-app-shell')!.shadowRoot!
+    .querySelector('pb-refresh-status')!.shadowRoot!.querySelector('button')!;
+  refresh.click();
+  await vi.waitFor(() => expect(grid.querySelector(`a[href="${releasePath(repository, version)}"]`)).not.toBeNull());
+  expect(grid.querySelector('thead th')?.textContent?.trim()).toBe('Target');
+  expect(grouping.value).toBe('repository');
+  expect(target.value).toBe(production);
+  expect(statuses(root)).toEqual(order);
+
+  version = '2.2';
+  fail = true;
+  refresh.click();
+  await vi.waitFor(() => expect(root.textContent).toContain('Showing the last data received'));
+  expect(grid.querySelector(`a[href="${releasePath(repository, '2.1')}"]`)).not.toBeNull();
+  expect(statuses(root)).toEqual(order);
+  const requests = fetch.mock.calls.map(([path]) => path);
+  expect(requests).toEqual([...requests.slice(0, 2), ...requests.slice(0, 2), ...requests.slice(0, 2)]);
 });
 
 test('explains an empty overview and allows retry after a failed read', async () => {

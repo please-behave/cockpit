@@ -41,8 +41,14 @@ test('serves latest summaries in the client shape', () => {
   expect([...points.values()].some(tiles => tiles.length > 1)).toBe(true);
 });
 
-test.each([fixtureTargets.repositoryOverview, fixtureTargets.latest, fixtureTargets.history])('delays %s for refresh review', target => {
-  expect(respond(`${target}?preview=slow-refresh`)).toEqual({ ...respond(target), delay: 750 });
+test.each([
+  fixtureTargets.repositoryOverview, fixtureTargets.latest, fixtureTargets.history,
+  fixtureTargets.releases, fixtureTargets.deployments, fixtureTargets.rules,
+  fixtureTargets.ruleSets, fixtureTargets.ruleSetCompliance[0],
+])('delays %s for refresh review', target => {
+  const url = new URL(target, 'http://preview.invalid');
+  url.searchParams.set('preview', 'slow-refresh');
+  expect(respond(url.href)).toEqual({ ...respond(target), delay: 750 });
 });
 
 test('serves completed Rule Sets in the client shape, including short, long and untrusted names', () => {

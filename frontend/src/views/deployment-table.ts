@@ -60,9 +60,9 @@ function deploymentReference(entry: Deployment) {
   </pb-tooltip>`;
 }
 
-function deploymentRow(entry: Deployment, identity: Identity) {
+function deploymentRow(entry: Deployment, identity: Identity, key: string = entry.id) {
   return {
-    key: entry.id,
+    key,
     cells: [
       identity === 'target' ? textWithPreview(targetLabel(entry.target)) : html`
         <pb-tooltip external-trigger .description=${entry.repository}>
@@ -89,7 +89,8 @@ export function groupedDeploymentTable(groups: DeploymentGroup[], groupBy: Ident
     return {
       key,
       heading: html`${name} · <pb-status-pill variant="compact" .status=${status}></pb-status-pill> ${count} of ${rows.length}`,
-      rows: rows.map(entry => deploymentRow(entry, identity)),
+      rows: rows.map(entry => deploymentRow(entry, identity,
+        identity === 'target' ? targetKey(entry.target) : entry.repository)),
     };
   });
   return html`<pb-data-table label="Deployments" hide-caption .columns=${columns[identity]} .groups=${tableGroups}

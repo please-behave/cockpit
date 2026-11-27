@@ -52,7 +52,7 @@ async function serve(request, response) {
   if (pathname.startsWith('/v0') && request.headers.referer && !url.searchParams.has('preview')) {
     const referrer = new URL(request.headers.referer);
     const preview = referrer.searchParams.get('preview');
-    if (['volume', 'empty', 'error'].includes(preview)) {
+    if (['volume', 'empty', 'error', 'slow-refresh'].includes(preview)) {
       for (const name of preview === 'volume' ? volumeParameters : ['preview']) {
         if (referrer.searchParams.has(name)) url.searchParams.set(name, referrer.searchParams.get(name));
       }

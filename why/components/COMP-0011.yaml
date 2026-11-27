@@ -24,6 +24,7 @@ depends_on:
   - COMP-0009
   - COMP-0010
 requirements:
+  - REQ-0020
   - REQ-0030
   - REQ-0031
   - REQ-0032

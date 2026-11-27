@@ -1,6 +1,7 @@
 // Verifies REQ-0004, REQ-0015, REQ-0016, REQ-0030 and REQ-0031.
 import { afterEach, expect, test, vi } from 'vitest';
 import { CockpitApp } from '../components/app';
+import type { ReleaseSummary } from '../api/client';
 import type { DataTable } from '../components/pb-data-table';
 import type { RelativeTime } from '../components/pb-relative-time';
 import type { RuleSetChip } from '../components/pb-rule-set-chip';
@@ -110,6 +111,48 @@ test('lists the latest releases across pages with attention first and escapes st
   const view = app.shadowRoot!.querySelector('pb-repository')!;
   expect(window.location.pathname + window.location.search).toBe(repositoryPath(repository));
   await vi.waitFor(() => expect(view.shadowRoot?.activeElement?.textContent).toBe('return-navigation'));
+  expect(app.shadowRoot!.querySelector('pb-app-shell')!.shadowRoot!.querySelector('pb-refresh-status')).toBeNull();
+});
+
+// Verifies REQ-0020.
+test('refreshes both release pages in place and retains the sorted list if a later page fails', async () => {
+  let version = '2.0';
+  let fail = false;
+  const fetch = vi.fn(async (path: string) => {
+    const { body, status } = respond(path)!;
+    const query = new URL(path, window.location.origin).searchParams;
+    if (fail && query.has('before')) return Response.json({}, { status: 503 });
+    return Response.json((body as ReleaseSummary[]).map(entry =>
+      entry.repository === repository ? { ...entry, version } : entry), { status });
+  });
+  vi.stubGlobal('fetch', fetch);
+  const app = await open('/releases');
+  const view = await loaded(app);
+  const table = view.shadowRoot!.querySelector<DataTable>('pb-data-table')!;
+  const rows = () => [...table.shadowRoot!.querySelectorAll('tbody tr')];
+  const order = () => rows().map(row => row.querySelector('th a')!.textContent);
+  const displayedVersion = () => rows().find(row => row.querySelector('th a')!.textContent === repository)
+    ?.querySelector('td a')?.textContent;
+  const shell = app.shadowRoot!.querySelector('pb-app-shell')!.shadowRoot!;
+  await vi.waitFor(() => expect(rows()).toHaveLength(110));
+  const refresh = shell.querySelector('pb-refresh-status')!.shadowRoot!.querySelector('button')!;
+  const initialOrder = order();
+
+  version = '3.0';
+  refresh.focus();
+  refresh.click();
+  await vi.waitFor(() => expect(displayedVersion()).toBe('3.0'));
+  expect(order()).toEqual(initialOrder);
+  expect(refresh.getRootNode()).toHaveProperty('activeElement', refresh);
+
+  version = '4.0';
+  fail = true;
+  refresh.click();
+  await vi.waitFor(() => expect(view.shadowRoot!.textContent).toContain('Showing the last data received'));
+  expect(order()).toEqual(initialOrder);
+  expect(displayedVersion()).toBe('3.0');
+  const requests = fetch.mock.calls.map(([path]) => path);
+  expect(requests).toEqual([...requests.slice(0, 2), ...requests.slice(0, 2), ...requests.slice(0, 2)]);
 });
 
 test('explains an empty release overview', async () => {
