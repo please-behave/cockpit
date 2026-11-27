@@ -57,6 +57,19 @@ and each row of frames can be scrolled horizontally. The 640-pixel width
 represents 200% zoom in a 1280-pixel window. Compare in the same browser with
 the same settings and fixture data.
 
+Open `/?preview=volume` (or `/attestations`, `/releases` and `/deployments` with the
+same parameter) to review the volume scenario. A seeded generator builds
+1,000 repositories, 20,000 attestations, their releases, deployments across
+several targets and completed Rule Sets in memory on the first request. Most
+repositories are current, a few fail and some are overdue, never integrated,
+unknown or unmanaged. The same seed gives identical responses, and nothing is
+committed. The generated lists page exactly as the read contracts define, so
+endless scrolling and the loops over every page run for real. Other parameters
+are optional: `seed` (default 1), `repositories` (1 to 5,000, default 1,000),
+`attestations` (0 to 100,000, default 20,000) and `delay`, the milliseconds
+every response waits (0 to 5,000), which makes sequential page reads visible.
+Views without generated data, such as rules, keep their hand-written fixtures.
+
 The preview is a developer tool and is not part of the executable.
 
 The executable serves the content-hashed bundles from `/assets/` and the Vite

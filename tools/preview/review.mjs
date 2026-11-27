@@ -33,7 +33,7 @@ async function measureFrame(frame, reviewCase, theme) {
   document.documentElement.dataset.theme = theme;
 
   // The shell loads before some views finish their fixture requests and render their rows.
-  const deadline = performance.now() + 15_000;
+  const deadline = performance.now() + (reviewCase.heavy ? 90_000 : 15_000);
   while (performance.now() < deadline) {
     const root = queryDeep(document, reviewCase.root)[0];
     if (root) {
@@ -49,7 +49,7 @@ async function measureFrame(frame, reviewCase, theme) {
 }
 
 function addCase(reviewCase, index) {
-  const { name, path, entries } = reviewCase;
+  const { name, path, entries, heavy } = reviewCase;
   const id = `view-${index + 1}`;
   const section = add(views, 'section');
   const heading = add(section, 'h2', name);
@@ -80,7 +80,7 @@ function addCase(reviewCase, index) {
       frame.title = `${name}, ${width} pixels, ${theme}`;
       frame.width = width;
       frame.height = viewportHeight;
-      return async () => {
+      const run = async () => {
         try {
           const result = await measureFrame(frame, reviewCase, theme);
           columns.forEach(([key], index) => { cells[index].textContent = result[key]; });
@@ -92,6 +92,8 @@ function addCase(reviewCase, index) {
           return false;
         }
       };
+      run.heavy = heavy;
+      return run;
     });
   });
 }
@@ -111,11 +113,16 @@ async function showReview() {
 
   const jobs = cases.flatMap(addCase);
   let failed = 0;
-  // A batch keeps the initial rendering and API requests manageable.
-  for (let offset = 0; offset < jobs.length; offset += 8) {
-    status.textContent = `Measuring previews (${offset} of ${jobs.length} complete)…`;
-    const results = await Promise.all(jobs.slice(offset, offset + 8).map(run => run()));
+  // A batch keeps the initial rendering and API requests manageable. Heavy frames follow one at a time.
+  const light = jobs.filter(run => !run.heavy);
+  const batches = [...Array.from({ length: Math.ceil(light.length / 8) }, (_, index) => light.slice(index * 8, index * 8 + 8)),
+    ...jobs.filter(run => run.heavy).map(run => [run])];
+  let complete = 0;
+  for (const batch of batches) {
+    status.textContent = `Measuring previews (${complete} of ${jobs.length} complete)…`;
+    const results = await Promise.all(batch.map(run => run()));
     failed += results.filter(result => !result).length;
+    complete += batch.length;
   }
   status.textContent = failed
     ? `Measured ${jobs.length - failed} of ${jobs.length} previews. See the table for failures.`

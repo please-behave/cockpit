@@ -4,11 +4,14 @@ const tableRows = 'tbody > tr:has(td)';
 const dashboardEntries = 'pb-stat-tile, li:has(> .reason, > .fact), li:has(> pb-repo-chip)';
 const repositoryEntries = `.sets > li, ${tableRows}`;
 
+// A heavy case renders thousands of entries, so the review sheet measures its frames one at a time.
 // Select the primary repeated entries in each view. Selectors also cover open shadow roots.
 export const reviewCases = [
   ['Dashboard', '/', 'pb-dashboard', dashboardEntries, 'Status tiles, attention rows, activity entries and repository chips'],
   ['Dashboard (large)', '/?preview=dashboard-large', 'pb-dashboard', dashboardEntries,
     'Status tiles, attention rows, activity entries and repository chips'],
+  ['Dashboard (volume)', '/?preview=volume', 'pb-dashboard', dashboardEntries,
+    'Status tiles, attention rows, activity entries and repository chips for 1,000 repositories', true],
   ['Dashboard (filtered)', '/?status=failed', 'pb-dashboard', dashboardEntries,
     'Status tiles, attention rows, activity entries and matching repository chips'],
   ['Dashboard (all clear)', '/?preview=dashboard-clear', 'pb-dashboard', dashboardEntries,
@@ -23,14 +26,19 @@ export const reviewCases = [
     'Status tiles, attention rows, activity entries and repository chips'],
   ['Dashboard (empty)', '/?preview=dashboard-empty', 'pb-dashboard', 'pb-empty-state', 'Empty state'],
   ['Attestations', '/attestations', 'pb-history', tableRows, 'Attestation rows'],
+  ['Attestations (volume)', '/attestations?preview=volume', 'pb-history', tableRows,
+    'Attestation rows from 20,000 generated attestations', true],
   ['Attestation detail', reviewTargets.attestation.slice(3), 'pb-attestation', tableRows, 'Rule result rows'],
   ['Releases', '/releases', 'pb-releases', tableRows, 'Release rows'],
+  ['Releases (volume)', '/releases?preview=volume', 'pb-releases', tableRows, 'Release rows of 1,000 repositories', true],
   ['Repository', '/repositories/detail' + reviewTargets.repository, 'pb-repository', repositoryEntries,
     'Rule Set chips, deployment, release and attestation rows'],
   ['Repository (release history address)', '/releases/repository' + reviewTargets.repository, 'pb-repository',
     repositoryEntries, 'Rule Set chips, deployment, release and attestation rows'],
   ['Release detail', reviewTargets.release.slice(3), 'pb-release', '.rule-sets > li', 'Evidence Rule Sets'],
   ['Deployments', '/deployments', 'pb-deployments', tableRows, 'Deployment rows'],
+  ['Deployments (volume)', '/deployments?preview=volume', 'pb-deployments', tableRows,
+    'Deployment rows across several targets', true],
   ['Rules', '/rules', 'pb-rules', 'details > summary', 'Rule and Rule Set group summaries'],
   ['Rule detail', reviewTargets.rule.slice(3), 'pb-rule', 'article dl > div:has(> dt)', 'Version facts'],
   ['Rule Set detail', reviewTargets.ruleSet.slice(3), 'pb-rule-set', `${tableRows}, .repositories > li`,
@@ -42,4 +50,4 @@ export const reviewCases = [
     'All-clear message'],
   ['Status pills', '/preview/status-pill', 'main', tableRows, 'Pairs of boxed and compact status pills'],
   ['Page not found', '/preview/unknown-page', 'pb-not-found', 'p', 'Message and return link'],
-].map(([name, path, root, selector, entries]) => ({ name, path, root, selector, entries }));
+].map(([name, path, root, selector, entries, heavy = false]) => ({ name, path, root, selector, entries, heavy }));

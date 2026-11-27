@@ -27,6 +27,7 @@ async function send(response, status, type, body) {
   response.end(body);
 }
 
+const volumeParameters = ['preview', 'seed', 'repositories', 'attestations', 'delay'];
 const dashboardReads = new Set(['/v0/repositories/overview', '/v0/attestations', '/v0/releases/latest', '/v0/deployments']);
 
 async function serve(request, response) {
@@ -46,6 +47,14 @@ async function serve(request, response) {
     const referrer = new URL(request.headers.referer);
     const preview = referrer.searchParams.get('preview');
     if (referrer.pathname === '/' && preview) url.searchParams.set('preview', preview);
+  }
+  if (pathname.startsWith('/v0') && request.headers.referer && !url.searchParams.has('preview')) {
+    const referrer = new URL(request.headers.referer);
+    if (referrer.searchParams.get('preview') === 'volume') {
+      for (const name of volumeParameters) {
+        if (referrer.searchParams.has(name)) url.searchParams.set(name, referrer.searchParams.get(name));
+      }
+    }
   }
   const fixture = respond(url);
   if (fixture) {

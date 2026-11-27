@@ -1,3 +1,5 @@
+import { generateVolume, volumeRequest } from './volume.mjs';
+
 const markup = '<img src=x onerror=alert(1)>';
 const longOwner = 'an-organization-with-an-unreasonably-long-name-that-has-to-wrap';
 const longName = 'a-repository-name-that-keeps-going-and-going-until-it-has-to-wrap-on-every-narrow-tile';
@@ -323,7 +325,7 @@ function limitFrom(params) {
   return Number.isInteger(limit) && limit >= 1 && limit <= 200 ? limit : undefined;
 }
 
-function attestations(params) {
+function attestations(params, entries = history) {
   const limit = limitFrom(params);
   const before = params.get('before');
   const repository = params.get('repository');
@@ -333,7 +335,7 @@ function attestations(params) {
       [...params.keys()].some(key => !allowed.includes(key) || params.getAll(key).length !== 1)) {
     return code(400, 'invalid_query');
   }
-  const page = history.filter(summary => (before === null || summary.id < before)
+  const page = entries.filter(summary => (before === null || summary.id < before)
     && (repository === null || summary.repository === repository));
   return json(200, page.slice(0, limit));
 }
@@ -391,7 +393,7 @@ function releaseDetail(params) {
   });
 }
 
-function releasePage(params, latestOnly) {
+function releasePage(params, latestOnly, facts = releaseFacts, latestFacts = latestReleases) {
   const limit = limitFrom(params);
   const repository = params.get('repository');
   const allowed = latestOnly ? ['limit', 'before'] : ['limit', 'before', 'repository'];
@@ -399,8 +401,8 @@ function releasePage(params, latestOnly) {
       [...params.keys()].some(key => !allowed.includes(key) || params.getAll(key).length !== 1)) {
     return code(400, 'invalid_query');
   }
-  const history = latestOnly ? releaseFacts : releaseFacts.filter(fact => fact.repository === repository);
-  const page = latestOnly ? latestReleases : history;
+  const history = latestOnly ? facts : facts.filter(fact => fact.repository === repository);
+  const page = latestOnly ? latestFacts : history;
   const before = params.get('before');
   if (before === null) return json(200, page.slice(0, limit));
   try {
@@ -449,7 +451,7 @@ const currentDeployments = deploymentFixtures.map(({
   evidence: unrecorded ? null : fact.evidence,
 }));
 
-function deploymentPage(params) {
+function deploymentPage(params, deployments = currentDeployments) {
   const limit = limitFrom(params);
   const repository = params.get('repository');
   const before = params.get('before');
@@ -458,7 +460,7 @@ function deploymentPage(params) {
       [...params.keys()].some(key => !allowed.includes(key) || params.getAll(key).length !== 1)) {
     return code(400, 'invalid_query');
   }
-  const entries = currentDeployments.filter(entry => repository === null || entry.repository === repository);
+  const entries = deployments.filter(entry => repository === null || entry.repository === repository);
   const index = before === null ? -1 : entries.findIndex(entry => entry.id === before);
   if (before !== null && index === -1) return code(400, 'invalid_query');
   return json(200, entries.slice(index + 1, index + 1 + limit));
@@ -612,10 +614,37 @@ function activityPreview(pathname, searchParams) {
   return undefined;
 }
 
+let volumeCache;
+
+function volumeData(options) {
+  const key = JSON.stringify([options.seed, options.repositories, options.attestations]);
+  if (volumeCache?.key !== key) volumeCache = { key, data: generateVolume(options) };
+  return volumeCache.data;
+}
+
+function volumeResponse(pathname, searchParams, { options, invalid }) {
+  if (invalid) return code(400, 'invalid_query');
+  const data = volumeData(options);
+  const response = {
+    '/v0/repositories/overview': () => json(200, data.overview),
+    '/v0/repositories/completed-rule-sets': () => json(200, data.completedRuleSets),
+    '/v0/attestations': () => attestations(searchParams, data.attestations),
+    '/v0/releases/latest': () => releasePage(searchParams, true, data.releases, data.latestReleases),
+    '/v0/releases': () => releasePage(searchParams, false, data.releases, data.latestReleases),
+    '/v0/deployments': () => deploymentPage(searchParams, data.deployments),
+  }[pathname]?.();
+  return response && options.delay ? { ...response, delay: options.delay } : response;
+}
+
 /** Answers a read API request path with the status and JSON body of the fixture, or undefined for other paths. */
 export function respond(target) {
   const url = new URL(target, 'http://preview.invalid');
   const { pathname, searchParams } = url;
+  const volume = pathname.startsWith('/v0') ? volumeRequest(searchParams) : undefined;
+  if (volume) {
+    const response = volumeResponse(pathname, searchParams, volume);
+    if (response) return response;
+  }
   const activity = activityPreview(pathname, searchParams);
   if (activity) return activity;
   if (pathname === '/v0/repositories/overview') {

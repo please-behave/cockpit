@@ -477,3 +477,108 @@ test('serves the activity feed reads in the client shape with ties across kinds 
   expect(respond(`${reads[1]}&preview=dashboard-activity-failed`)!.status).toBe(503);
   expect(respond(`${reads[0]}&preview=dashboard-activity-failed`)!.status).toBe(200);
 });
+
+const volume = 'preview=volume&seed=7&repositories=300&attestations=450';
+const volumeTargets = ['/v0/repositories/overview', '/v0/repositories/completed-rule-sets', '/v0/attestations',
+  '/v0/releases/latest', '/v0/releases?repository=github.com/acme/service-0001', '/v0/deployments'];
+
+function walk<T>(path: string, limit: number, cursor: (item: T) => string): T[][] {
+  const pages: T[][] = [];
+  let before = '';
+  do {
+    const query = `${path}${path.includes('?') ? '&' : '?'}${volume}&limit=${limit}${before}`;
+    const page = body<T[]>(query);
+    pages.push(page);
+    before = page.length === limit ? `&before=${encodeURIComponent(cursor(page.at(-1)!))}` : '';
+  } while (before);
+  return pages;
+}
+
+test('generates identical volume data for the same seed and different data for another', () => {
+  for (const target of volumeTargets) {
+    const url = `${target}${target.includes('?') ? '&' : '?'}${volume}`;
+    expect(respond(url), target).toEqual(respond(url));
+  }
+  const other = respond(`/v0/attestations?${volume.replace('seed=7', 'seed=8')}`);
+  expect(other).not.toEqual(respond(`/v0/attestations?${volume}`));
+});
+
+test('serves the volume overview with a skewed mix of states in the client shape', () => {
+  const { repositories } = body<RepositoryOverview>(`/v0/repositories/overview?${volume}`);
+  expect(repositories).toHaveLength(300);
+  expect(repositories.map(entry => entry.repository)).toEqual(repositories.map(entry => entry.repository).sort());
+  const counts = Map.groupBy(repositories, entry => entry.state);
+  expect(new Set(counts.keys())).toEqual(new Set(['current', 'pending', 'overdue', 'never_integrated', 'unknown']));
+  expect(counts.get('current')!.length).toBeGreaterThan(repositories.length / 2);
+  expect(repositories.some(entry => !entry.managed)).toBe(true);
+  const failing = repositories.filter(entry => entry.latest_check && entry.latest_check.overall !== 'PASS');
+  expect(failing.length).toBeGreaterThan(0);
+  expect(failing.length).toBeLessThan(repositories.length / 4);
+  for (const entry of repositories) {
+    repositoryHealth(entry);
+    expect(entry.latest_check === null || /^[0-9a-f-]{36}$/.test(entry.latest_check.id)).toBe(true);
+  }
+});
+
+test('pages the generated attestations newest first down to a short last page', () => {
+  const pages = walk<Summary>('/v0/attestations', 64, summary => summary.id);
+  expect(pages.map(page => page.length)).toEqual([64, 64, 64, 64, 64, 64, 64, 2]);
+  const all = pages.flat();
+  all.forEach(expectSummary);
+  expect(new Set(all.map(summary => summary.id)).size).toBe(450);
+  expect(all.map(summary => summary.id)).toEqual(all.map(summary => summary.id).sort().reverse());
+  const repository = all[0].repository;
+  const filtered = body<Summary[]>(`/v0/attestations?${volume}&repository=${encodeURIComponent(repository)}`);
+  expect(filtered.every(summary => summary.repository === repository)).toBe(true);
+  expect(body<Summary[]>(`/v0/attestations?${volume}`)).toHaveLength(100);
+  expect(respond(`/v0/attestations?${volume}&limit=201`)!.status).toBe(400);
+});
+
+test('pages the generated releases and deployments exactly as the contracts define', () => {
+  const latest = walk<ReleaseSummary>('/v0/releases/latest', 50, ({ repository, version }) => JSON.stringify({ repository, version })).flat();
+  expect(new Set(latest.map(release => release.repository)).size).toBe(latest.length);
+  expect(latest.length).toBeGreaterThan(100);
+  expect(latest.map(release => release.received_at)).toEqual(latest.map(release => release.received_at).sort().reverse());
+  for (const release of latest) {
+    expect(release.version).toMatch(/^1\.\d+$/);
+    expect(['api_key', 'github_oidc']).toContain(release.auth_method);
+    expect(release.evidence === null || ['PASS', 'FAIL', 'ERROR'].includes(release.evidence.overall)).toBe(true);
+  }
+  const history = body<ReleaseSummary[]>(`/v0/releases?${volume}&repository=${encodeURIComponent(latest[0].repository)}`);
+  expect(history.every(release => release.repository === latest[0].repository)).toBe(true);
+
+  const pages = walk<Deployment>('/v0/deployments', 40, deployment => deployment.id);
+  const deployments = pages.flat();
+  expect(deployments.length).toBeGreaterThan(100);
+  expect(pages.slice(0, -1).every(page => page.length === 40)).toBe(true);
+  expect(pages.at(-1)!.length).toBeLessThan(40);
+  expect(new Set(deployments.map(deployment => `${deployment.target.owner}/${deployment.target.name}`)).size).toBeGreaterThan(3);
+  expect(new Set(deployments.map(deployment => deployment.state))).toEqual(new Set(['evidence', 'no_evidence', 'release_not_recorded']));
+  expect(deployments.map(deployment => Number(deployment.id))).toEqual(deployments.map((_, index) => deployments.length - index));
+});
+
+test('serves generated completed Rule Sets for repositories of the overview', () => {
+  const overview = body<RepositoryOverview>(`/v0/repositories/overview?${volume}`).repositories.map(entry => entry.repository);
+  const entries = body<RepositoryRuleSets[]>(`/v0/repositories/completed-rule-sets?${volume}`);
+  expect(entries.length).toBeGreaterThan(100);
+  for (const { repository, sets } of entries) {
+    expect(overview).toContain(repository);
+    expect(sets.length).toBeGreaterThan(0);
+  }
+});
+
+test('delays volume responses on request and rejects invalid volume options', () => {
+  expect(respond(`/v0/deployments?${volume}&delay=250`)).toEqual({ ...respond(`/v0/deployments?${volume}`), delay: 250 });
+  for (const option of ['delay=-1', 'delay=1.5', 'delay=9999', 'seed=x', 'repositories=0', 'attestations=100001', 'seed=']) {
+    expect(respond(`/v0/deployments?preview=volume&${option}`)!.status, option).toBe(400);
+  }
+  expect(respond('/v0/rules?preview=volume')!.status).toBe(200);
+});
+
+test('generates the default volume without noticeable delay', () => {
+  const started = performance.now();
+  const { repositories } = body<RepositoryOverview>('/v0/repositories/overview?preview=volume');
+  expect(repositories).toHaveLength(1000);
+  expect(body<Summary[]>('/v0/attestations?preview=volume&limit=200')).toHaveLength(200);
+  expect(performance.now() - started).toBeLessThan(2000);
+});
