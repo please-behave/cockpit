@@ -51,6 +51,13 @@ test('pb-app renders its content in the application shell', async () => {
     .toEqual([['Please Behave Dashboard', '/'], ['Attestations', '/attestations'], ['Releases', '/releases'], ['Deployments', '/deployments'], ['Rules', '/rules']]);
   expect(root.querySelector('header .actions pb-theme-toggle + a.sign-out')?.getAttribute('href')).toBe('/sign-out');
   expect(root.querySelector('main slot')).not.toBeNull();
+  const footer = root.querySelector('main + footer[role="contentinfo"]')!;
+  expect(footer.querySelector('span')?.textContent).toBe('© 2026 Please Behave');
+  const project = footer.querySelector('a')!;
+  expect(project.textContent).toBe('Please Behave');
+  expect(project.getAttribute('href')).toBe('https://github.com/please-behave');
+  expect(project.getAttribute('target')).toBe('_blank');
+  expect([...project.relList]).toEqual(['noopener', 'noreferrer']);
 
   root.querySelector<HTMLAnchorElement>('.skip-link')!.click();
   expect(root.activeElement).toBe(root.querySelector('main'));

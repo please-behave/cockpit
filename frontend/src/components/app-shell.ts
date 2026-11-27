@@ -21,7 +21,9 @@ export class CockpitAppShell extends LitElement {
 
     @layer components {
       :host {
-        display: block;
+        display: flex;
+        flex-direction: column;
+        min-block-size: 100svh;
       }
 
       header {
@@ -98,14 +100,15 @@ export class CockpitAppShell extends LitElement {
         outline-offset: calc(-1 * var(--focus-offset));
       }
 
-      .toolbar, main {
+      .toolbar, main, footer {
         box-sizing: border-box;
         max-inline-size: var(--content-width-detail);
+        inline-size: 100%;
         margin-inline: auto;
         padding-inline: var(--space-4);
       }
 
-      .toolbar, main.wide {
+      .toolbar, .wide {
         max-inline-size: var(--content-width-wide);
       }
 
@@ -142,6 +145,26 @@ export class CockpitAppShell extends LitElement {
 
       main:focus-visible {
         outline-offset: calc(-1 * var(--focus-offset));
+      }
+
+      footer {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-1) var(--space-3);
+        margin-block-start: auto;
+        padding-block: var(--space-2);
+        color: var(--text-muted);
+        font-size: var(--type-meta);
+        line-height: var(--line-meta);
+      }
+
+      @media (forced-colors: none) {
+        footer a:any-link { color: inherit; }
+      }
+
+      @media (max-width: 20rem) {
+        footer span { flex-basis: 100%; }
       }
     }
 
@@ -236,6 +259,10 @@ export class CockpitAppShell extends LitElement {
         ${this.refreshStatus(refresh)}
       </div>
       <main id="main-content" class=${wide ? 'wide' : nothing} tabindex="-1"><slot></slot></main>
+      <footer role="contentinfo" class=${wide ? 'wide' : nothing}>
+        <a href="https://github.com/please-behave" target="_blank" rel="noopener noreferrer">Please Behave</a>
+        <span>© 2026 Please Behave</span>
+      </footer>
     `;
   }
 }

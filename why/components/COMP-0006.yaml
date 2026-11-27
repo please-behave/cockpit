@@ -2,7 +2,7 @@ id: COMP-0006
 name: Application Shell and Routing
 purpose: "Frames every page and moves the viewer between views."
 scope:
-  - "Renders the header, navigation and sign-out link around the active view."
+  - "Renders the header, navigation, sign-out link and footer around the active view."
   - "Maps the address to a view and builds the links between views."
   - "Keeps history navigation and the return from a detail page consistent."
 out_of_scope:
@@ -30,4 +30,5 @@ depends_on:
 requirements:
   - REQ-0004
   - REQ-0012
+  - REQ-0015
   - REQ-0033
