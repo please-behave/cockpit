@@ -6,11 +6,11 @@ description: >-
   supplied by the ledger under ledger:CON-0003, without computing it. It
   labels results Verified or Unverified. A tooltip and the label's accessible
   description explain what Verified means. For Unverified, they explain the
-  reported reason, unregistered or mismatch. Both reasons use the same label and symbol.
-  Verification describes the evidence separately from the reported rule
-  outcome. The display uses shared status tokens and visible text in both
-  themes. Viewers can inspect
-  the source and path for registered rules on the linked rule detail.
+  reported reason, unregistered or mismatch. Both reasons use the same
+  label and symbol. Verification describes the evidence separately from the
+  reported rule outcome. Both verification states use the unframed label
+  and symbol in the corresponding status color under REQ-0016. Viewers can
+  inspect the source and path for registered rules on the linked rule detail.
 rationale: >-
   Viewers can tell how far a reported result can be attributed to a known
   rule version.

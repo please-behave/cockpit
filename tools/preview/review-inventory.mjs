@@ -48,9 +48,6 @@ function form(element) {
   if (element.matches('.status, .health') && element.getRootNode().host?.matches('pb-needs-attention, pb-repo-chip')) {
     return ['Outcomes', 'Repository health'];
   }
-  if (element.matches('.incomplete') && element.getRootNode().host?.matches('pb-rules')) {
-    return ['Outcomes', 'Compliance text'];
-  }
   if (element.matches('pb-badge')) return ['Classifications', element.getAttribute('tone') ?? 'Plain badge'];
   if (element.matches('.chip') && element.getRootNode().host?.matches('pb-rule-set-summary')) {
     return ['Object references', 'Rule Set summary'];

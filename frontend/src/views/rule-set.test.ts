@@ -95,8 +95,8 @@ test('opens a Rule Set from Rules, escapes registered text, and shows exact memb
   const binding = failing.closest('pb-widget')!;
   expect(binding.shadowRoot?.querySelector('h3')?.textContent).toBe(`github.com/team/failing-${markup}`);
   expect(binding.textContent).toContain('Version 1.2');
-  expect(binding.textContent).toContain('Incomplete');
-  expect(view.querySelector('.repositories li')!.textContent).toContain('Complete');
+  expect(binding.querySelector('[slot="metadata"] pb-status-pill')).toHaveProperty('status', 'Incomplete');
+  expect(view.querySelector('.repositories li pb-status-pill')).toHaveProperty('status', 'Complete');
 
   const select = view.querySelector('select')!;
   expect([...select.options].map(option => option.value)).toEqual(['1.10', '1.2']);

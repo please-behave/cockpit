@@ -60,6 +60,6 @@ export const viewManifest = [
   ['Needs attention', '/preview/needs-attention', 'pb-needs-attention', 'li', 'Repository rows'],
   ['Needs attention (all clear)', '/preview/needs-attention?clear', 'pb-needs-attention', 'pb-widget > p',
     'All-clear message'],
-  ['Status pills', '/preview/status-pill', 'main', tableRows, 'Pairs of boxed and compact status pills'],
+  ['Status pills', '/preview/status-pill', 'main', tableRows, 'Status labels'],
   ['Page not found', '/preview/unknown-page', 'pb-not-found', 'p', 'Message and return link'],
 ].map(([name, path, root, selector, entries, heavy = false]) => ({ name, path, root, selector, entries, heavy }));

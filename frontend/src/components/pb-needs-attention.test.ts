@@ -61,7 +61,8 @@ test.each([[failedCheck, 'FAIL'], [fixture('gadget'), 'ERROR']] as const)(
   async (entry, verdict) => {
     const root = await mount([entry]);
     const reason = root.querySelector('.reason')!;
-    expect(text(reason)).toBe(`${verdict} · · Reported`);
+    expect(reason.querySelector('pb-status-pill')).toHaveProperty('status', verdict);
+    expect(text(reason)).toBe('· · Reported');
     const commit = reason.querySelector<CommitLink>('pb-commit-link')!;
     const time = reason.querySelector<RelativeTime>('pb-relative-time')!;
     await Promise.all([commit.updateComplete, time.updateComplete]);
@@ -86,7 +87,9 @@ test('uses failing evidence before the overdue reason, and unknown health before
   const overdue = { ...fixture('widget'), latest_check: failedCheck.latest_check };
   const unknown = { ...fixture('stale-sync'), latest_check: failedCheck.latest_check };
   const root = await mount([unknown, overdue]);
-  expect([...root.querySelectorAll('.reason')].map(text)).toEqual(['FAIL · · Reported', 'Evidence status unknown']);
+  const [failure, missing] = root.querySelectorAll('.reason');
+  expect(failure.querySelector('pb-status-pill')).toHaveProperty('status', 'FAIL');
+  expect(text(missing)).toBe('Evidence status unknown');
 });
 
 test.each([

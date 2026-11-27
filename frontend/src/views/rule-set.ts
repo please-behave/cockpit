@@ -105,7 +105,7 @@ function repositoryList(repositories: RuleSetCompliance[]) {
           <pb-widget .heading=${binding.repository} heading-level="3">
             <div slot="metadata" class="binding">
               <span>Version ${binding.version}</span>
-              <span>${binding.complete ? 'Complete' : 'Incomplete'}</span>
+              <pb-status-pill .status=${binding.complete ? 'Complete' : 'Incomplete'}></pb-status-pill>
             </div>
             ${!binding.registered ? html`<p>Version is unregistered.</p>` : nothing}
             ${!binding.complete && binding.non_passing_members.length ? html`<ul class="non-passing" aria-label="Non-passing rules">

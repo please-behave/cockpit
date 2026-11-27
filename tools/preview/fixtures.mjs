@@ -776,5 +776,6 @@ export const reviewTargets = {
 export const statusPillLabels = [
   'PASS', 'FAIL', 'ERROR', 'WARN', 'NOT_RUN',
   'release not recorded', 'No evidence', 'Verified', 'Unverified', 'Complete', 'Incomplete', 'API key',
+  'Repository not compliant',
   'FUTURE_STATUS_WITH_A_LONG_REPORTED_VALUE_THAT_NEEDS_TO_WRAP_IN_NARROW_COLUMNS',
 ];

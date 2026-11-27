@@ -17,9 +17,10 @@ description: >-
   knowledge fields do not prevent the detail from rendering. The
   page also shows each current repository binding reported by CON-0008,
   with its bound version, completeness at check and each non-passing rule's
-  status and link to the registered rule version. The bindings remain visible
-  when viewing historical versions. The page follows REQ-0015 and renders
-  registered text as escaped plain text.
+  status and link to the registered rule version. Completeness and rule status
+  follow REQ-0016. The bindings remain visible when viewing historical
+  versions. The page follows REQ-0015 and renders registered text as escaped
+  plain text.
 rationale: >-
   Viewers can understand why a Rule Set exists, see its registered membership,
   and identify which repositories meet it and which rules need attention.

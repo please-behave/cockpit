@@ -9,7 +9,8 @@ description: >-
   each of those sets or, if it belongs to none, in its local repository group.
   The Rule Set header uses the shared Rule Set token and shows the display
   name, latest version, member count, distinct current repository count, and
-  a text marker when any binding is incomplete according to CON-0008.
+  an outcome indicator under REQ-0016 when any binding is incomplete according
+  to CON-0008.
   Local repository headers use neutral tokens and start collapsed.
   Case-insensitive search matches rule names, rule IDs, set names and IDs,
   and source or bound repositories. It opens matching groups and shows only

@@ -14,13 +14,13 @@ const statuses = new Map<string, { style: string; icon: IconName }>([
   ['Unverified', { style: 'warning', icon: 'warning' }],
   ['Complete', { style: 'passed', icon: 'check' }],
   ['Incomplete', { style: 'warning', icon: 'warning' }],
+  ['Repository not compliant', { style: 'warning', icon: 'warning' }],
   ['API key', { style: 'warning', icon: 'warning' }],
 ]);
 
 export class StatusPill extends LitElement {
   static override properties = {
     status: { type: String },
-    variant: { type: String },
   };
 
   static override styles = css`
@@ -40,13 +40,6 @@ export class StatusPill extends LitElement {
         overflow-wrap: anywhere;
       }
 
-      .pill:not(.compact) {
-        padding: var(--space-1) var(--space-2);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-control);
-        background: var(--surface-raised);
-      }
-
       .passed { color: var(--status-passed); }
       .failed { color: var(--status-failed); }
       .error { color: var(--status-error); }
@@ -56,7 +49,6 @@ export class StatusPill extends LitElement {
   `;
 
   declare status: string;
-  declare variant?: 'boxed' | 'compact';
 
   constructor() {
     super();
@@ -65,9 +57,8 @@ export class StatusPill extends LitElement {
 
   override render() {
     const status = statuses.get(this.status);
-    const compact = this.variant === 'compact' ? ' compact' : '';
     return html`
-      <span class="pill ${status?.style ?? 'unknown'}${compact}">
+      <span class="pill ${status?.style ?? 'unknown'}">
         <pb-icon name=${status?.icon ?? 'question'}></pb-icon>
         <span>${this.status}</span>
       </span>

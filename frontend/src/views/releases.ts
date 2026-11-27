@@ -50,7 +50,7 @@ function releaseRow(entry: ReleaseSummary, overview: boolean) {
     cells: [
       ...identity,
       html`<pb-relative-time .value=${entry.received_at}></pb-relative-time>`,
-      html`<pb-status-pill variant="compact" .status=${entry.evidence?.overall ?? 'No evidence'}></pb-status-pill>`,
+      html`<pb-status-pill .status=${entry.evidence?.overall ?? 'No evidence'}></pb-status-pill>`,
       html`<pb-rule-set-summary .sets=${entry.evidence?.completed_rule_sets ?? []}></pb-rule-set-summary>`,
     ],
   };

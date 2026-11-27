@@ -70,7 +70,7 @@ function deploymentRow(entry: Deployment, identity: Identity, key: string = entr
         </pb-tooltip>`,
       deploymentReference(entry),
       html`<pb-relative-time .value=${entry.received_at}></pb-relative-time>`,
-      html`<pb-status-pill variant="compact" .status=${evidenceStatus(entry)}></pb-status-pill>`,
+      html`<pb-status-pill .status=${evidenceStatus(entry)}></pb-status-pill>`,
       html`<pb-rule-set-summary .sets=${entry.evidence?.completed_rule_sets ?? []}></pb-rule-set-summary>`,
     ],
   };
@@ -88,7 +88,7 @@ export function groupedDeploymentTable(groups: DeploymentGroup[], groupBy: Ident
       : label;
     return {
       key,
-      heading: html`${name} · <pb-status-pill variant="compact" .status=${status}></pb-status-pill> ${count} of ${rows.length}`,
+      heading: html`${name} · <pb-status-pill .status=${status}></pb-status-pill> ${count} of ${rows.length}`,
       rows: rows.map(entry => deploymentRow(entry, identity,
         identity === 'target' ? targetKey(entry.target) : entry.repository)),
     };

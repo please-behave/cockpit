@@ -66,7 +66,7 @@ test('lists the latest releases across pages with attention first and escapes st
   expect(names).not.toContain('github.com/acme/empty');
   const pills = rows.map(row => row.querySelector<StatusPill>('pb-status-pill')!);
   expect(pills.slice(0, 3).map(pill => pill.status)).toEqual(['ERROR', 'FAIL', 'No evidence']);
-  expect(pills.every(pill => pill.variant === 'compact')).toBe(true);
+  expect(pills.every(pill => !pill.hasAttribute('variant'))).toBe(true);
   const noEvidence = pills[2];
   await noEvidence.updateComplete;
   expect(noEvidence.shadowRoot?.querySelector('pb-icon')?.getAttribute('name')).toBe('dash');

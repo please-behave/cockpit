@@ -9,6 +9,7 @@ import { ownerName, shortName } from './pb-short-name';
 import './pb-commit-link';
 import './pb-icon';
 import './pb-relative-time';
+import './pb-status-pill';
 import './pb-tooltip';
 import './pb-widget';
 
@@ -17,8 +18,8 @@ function attentionReason(entry: RepositoryOverviewEntry) {
   if (state === 'unknown') return 'Evidence status unknown';
   if (state === 'never_integrated') return stateLabels[state];
   if (check?.overall === 'FAIL' || check?.overall === 'ERROR') {
-    return html`${check.overall} · <pb-commit-link .repository=${entry.repository}
-      .commit=${check.commit}></pb-commit-link> · Reported <pb-relative-time
+    return html`<pb-status-pill .status=${check.overall}></pb-status-pill> ·
+      <pb-commit-link .repository=${entry.repository} .commit=${check.commit}></pb-commit-link> · Reported <pb-relative-time
       .value=${check.received_at}></pb-relative-time>`;
   }
   return html`${stateLabels.overdue} (step ${entry.overdue_step} of ${entry.overdue_steps})`;

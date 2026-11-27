@@ -8,6 +8,7 @@ import {
 import '../components/pb-data-table';
 import type { DataTableColumn } from '../components/pb-data-table';
 import '../components/pb-empty-state';
+import '../components/pb-status-pill';
 import { CockpitView } from './cockpit-view';
 import { rulePath, ruleSetPath } from './router';
 
@@ -222,7 +223,7 @@ export class RulesView extends CockpitView<Registry> {
               <span>Version ${setGroup.set.version}</span>
               <span>${countLabel(setGroup.set.member_count, 'rule', 'rules')}</span>
               <span>${countLabel(setGroup.repositories.length, 'repository', 'repositories')}</span>
-              ${setGroup.incomplete ? html`<span class="incomplete strong">Repository not compliant</span>` : nothing}
+              ${setGroup.incomplete ? html`<pb-status-pill status="Repository not compliant"></pb-status-pill>` : nothing}
             </span>
           ` : nothing}
         </summary>

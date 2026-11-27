@@ -145,9 +145,10 @@ test('shows set facts and keeps same-name local rules in distinct collapsed grou
   expect(labels(root)).toEqual([baseline.name, release.name, local[0].source, local[1].source]);
   const [baselineGroup, releaseGroup, cli, gateway] = groups(root);
   expect(baselineGroup.className).toBe('disclosure set');
-  expect(baselineGroup.querySelector('summary')?.textContent).toMatch(/Version 2\.0\s+3 rules\s+2 repositories\s+Repository not compliant/);
+  expect(baselineGroup.querySelector('summary')?.textContent).toMatch(/Version 2\.0\s+3 rules\s+2 repositories/);
   expect(releaseGroup.querySelector('summary')?.textContent).toMatch(/1 rule\s+0 repositories/);
-  expect(releaseGroup.querySelector('.incomplete')).toBeNull();
+  expect(baselineGroup.querySelector('summary pb-status-pill')).toHaveProperty('status', 'Repository not compliant');
+  expect(releaseGroup.querySelector('summary pb-status-pill')).toBeNull();
   expect(ruleNames(baselineGroup)).toEqual(['safety', 'shared-id']);
   expect(ruleNames(releaseGroup)).toEqual(['shared-id']);
   for (const [index, group] of [cli, gateway].entries()) {
