@@ -39,8 +39,10 @@ description: >-
   The newest version's widget has a Latest badge and an accent stripe. The
   selected version shows its kind as a toned text badge, its description and
   registration time, its owner, and, for a review, its effective blocking
-  value as a toned text badge. The Owner column and version widget render the
-  reported owner as escaped plain text that wraps without truncation. When
+  value as a toned text badge. The blocking value in the fact strip and
+  version widget uses the shared tooltip in REQ-0016 to explain its effect on
+  the build. The Owner column and version widget render the reported owner
+  as escaped plain text that wraps without truncation. When
   the owner is absent, the list shows a dash and the widget omits the field.
   A review prompt has
   its own block and preserves line breaks. The detail displays

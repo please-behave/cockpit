@@ -37,6 +37,11 @@ export class Tooltip extends LitElement {
         text-align: inherit;
       }
 
+      :host([value-chip]) button {
+        cursor: pointer;
+        user-select: none;
+      }
+
       button:focus-visible {
         outline: var(--focus-ring);
         outline-offset: var(--focus-offset);
@@ -160,7 +165,10 @@ export class Tooltip extends LitElement {
   private enter(event: PointerEvent) {
     if (event.pointerType === 'touch') return;
     if (this.externalTrigger) this.move(event);
-    else this.scheduleHover();
+    else {
+      this.pointerOverTrigger = true;
+      this.scheduleHover();
+    }
   }
 
   private scheduleHover() {
@@ -209,8 +217,8 @@ export class Tooltip extends LitElement {
 
   private focusLeft(event: FocusEvent) {
     const next = event.relatedTarget;
-    if (this.interactive && (this.pointerOverTrigger || this.pointerOverPreview ||
-        (next instanceof Node && (this.contains(next) || this.renderRoot.contains(next))))) return;
+    if (this.pointerOverTrigger || this.pointerOverPreview ||
+        (next instanceof Node && (this.contains(next) || this.renderRoot.contains(next)))) return;
     this.dismiss();
   }
 
@@ -240,6 +248,8 @@ export class Tooltip extends LitElement {
     if (event.pointerType === 'touch' || event.detail === 0) {
       if (this.popup.hidden) this.open();
       else this.dismiss();
+    } else if (this.hasAttribute('value-chip')) {
+      this.open();
     }
   }
 

@@ -21,7 +21,10 @@ description: >-
   and version. When bindings exist, unmatched rules from the attestation
   repository appear under "Local rules". Other unmatched results, and all
   results when bindings are absent or empty, appear under "Unassigned". The
-  Kind column shows each kind as a text badge. Results with a registered
+  Kind column shows each kind as a text badge. The overall outcome, rule
+  kinds, rule statuses and verification values have value-specific
+  explanations through the shared tooltip in REQ-0016. Explanations cover
+  every value in CON-0002. Results with a registered
   version show the link described by REQ-0027. Other results show the plain
   local rule ID, or the run-scoped result ID when no rule identity was
   reported. A link at the top returns to the

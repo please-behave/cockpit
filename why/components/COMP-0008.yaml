@@ -32,6 +32,7 @@ files:
   - frontend/src/components/pb-tooltip.ts
   - frontend/src/components/pb-widget.ts
   - frontend/src/components/state-panel.ts
+  - frontend/src/components/value-explanations.ts
   - frontend/src/status-pill-preview.ts
 depends_on:
   - COMP-0005

@@ -9,6 +9,7 @@ import '../components/pb-time';
 import '../components/pb-tooltip';
 import '../components/pb-widget';
 import type { Widget } from '../components/pb-widget';
+import { blockingExplanations, explainValue } from '../components/value-explanations';
 import { CockpitView } from './cockpit-view';
 import { followHistoryBack, ruleSetPath, type AttestationOrigin } from './router';
 import { selectedVersion, versionSelector, versionSelectorStyles } from './registry-version';
@@ -200,7 +201,9 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
   }
 
   private blockingBadge(blocking: boolean | undefined) {
-    return html`<pb-badge tone=${blocking ? 'blocking' : 'neutral'}>${blocking ? 'Blocking' : 'Non-blocking'}</pb-badge>`;
+    const label = blocking ? 'Blocking' : 'Non-blocking';
+    return explainValue(html`<pb-badge tone=${blocking ? 'blocking' : 'neutral'}>${label}</pb-badge>`,
+      blockingExplanations, label);
   }
 
   private version(version: RegisteredVersion, requested: string | null, latest: boolean) {

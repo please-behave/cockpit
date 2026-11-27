@@ -14,6 +14,8 @@ export class Badge extends LitElement {
   static override styles = css`
     @layer components {
       :host {
+        cursor: pointer;
+        user-select: none;
         display: inline-block;
         box-sizing: border-box;
         max-inline-size: 100%;

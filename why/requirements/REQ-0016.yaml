@@ -7,12 +7,13 @@ description: >-
   have visible text and a distinct SVG symbol in addition to color. Unrecognized
   statuses retain their reported text with neutral styling. Status labels
   have a boxed presentation for standalone use and a compact presentation
-  with the same text and symbol and no surrounding box. The verification
-  reason in REQ-0024 is available through a tooltip and the accessible
-  description of its focusable status label. The tooltip opens on hover,
-  keyboard focus or tap and stays visible while the pointer moves into it.
-  Viewers can dismiss it with Escape, and it closes when the focus or
-  pointer that opened it moves away or the trigger is tapped again.
+  with the same text and symbol and no surrounding box. Shared status pills
+  and badges use the pointer cursor and their labels cannot be selected as
+  text. When a value has an explanation, the shared tooltip makes the chip
+  focusable and gives its trigger the explanation as an accessible description.
+  The tooltip opens on hover, keyboard focus or tap and stays visible while
+  the pointer or keyboard focus is within the trigger or popup. Viewers can
+  dismiss it with Escape or a second tap.
 rationale: >-
   Viewers can read reported outcomes regardless of color perception and can
   recognize values introduced by newer producers.

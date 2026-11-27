@@ -13,7 +13,9 @@ import '../components/pb-rule-set-chip';
 import { shortName } from '../components/pb-short-name';
 import '../components/pb-status-pill';
 import '../components/pb-time';
-import '../components/pb-tooltip';
+import {
+  explainValue, kindExplanations, overallExplanations, statusExplanations, verificationExplanations,
+} from '../components/value-explanations';
 import { CockpitView } from './cockpit-view';
 import { followHistoryBack, repositoryPath, rulePath, ruleSetPath } from './router';
 
@@ -28,18 +30,11 @@ const columns: DataTableColumn<ResultRow>[] = [
     compare: (a, b) => a.result.verification.status.localeCompare(b.result.verification.status) },
 ];
 
-const verificationReasons = {
-  unregistered: 'No rule is registered for this identity and version, so the ledger could not check the result.',
-  mismatch: 'The reported rule differs from its registered version: the digest does not match.',
-};
-
 function verificationCell(verification: Result['verification']) {
-  if (verification.status === 'verified') return html`<pb-status-pill status="Verified"></pb-status-pill>`;
-  return html`
-    <pb-tooltip hint .description=${verificationReasons[verification.reason]}>
-      <pb-status-pill status="Unverified"></pb-status-pill>
-    </pb-tooltip>
-  `;
+  const verified = verification.status === 'verified';
+  const label = verified ? 'Verified' : 'Unverified';
+  return explainValue(html`<pb-status-pill .status=${label}></pb-status-pill>`,
+    verificationExplanations, verified ? 'verified' : verification.reason);
 }
 
 function hasRegisteredVersion(result: Result) {
@@ -100,8 +95,9 @@ function resultGroups({ attestation, sets }: Detail): ResultGroup[] {
       key: String(index),
       cells: [
         ruleCell(result),
-        html`<pb-badge tone=${ifDefined(kindTone(result.kind))}>${result.kind}</pb-badge>`,
-        html`<pb-status-pill .status=${result.status}></pb-status-pill>`,
+        explainValue(html`<pb-badge tone=${ifDefined(kindTone(result.kind))}>${result.kind}</pb-badge>`,
+          kindExplanations, result.kind),
+        explainValue(html`<pb-status-pill .status=${result.status}></pb-status-pill>`, statusExplanations, result.status),
         verificationCell(result.verification),
       ],
     };
@@ -173,7 +169,9 @@ export class DetailView extends CockpitView<Detail> {
   private results(detail: Detail) {
     const { attestation } = detail;
     const items = [
-      { term: 'Overall', description: html`<pb-status-pill .status=${attestation.overall}></pb-status-pill>` },
+      { term: 'Overall', description: explainValue(
+        html`<pb-status-pill .status=${attestation.overall}></pb-status-pill>`, overallExplanations, attestation.overall,
+      ) },
       { term: 'Commit', description: html`<pb-commit-link full .repository=${attestation.repository}
         .commit=${attestation.commit}></pb-commit-link>` },
       { term: 'Reported', description: html`<pb-time .value=${attestation.received_at}></pb-time>` },

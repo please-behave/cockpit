@@ -49,3 +49,9 @@ test('defaults to boxed and updates when the status and variant change', async (
   await pill.updateComplete;
   expect(pill.shadowRoot!.querySelector('.compact.passed')?.lastElementChild?.textContent).toBe('PASS');
 });
+
+// Verifies REQ-0016.
+test('uses a pointer cursor and prevents label text selection', () => {
+  const styles = StatusPill.styles.cssText;
+  expect(styles).toMatch(/\.pill \{[^}]*cursor: pointer;[^}]*user-select: none;/);
+});

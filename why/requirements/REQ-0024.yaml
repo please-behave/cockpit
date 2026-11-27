@@ -4,9 +4,9 @@ area: attestations
 description: >-
   Wherever the cockpit shows rule results, it displays the verification
   supplied by the ledger under ledger:CON-0003, without computing it. It
-  labels results Verified or Unverified. For an unverified result, a tooltip
-  and the label's accessible description explain the reported reason,
-  unregistered or mismatch. Both reasons use the same label and symbol.
+  labels results Verified or Unverified. A tooltip and the label's accessible
+  description explain what Verified means. For Unverified, they explain the
+  reported reason, unregistered or mismatch. Both reasons use the same label and symbol.
   Verification describes the evidence separately from the reported rule
   outcome. The display uses shared status tokens and visible text in both
   themes. Viewers can inspect

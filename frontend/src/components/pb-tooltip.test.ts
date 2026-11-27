@@ -45,6 +45,16 @@ test('opens after a short hover and stays open over its surface', async () => {
   expect(tooltip.hidden).toBe(true);
 });
 
+test('keeps the explanation open when focus leaves while the pointer is over it', async () => {
+  const { trigger, tooltip, hoverArea } = await mount();
+  trigger.focus();
+  pointer(hoverArea, 'pointerenter');
+  trigger.blur();
+  expect(tooltip.hidden).toBe(false);
+  pointer(hoverArea, 'pointerleave');
+  expect(tooltip.hidden).toBe(true);
+});
+
 test('cancels a pending hover on exit, Escape or removal', async () => {
   vi.useFakeTimers();
   const { component, hoverArea, tooltip } = await mount();

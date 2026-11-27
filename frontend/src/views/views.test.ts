@@ -55,6 +55,15 @@ function mountDetail(id: string, origin?: DetailView['origin']) {
   return view;
 }
 
+async function expectExplanation(container: Element, description: string) {
+  const tooltip = container.querySelector<Tooltip>('pb-tooltip')!;
+  await tooltip.updateComplete;
+  const trigger = tooltip.shadowRoot!.querySelector('button')!;
+  expect(trigger.tabIndex).toBe(0);
+  expect(tooltip.shadowRoot!.getElementById(trigger.getAttribute('aria-describedby')!)?.textContent?.trim())
+    .toBe(description);
+}
+
 // Verifies REQ-0004, REQ-0010, REQ-0016, REQ-0017, REQ-0018, REQ-0024 and REQ-0027.
 test.each(['light', 'dark'])('detail presents reported results and verification in the %s theme', async theme => {
   document.documentElement.setAttribute('data-theme', theme);
@@ -110,6 +119,7 @@ test.each(['light', 'dark'])('detail presents reported results and verification 
   await pill.updateComplete;
   expect(pill.shadowRoot!.querySelector('.pill span:last-child')?.textContent).toBe('FAIL');
   expect(pill.shadowRoot!.querySelector('pb-icon')?.getAttribute('name')).toBe('cross');
+  await expectExplanation(overall, 'The run reported a blocking failure, so it did not pass.');
   expect(reported.querySelector<CockpitTime>('pb-time')?.value).toBe(receipt);
   expect(facts.querySelector('img, script')).toBeNull();
 
@@ -150,23 +160,58 @@ test.each(['light', 'dark'])('detail presents reported results and verification 
     .toEqual(['Verified', 'Unverified', 'Unverified', 'Unverified', 'Verified']);
   expect(verification.map(pill => pill.shadowRoot!.querySelector('.pill')?.className))
     .toEqual(['pill passed', 'pill warning', 'pill warning', 'pill warning', 'pill passed']);
-  const tooltips = rows.map(row => row.cells[3].querySelector<Tooltip>('pb-tooltip'));
-  await Promise.all(tooltips.map(tooltip => tooltip?.updateComplete));
-  expect(tooltips.map(tooltip => tooltip?.description)).toEqual([
-    undefined,
-    'No rule is registered for this identity and version, so the ledger could not check the result.',
-    'The reported rule differs from its registered version: the digest does not match.',
-    'No rule is registered for this identity and version, so the ledger could not check the result.',
-    undefined,
-  ]);
-  for (const tooltip of tooltips) {
-    if (!tooltip) continue;
-    const trigger = tooltip.shadowRoot!.querySelector('button')!;
-    expect(trigger.tabIndex).toBe(0);
-    expect(trigger.classList.contains('hint')).toBe(true);
-    expect(tooltip.shadowRoot!.getElementById(trigger.getAttribute('aria-describedby')!)?.textContent?.trim())
-      .toBe(tooltip.description);
+  const descriptions = [
+    [
+      'An AI reviewer evaluates the supplied evidence against a prompt. Its verdict is probabilistic.',
+      'The rule ran and reported that its requirements were not met.',
+      'The reported rule identity and version match a ledger registration, and their digests are equal.',
+    ],
+    [
+      'An integrity result reports whether the conditions needed for trustworthy run evidence held.',
+      'The rule did not complete, so no verdict is available.',
+      'The ledger could not verify the rule. Its identity, version or digest was missing, or no matching version was registered.',
+    ],
+    [
+      'A check runs a command and determines the outcome from its exit status.',
+      'The rule ran and reported success.',
+      'The ledger could not verify the rule. The identity and version match a registration, but the reported and registered digests differ.',
+    ],
+    [
+      'An AI reviewer evaluates the supplied evidence against a prompt. Its verdict is probabilistic.',
+      'The rule reported an advisory problem that did not block overall success.',
+      'The ledger could not verify the rule. Its identity, version or digest was missing, or no matching version was registered.',
+    ],
+    [
+      'An AI reviewer evaluates the supplied evidence against a prompt. Its verdict is probabilistic.',
+      'The rule ran and reported success.',
+      'The reported rule identity and version match a ledger registration, and their digests are equal.',
+    ],
+  ];
+  for (const [index, row] of rows.entries()) {
+    await Promise.all(descriptions[index].map((text, column) => expectExplanation(row.cells[column + 1], text)));
   }
+});
+
+// Verifies REQ-0010.
+test.each([
+  ['PASS', 'The run reported overall success. Advisory warnings can still be present.'],
+  ['ERROR', 'An error or an incomplete required result prevented the run from passing.'],
+] as const)('explains the %s overall outcome separately from rule status', async (overall, description) => {
+  const value = summary('00000000-0000-4000-8000-000000000001', overall, 'org/repo');
+  detail.mockResolvedValue({
+    ...value,
+    results: [
+      { id: 'evaluation-error', kind: 'check', status: 'ERROR', verification: { status: 'verified' } },
+    ],
+  });
+  const view = mountDetail(value.id);
+  await vi.waitFor(() => expect(view.shadowRoot!.querySelector('pb-data-table')).not.toBeNull());
+  const table = await tableRoot(view);
+  const strip = view.shadowRoot!.querySelector<FactStrip>('pb-fact-strip')!;
+  await strip.updateComplete;
+  await expectExplanation(strip.shadowRoot!.querySelector('dd')!, description);
+  const row = table.querySelector<HTMLTableRowElement>('tbody tr + tr')!;
+  await expectExplanation(row.cells[2], 'A problem prevented the rule from reaching a verdict.');
 });
 
 // Verifies REQ-0010 and REQ-0015.

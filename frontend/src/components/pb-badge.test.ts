@@ -23,3 +23,9 @@ test('a tone is reflected as an attribute and the label stays written out', asyn
   expect(badge.getAttribute('tone')).toBe('blocking');
   expect(badge.textContent).toBe('Blocking');
 });
+
+// Verifies REQ-0016.
+test('uses a pointer cursor and prevents label text selection', () => {
+  const styles = Badge.styles.cssText;
+  expect(styles).toMatch(/:host \{[^}]*cursor: pointer;[^}]*user-select: none;/);
+});

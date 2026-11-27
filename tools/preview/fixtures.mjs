@@ -737,6 +737,9 @@ export const reviewTargets = {
   repository: `?${new URLSearchParams({ repository: releaseRepository })}`,
   release: fixtureTargets.releaseDetails[0],
   attestation: fixtureTargets.details[0],
+  attestationPassed: fixtureTargets.details[1],
+  attestationError: fixtureTargets.details[3],
+  advisoryReview: `/v0/rules/detail?${new URLSearchParams(identity('reviews/docs', 'docs-review'))}`,
   rule: `/v0/rules/detail?${new URLSearchParams(identity('reviews/design', 'design-review'))}`,
   ruleSet: `/v0/rule-sets/detail?${new URLSearchParams(identity('sets/baseline', 'baseline'))}`,
 };

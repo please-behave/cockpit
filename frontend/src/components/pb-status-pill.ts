@@ -26,6 +26,8 @@ export class StatusPill extends LitElement {
   static override styles = css`
     @layer components {
       .pill {
+        cursor: pointer;
+        user-select: none;
         display: inline-flex;
         font-size: var(--type-meta);
         line-height: var(--line-meta);
