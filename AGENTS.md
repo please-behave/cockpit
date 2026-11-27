@@ -21,6 +21,15 @@
 - Views declare layout only. `tools/view-styles/view-styles.test.ts` fails on borders, backgrounds, radii, shadows, colors, font size and weight in view styles; allow an exception with a reason in `tools/view-styles/exceptions.ts` (DEC-0019).
 - Add a fixture for every new visual case to `tools/preview/fixtures.mjs`; the fixture test keeps the responses in the shape of the API client.
 
+### On-request UI review
+
+An independent review of the interface runs only when someone requests it; it finds what a single change cannot show. The per-issue duty above stays the measurements before and after a change.
+
+- Scope: take the scope that was named. Without one, review the dashboard, releases, deployments and attestations at 1440 and 320 CSS pixels in the light theme.
+- Procedure: start the fixture preview and open `/preview/review`. Read the measured numbers before looking at images. Judge each view against the [interface principles](https://github.com/please-behave/why/blob/main/brand/interface-principles.md), the question the view answers according to its requirement in `why/requirements/`, hierarchy, density, consistency, states and keyboard focus.
+- Report: list findings ranked by weight, at most about fifteen. Give each finding where it occurs, its evidence marked as measured or as impression, the principle or requirement it touches and a small suggestion. End with what was and was not checked.
+- Edit nothing and create no issues; the review only reports.
+
 ## GitHub issues
 
 - Product development normally starts from a GitHub issue. Each issue references the relevant Why artifacts by ID or path where they exist. Identify missing references and resolve missing or conflicting requirements before coding. Explicit direct instructions in this chat authorize focused work without an issue.
