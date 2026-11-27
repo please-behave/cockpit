@@ -4,8 +4,10 @@
 returns the JSON object reported by the ledger under `ledger:CON-0003`.
 [attestation.schema.json](attestation.schema.json) defines its structure.
 The object contains the summary fields, the bound Rule Sets and the results
-in reported order. Fields and values are preserved as reported. Each binding
-in `rule_sets` contains the set's `source`, `path`, `id`, `version` and
+in reported order. Fields and values are preserved as reported, including
+the ledger's `received_at` timestamp, which follows
+[why:DEC-0027](https://github.com/please-behave/why/blob/main/why/decisions/DEC-0027.yaml).
+Each binding in `rule_sets` contains the set's `source`, `path`, `id`, `version` and
 `execution_points`, including bindings whose set version is unregistered.
 Older responses can omit the array. The ledger returns an empty array when
 it has no bindings for an attestation.
