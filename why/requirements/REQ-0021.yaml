@@ -12,9 +12,10 @@ description: >-
   expose the full value of a shortened commit. The commit links to github.com
   by the rule of DEC-0011. The columns never wrap and long values are
   truncated. The table scrolls with the page and keeps its column headers
-  visible according to REQ-0018. A ledger without attestations has an
-  explicit empty state, and
-  a failed first page shows the ledger-unavailable error with a retry action.
+  visible according to REQ-0018. The visually hidden Attestations caption
+  names both the table and its scroll region for assistive technology. A ledger
+  without attestations has an explicit empty state, and a failed first page
+  shows the ledger-unavailable error with a retry action.
   The page has an entry in the navigation and refreshes by the rule of
   REQ-0020.
 rationale: >-

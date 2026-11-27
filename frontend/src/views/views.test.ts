@@ -114,6 +114,7 @@ test.each(['light', 'dark'])('detail presents reported results and verification 
   expect(facts.querySelector('img, script')).toBeNull();
 
   const table = await tableRoot(view);
+  expect(table.querySelector('caption:not(.assistive)')?.textContent).toBe('Rules');
   expect(table.querySelector('th[scope="rowgroup"]')?.textContent).toBe('Unassigned');
   expect(setVersions).not.toHaveBeenCalled();
   const rows = [...table.querySelectorAll<HTMLTableRowElement>('tbody tr + tr')];

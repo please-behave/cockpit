@@ -34,6 +34,7 @@ type Sort = { index: number; direction: 'ascending' | 'descending' };
 export class DataTable<Row extends DataTableRow = DataTableRow> extends LitElement {
   static override properties = {
     label: { type: String },
+    hideCaption: { type: Boolean, attribute: 'hide-caption' },
     columns: { attribute: false },
     rows: { attribute: false },
     groups: { attribute: false },
@@ -113,6 +114,16 @@ export class DataTable<Row extends DataTableRow = DataTableRow> extends LitEleme
         overflow-wrap: anywhere;
       }
 
+      .assistive {
+        position: absolute;
+        inline-size: 1px;
+        block-size: 1px;
+        padding: 0;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
+
       th, td {
         border-block-end: 1px solid var(--border-subtle);
       }
@@ -158,6 +169,7 @@ export class DataTable<Row extends DataTableRow = DataTableRow> extends LitEleme
   `;
 
   declare label: string;
+  declare hideCaption: boolean;
   declare columns: readonly (string | DataTableColumn<Row>)[];
   declare rows: readonly Row[];
   declare groups?: readonly DataTableGroup<Row>[];
@@ -173,6 +185,7 @@ export class DataTable<Row extends DataTableRow = DataTableRow> extends LitEleme
   constructor() {
     super();
     this.label = 'Results';
+    this.hideCaption = false;
     this.columns = [];
     this.rows = [];
     this.rowHeaderColumn = -1;
@@ -226,8 +239,9 @@ export class DataTable<Row extends DataTableRow = DataTableRow> extends LitEleme
 
   private readonly pinHeader = () => {
     const table = this.renderRoot.querySelector('table')!;
-    const start = table.caption!.getBoundingClientRect().bottom;
-    const end = table.getBoundingClientRect().bottom - table.tHead!.getBoundingClientRect().height;
+    const bounds = table.getBoundingClientRect();
+    const start = this.hideCaption ? bounds.top : table.caption!.getBoundingClientRect().bottom;
+    const end = bounds.bottom - table.tHead!.getBoundingClientRect().height;
     const offset = Math.max(0, Math.min(-start, end - start));
     if (offset === this.headerOffset) return;
     this.headerOffset = offset;
@@ -271,7 +285,7 @@ export class DataTable<Row extends DataTableRow = DataTableRow> extends LitEleme
       <div class="scroll" role="region" aria-labelledby="caption" tabindex="0"
         @scroll=${this.rememberScroll} @focusin=${this.revealFocus}>
         <table>
-          <caption id="caption">${this.label}</caption>
+          <caption id="caption" class=${this.hideCaption ? 'assistive' : nothing}>${this.label}</caption>
           <thead>
               <tr>${columns.map(({ label, mode, part, compare }, index) => {
                 const direction = compare && this.sort?.index === index ? this.sort.direction : undefined;

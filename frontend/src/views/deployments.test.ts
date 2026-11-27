@@ -64,6 +64,7 @@ test('shows all pages grouped by target with the worst evidence first', async ()
     '/v0/deployments?limit=100', '/v0/deployments?limit=100&before=16',
   ]);
   const grid = table(root)!.shadowRoot!;
+  expect(grid.querySelector('caption.assistive')?.textContent).toBe('Deployments');
   expect([...grid.querySelectorAll('thead th')].map(cell => cell.textContent?.trim()))
     .toEqual(['Repository', 'Version or commit', 'Recorded', 'Evidence', 'Completed Rule Sets']);
   const groups = [...grid.querySelectorAll('tbody')];

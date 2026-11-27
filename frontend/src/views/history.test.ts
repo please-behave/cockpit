@@ -113,6 +113,7 @@ test('shows one row per attestation with its columns, links and tooltips', async
   page.mockResolvedValue([report, summary(2, 'gitlab.com/acme/other')]);
   const view = await mount();
   const root = await tableRoot(view);
+  expect(root.querySelector('caption.assistive')?.textContent).toBe('Attestations');
   expect([...root.querySelectorAll('thead th')].map(cell => cell.textContent))
     .toEqual(['Reported', 'Repository', 'Commit', 'Overall']);
   expect([...root.querySelectorAll('thead th')].map(cell => cell.className)).toEqual(['content', 'fill', 'content', 'content']);

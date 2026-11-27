@@ -63,7 +63,7 @@ export function releaseTable(entries: ReleaseSummary[], label: 'Releases' | 'Rel
       ? 'No release has been recorded yet.'
       : 'No release has been recorded for this repository.'}></pb-empty-state>`;
   }
-  return html`<pb-data-table .label=${label} .columns=${overview ? overviewColumns : historyColumns}
+  return html`<pb-data-table .label=${label} ?hide-caption=${overview} .columns=${overview ? overviewColumns : historyColumns}
     .rows=${entries.map(entry => releaseRow(entry, overview))} row-header-column="0"></pb-data-table>`;
 }
 

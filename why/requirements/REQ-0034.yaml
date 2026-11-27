@@ -4,9 +4,10 @@ area: deployments
 description: >-
   The Deployments tab shows the ledger's current deployment for each target owner,
   target name and canonical subject repository. It reads every page through CON-0013.
-  The table shows one row per deployment. It links the canonical repository to
-  REQ-0033 in the row when grouped by target and in the group header when
-  grouped by repository. Each row links a recorded release version to REQ-0032,
+  The visually hidden Deployments caption names both the table and its scroll
+  region for assistive technology. The table shows one row per deployment.
+  It links the canonical repository to REQ-0033 in the row when grouped by
+  target and in the group header when grouped by repository. Each row links a recorded release version to REQ-0032,
   shows an unrecorded version as plain text with
   "release not recorded", or shows the first seven characters of the reported
   commit with the full identifier in an accessible tooltip for a commit-only deployment.

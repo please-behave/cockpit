@@ -51,6 +51,7 @@ test('lists the latest releases across pages with attention first and escapes st
   expect(root!.querySelector('h1.assistive')?.textContent).toBe('Releases');
   const table = root!.querySelector<DataTable>('pb-data-table')!;
   await table.updateComplete;
+  expect(table.shadowRoot!.querySelector('caption.assistive')?.textContent).toBe('Releases');
   expect([...table.shadowRoot!.querySelectorAll('thead th')].map(cell => cell.textContent?.trim()))
     .toEqual(['Repository', 'Newest version', 'Recorded', 'Evidence', 'Completed Rule Sets']);
   const rows = [...table.shadowRoot!.querySelectorAll('tbody tr')];

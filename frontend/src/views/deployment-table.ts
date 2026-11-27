@@ -92,7 +92,7 @@ export function groupedDeploymentTable(groups: DeploymentGroup[], groupBy: Ident
       rows: rows.map(entry => deploymentRow(entry, identity)),
     };
   });
-  return html`<pb-data-table label="Deployments" .columns=${columns[identity]} .groups=${tableGroups}
+  return html`<pb-data-table label="Deployments" hide-caption .columns=${columns[identity]} .groups=${tableGroups}
     row-header-column="0"></pb-data-table>`;
 }
 

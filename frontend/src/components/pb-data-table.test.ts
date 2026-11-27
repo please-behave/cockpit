@@ -36,8 +36,14 @@ test('exposes a named table with column and optional row headers in a focusable 
   expect(root.querySelector('tbody td pb-status-pill')).not.toBeNull();
   expect(root.querySelector('tbody td a')?.getAttribute('href')).toBe('/attestations');
 
+  expect(caption.classList.contains('assistive')).toBe(false);
+  table.hideCaption = true;
   table.rowHeaderColumn = -1;
   await table.updateComplete;
+  expect(caption.classList.contains('assistive')).toBe(true);
+  expect(caption.textContent).toBe('Reported checks');
+  expect(root.querySelector('table')?.caption).toBe(caption);
+  expect(scroller.getAttribute('aria-labelledby')).toBe(caption.id);
   expect(root.querySelector('tbody th')).toBeNull();
   expect(root.querySelectorAll('tbody td')).toHaveLength(3);
 });

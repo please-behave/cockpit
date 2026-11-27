@@ -195,7 +195,7 @@ export class HistoryView extends CockpitView<Summary[]> {
     const count = `${this.loaded.length} ${this.loaded.length === 1 ? 'attestation' : 'attestations'}`;
 
     return html`
-      <pb-data-table label="Attestations" .columns=${columns} .rows=${rows}></pb-data-table>
+      <pb-data-table label="Attestations" hide-caption .columns=${columns} .rows=${rows}></pb-data-table>
       <div class="sentinel"></div>
       ${this.loadingMore ? html`<p role="status">Loading older attestations…</p>` : nothing}
       ${this.moreFailed
