@@ -13,7 +13,7 @@ import '../components/pb-status-pill';
 import '../components/pb-time';
 import { CockpitView } from './cockpit-view';
 import { compareEvidence, deploymentList, deploymentListStyles, targetLabel } from './deployment-list';
-import { releaseList, releaseListStyles } from './releases';
+import { releaseTable } from './releases';
 import { ruleSetPath } from './router';
 
 const historyLimit = 100;
@@ -57,7 +57,7 @@ function attestationRow(summary: Summary) {
 export class RepositoryView extends CockpitView<RepositoryData> {
   static override properties = { repository: { attribute: false } };
 
-  static override styles = [CockpitView.styles as CSSResult, releaseListStyles, deploymentListStyles, css`
+  static override styles = [CockpitView.styles as CSSResult, deploymentListStyles, css`
     @layer components {
       .canonical { margin-block: var(--space-2) 0; color: var(--text-muted); }
       section { margin-block-start: var(--space-6); }
@@ -100,7 +100,7 @@ export class RepositoryView extends CockpitView<RepositoryData> {
       <section aria-labelledby="releases">
         <h2 id="releases">Releases</h2>
         <p><a data-route href="/releases">All releases</a></p>
-        ${data ? releaseList(data.releases, false) : nothing}
+        ${data ? releaseTable(data.releases, 'Release history') : nothing}
       </section>
       <section aria-labelledby="deployments">
         <h2 id="deployments">Deployments</h2>

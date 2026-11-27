@@ -343,6 +343,7 @@ const releaseFacts = [
   release(releaseRepository, '2.0', 1, 'PASS', [baselineSet, securitySet]),
   release(releaseRepository, '1.11', 8, 'ERROR'),
   release(releaseRepository, '1.9', 10, 'PASS'),
+  release(releaseRepository, '1.8', 12, null),
   release('github.com/acme/missing-evidence', '1.0', 2, null),
   release('github.com/acme/failing-evidence', '1.0', 3, 'FAIL'),
   release('github.com/acme/evidence-error', '1.0', 4, 'ERROR'),

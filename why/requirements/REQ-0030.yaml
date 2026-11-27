@@ -1,28 +1,30 @@
 id: REQ-0030
 name: Releases by Repository
 description: >-
-  The Releases tab shows one entry per repository with a recorded release.
-  Each entry shows the repository, its newest recorded version, the ledger
-  receipt time, and the release's reported evidence. Repositories with no
-  evidence or a FAIL or ERROR outcome appear first. Within each group, the
-  list is ordered by repository name. The repository name opens the repository
-  page of REQ-0033, which lists that repository's releases in descending
-  receipt order. Each version opens the release detail page of REQ-0032.
-  The history entries show the version, the first seven characters of the
-  commit, the receipt time, and the reported evidence. The full commit is available
-  in an accessible tooltip. Both views show relative receipt times with the
-  localized exact time in an accessible tooltip and explain when no release
-  has been recorded. Evidence shows the reported status or “No evidence” as
-  text with an icon and shows a platinum-blue chip for each completed Rule
-  Set in that release's evidence. Each chip names the bound version, makes
-  the full name available through an accessible tooltip if truncated, and
-  links to the bound version on the Rule Set detail page of REQ-0029. Both views follow
-  REQ-0004, REQ-0015 and REQ-0016.
+  The Releases tab shows a table with one row per repository with a recorded
+  release. Each row shows the repository, its newest recorded version, the
+  ledger receipt time, the reported evidence status and the completed Rule Set
+  summary. Repositories with no evidence or a FAIL or ERROR outcome appear
+  first. Within each group, the initial order is by repository name. The
+  repository name opens the repository page of REQ-0033, which shows a release
+  history table in descending ledger receipt order. Each version opens the
+  release detail page of REQ-0032. History rows show the version, the first
+  seven characters of the commit, the receipt time, the evidence status and the
+  completed Rule Set summary. The full commit is available in an accessible
+  tooltip. Both views show relative receipt times with the localized exact
+  time in an accessible tooltip and explain when no release has been recorded.
+  The evidence status shows the reported outcome or “No evidence” as compact
+  text with an icon. The Rule Set summary gives the count of completed Rule
+  Sets when present. Its pointer- and keyboard-accessible preview shows a
+  platinum-blue chip for each completed Rule Set. Each chip names the bound
+  version and links to it on the Rule Set detail page of REQ-0029. Both views
+  follow REQ-0004, REQ-0015, REQ-0016 and REQ-0018.
 rationale: >-
   Viewers can find each repository's releases and see what evidence was
   reported for the released commits.
 decisions:
   - DEC-0001
   - DEC-0002
+  - DEC-0009
   - why:DEC-0020
   - why:DEC-0021

@@ -1,97 +1,79 @@
 import { css, html, nothing, type CSSResult } from 'lit';
-import { repeat } from 'lit/directives/repeat.js';
 import { releases, type ReleaseSummary } from '../api/client';
+import type { DataTableColumn } from '../components/pb-data-table';
+import '../components/pb-data-table';
 import '../components/pb-empty-state';
-import type { KeyValueItem } from '../components/pb-key-value';
-import '../components/pb-key-value';
 import '../components/pb-relative-time';
-import '../components/pb-rule-set-chip';
-import '../components/pb-section';
+import '../components/pb-rule-set-summary';
 import '../components/pb-status-pill';
 import '../components/pb-tooltip';
 import { CockpitView } from './cockpit-view';
-import { releasePath, repositoryPath, ruleSetPath } from './router';
+import { releasePath, repositoryPath } from './router';
+
+const evidenceColumns: DataTableColumn[] = [
+  { label: 'Recorded', mode: 'content' },
+  { label: 'Evidence', mode: 'content' },
+  { label: 'Completed Rule Sets', mode: 'content' },
+];
+
+const overviewColumns: DataTableColumn[] = [
+  { label: 'Repository', mode: 'fill', part: 'repository' },
+  { label: 'Newest version', mode: 'fill', part: 'newest-version' },
+  ...evidenceColumns,
+];
+
+const historyColumns: DataTableColumn[] = [
+  { label: 'Version', mode: 'fill' },
+  { label: 'Commit', mode: 'content' },
+  ...evidenceColumns,
+];
 
 function needsAttention({ evidence }: ReleaseSummary) {
   return evidence === null || evidence.overall === 'FAIL' || evidence.overall === 'ERROR';
 }
 
-export const releaseListStyles = css`
-  @layer components {
-    :host { overflow-wrap: anywhere; }
-
-    .releases {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      display: grid;
-      gap: var(--space-2);
-    }
-
-    .release {
-      display: grid;
-      grid-template-columns: minmax(0, 2fr) minmax(0, 5fr);
-      align-items: start;
-      gap: var(--space-2) var(--space-4);
-      padding: var(--panel-padding);
-      border: 1px solid var(--panel-border);
-      border-radius: var(--radius-panel);
-      background: var(--surface-raised);
-    }
-
-    .release > a {
-      justify-self: start;
-      font-weight: var(--weight-semibold);
-    }
-
-    @media (max-width: 52rem) {
-      .release { grid-template-columns: minmax(0, 1fr); }
-    }
-  }
-`;
-
 function releaseRow(entry: ReleaseSummary, overview: boolean) {
-  const sets = entry.evidence?.completed_rule_sets ?? [];
-  const items: KeyValueItem[] = [
-    overview ? { term: 'Newest version',
-      description: html`<a data-route href=${releasePath(entry.repository, entry.version)}>${entry.version}</a>` }
-      : { term: 'Commit', description: html`<pb-tooltip .description=${entry.commit}>
-        <code>${entry.commit.slice(0, 7)}</code></pb-tooltip>` },
-    { term: 'Recorded', description: html`<pb-relative-time .value=${entry.received_at}></pb-relative-time>` },
-    { term: 'Evidence', description: html`<pb-status-pill .status=${entry.evidence?.overall ?? 'No evidence'}></pb-status-pill>` },
+  const version = html`<pb-tooltip external-trigger .description=${entry.version}>
+    <a data-route href=${releasePath(entry.repository, entry.version)}>${entry.version}</a>
+  </pb-tooltip>`;
+  const identity = overview ? [
+    html`<pb-tooltip external-trigger .description=${entry.repository}>
+      <a data-route href=${repositoryPath(entry.repository)}>${entry.repository}</a>
+    </pb-tooltip>`,
+    version,
+  ] : [
+    version,
+    html`<pb-tooltip .description=${entry.commit}><code>${entry.commit.slice(0, 7)}</code></pb-tooltip>`,
   ];
-  if (sets.length) items.push({
-    term: 'Completed Rule Sets',
-    fullWidth: true,
-    description: html`<ul class="chips" role="list">${sets.map(set => html`
-      <li><pb-rule-set-chip .label=${set.name} .href=${ruleSetPath(set, set.version)}></pb-rule-set-chip></li>
-    `)}</ul>`,
-  });
-  return html`
-    <li class="release">
-      ${overview
-        ? html`<pb-section compact><h2 slot="heading">
-          <a data-route href=${repositoryPath(entry.repository)}>${entry.repository}</a>
-        </h2></pb-section>`
-        : html`<a data-route href=${releasePath(entry.repository, entry.version)}>${entry.version}</a>`}
-      <pb-key-value .items=${items}></pb-key-value>
-    </li>
-  `;
+  return {
+    key: overview ? entry.repository : entry.version,
+    cells: [
+      ...identity,
+      html`<pb-relative-time .value=${entry.received_at}></pb-relative-time>`,
+      html`<pb-status-pill variant="compact" .status=${entry.evidence?.overall ?? 'No evidence'}></pb-status-pill>`,
+      html`<pb-rule-set-summary .sets=${entry.evidence?.completed_rule_sets ?? []}></pb-rule-set-summary>`,
+    ],
+  };
 }
 
-export function releaseList(entries: ReleaseSummary[], overview: boolean) {
+export function releaseTable(entries: ReleaseSummary[], label: 'Releases' | 'Release history') {
+  const overview = label === 'Releases';
   if (entries.length === 0) {
     return html`<pb-empty-state heading="No releases" .message=${overview
       ? 'No release has been recorded yet.'
       : 'No release has been recorded for this repository.'}></pb-empty-state>`;
   }
-  return html`<ul class="releases" role="list">
-    ${repeat(entries, entry => overview ? entry.repository : entry.version, entry => releaseRow(entry, overview))}
-  </ul>`;
+  return html`<pb-data-table .label=${label} .columns=${overview ? overviewColumns : historyColumns}
+    .rows=${entries.map(entry => releaseRow(entry, overview))} row-header-column="0"></pb-data-table>`;
 }
 
 export class ReleasesView extends CockpitView<ReleaseSummary[]> {
-  static override styles = [CockpitView.styles as CSSResult, releaseListStyles];
+  static override styles = [CockpitView.styles as CSSResult, css`
+    @layer components {
+      pb-data-table::part(repository) { min-inline-size: 16ch; }
+      pb-data-table::part(newest-version) { inline-size: 20%; min-inline-size: 14ch; }
+    }
+  `];
 
   protected override get headingVisible() { return false; }
 
@@ -106,7 +88,7 @@ export class ReleasesView extends CockpitView<ReleaseSummary[]> {
   }
 
   protected override content(entries?: ReleaseSummary[]) {
-    return html`${entries === undefined ? nothing : releaseList(entries, true)}`;
+    return html`${entries === undefined ? nothing : releaseTable(entries, 'Releases')}`;
   }
 }
 

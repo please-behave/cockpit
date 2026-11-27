@@ -6,6 +6,7 @@ import { CockpitApp } from '../components/app';
 import type { DataTable } from '../components/pb-data-table';
 import type { RelativeTime } from '../components/pb-relative-time';
 import type { RuleSetChip } from '../components/pb-rule-set-chip';
+import type { RuleSetSummary } from '../components/pb-rule-set-summary';
 import type { StatusPill } from '../components/pb-status-pill';
 import type { Tooltip } from '../components/pb-tooltip';
 import { releasePath, repositoryPath, routeFor, ruleSetPath } from './router';
@@ -31,7 +32,8 @@ async function open(path: string) {
   document.body.append(app);
   await app.updateComplete;
   const view = app.shadowRoot!.querySelector('pb-repository')!;
-  await vi.waitFor(() => expect(view.shadowRoot!.querySelector('.releases, pb-empty-state')).not.toBeNull());
+  await vi.waitFor(() =>
+    expect(view.shadowRoot!.querySelector('[aria-labelledby="releases"] :is(pb-data-table, pb-empty-state)')).not.toBeNull());
   return { app, root: view.shadowRoot!, fetch };
 }
 
@@ -43,13 +45,19 @@ test.each([repositoryPath(repository), '/releases/repository?repository=github.c
     expect(root.querySelector('.canonical')?.textContent).toBe(repository);
     expect([...root.querySelectorAll('section > h2')].map(heading => heading.textContent))
       .toEqual(['Completed Rule Sets', 'Releases', 'Deployments', 'Attestations']);
-    const versions = [...root.querySelectorAll('.release > a')];
-    expect(versions.map(link => link.textContent)).toEqual(['2.0', '1.11', '1.9']);
+    const table = root.querySelector<DataTable>('[aria-labelledby="releases"] pb-data-table')!;
+    await table.updateComplete;
+    expect(table.label).toBe('Release history');
+    expect(table.shadowRoot?.querySelector('thead button, [aria-sort]')).toBeNull();
+    const rows = [...table.shadowRoot!.querySelectorAll('tbody tr')];
+    const versions = rows.map(row => row.querySelector('th a')!);
+    expect(versions.map(link => link.textContent)).toEqual(['2.0', '1.11', '1.9', '1.8']);
     expect(versions[0].getAttribute('href')).toBe(releasePath(repository, '2.0'));
-    const releaseFacts = [...root.querySelectorAll('.release pb-key-value')].map(list => list.shadowRoot!);
-    expect(releaseFacts.map(list => list.querySelector<StatusPill>('pb-status-pill')!.status))
-      .toEqual(['PASS', 'ERROR', 'PASS']);
-    const commit = releaseFacts[0].querySelector<Tooltip>('pb-tooltip')!;
+    expect(rows.map(row => row.querySelector<StatusPill>('pb-status-pill')!.status))
+      .toEqual(['PASS', 'ERROR', 'PASS', 'No evidence']);
+    expect(rows.map(row => row.querySelector<RuleSetSummary>('pb-rule-set-summary')!.sets.length))
+      .toEqual([2, 0, 0, 0]);
+    const commit = rows[0].querySelector<Tooltip>('td pb-tooltip')!;
     await commit.updateComplete;
     expect(commit.description).toMatch(/^[0-9a-f]{40}$/);
     expect(commit.querySelector('code')?.textContent).toBe(commit.description.slice(0, 7));
@@ -57,7 +65,7 @@ test.each([repositoryPath(repository), '/releases/repository?repository=github.c
     expect(commit.shadowRoot?.getElementById(descriptionId!)?.textContent?.trim()).toBe(commit.description);
     expect(root.querySelector('a[href="/releases"]')).not.toBeNull();
 
-    const [latest, history] = [...root.querySelectorAll<DataTable>('pb-data-table')];
+    const [latest, history] = root.querySelectorAll<DataTable>('[aria-labelledby="attestations"] pb-data-table');
     expect(latest.label).toBe('Latest by execution-point combination');
     expect(latest.rows.map(row => row.cells[0])).toEqual(['check']);
     expect(history.label).toBe('Recent attestations');
@@ -160,7 +168,8 @@ test('shows every overlapping execution-point combination separately', async () 
 
 test('shows the latest attestation without execution points', async () => {
   const { root } = await open(repositoryPath('github.com/acme/gadget'));
-  expect(root.querySelector<DataTable>('pb-data-table')!.rows[0].cells[0]).toBe('No execution points');
+  expect(root.querySelector<DataTable>('[aria-labelledby="attestations"] pb-data-table')!.rows[0].cells[0])
+    .toBe('No execution points');
 });
 
 test.each([

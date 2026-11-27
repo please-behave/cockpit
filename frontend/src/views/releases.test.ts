@@ -1,13 +1,15 @@
 // Verifies REQ-0004, REQ-0015, REQ-0016, REQ-0030 and REQ-0031.
 import { afterEach, expect, test, vi } from 'vitest';
 import { CockpitApp } from '../components/app';
+import type { DataTable } from '../components/pb-data-table';
 import type { RelativeTime } from '../components/pb-relative-time';
 import type { RuleSetChip } from '../components/pb-rule-set-chip';
+import type { RuleSetSummary } from '../components/pb-rule-set-summary';
 import type { StatusPill } from '../components/pb-status-pill';
 import type { Tooltip } from '../components/pb-tooltip';
 import { respond } from '../../../tools/preview/fixtures.mjs';
 import type { ReleasesView } from './releases';
-import { repositoryPath } from './router';
+import { releasePath, repositoryPath, ruleSetPath } from './router';
 
 const repository = 'github.com/acme/return-navigation';
 
@@ -38,7 +40,7 @@ async function open(path: string) {
 
 async function loaded(app: CockpitApp) {
   const view = app.shadowRoot!.querySelector<ReleasesView>('pb-releases')!;
-  await vi.waitFor(() => expect(view.shadowRoot!.querySelector('.releases')).not.toBeNull());
+  await vi.waitFor(() => expect(view.shadowRoot!.querySelector('pb-data-table')).not.toBeNull());
   return view;
 }
 
@@ -47,39 +49,52 @@ test('lists the latest releases across pages with attention first and escapes st
   const app = await open('/releases');
   const { shadowRoot: root } = await loaded(app);
   expect(root!.querySelector('h1.assistive')?.textContent).toBe('Releases');
-  const rows = [...root!.querySelectorAll('.release')];
+  const table = root!.querySelector<DataTable>('pb-data-table')!;
+  await table.updateComplete;
+  expect([...table.shadowRoot!.querySelectorAll('thead th')].map(cell => cell.textContent?.trim()))
+    .toEqual(['Repository', 'Newest version', 'Recorded', 'Evidence', 'Completed Rule Sets']);
+  const rows = [...table.shadowRoot!.querySelectorAll('tbody tr')];
   expect(rows).toHaveLength(110);
-  const facts = rows.map(row => row.querySelector('pb-key-value')!.shadowRoot!);
-  const names = rows.map(row => row.querySelector('pb-section > h2')!.textContent!.trim());
+  const names = rows.map(row => row.querySelector('th a')!.textContent!);
   expect(names.slice(0, 4)).toEqual([
     'github.com/acme/evidence-error', 'github.com/acme/failing-evidence', 'github.com/acme/missing-evidence',
     expect.stringMatching(/^github.com\/.{100,}/),
   ]);
   expect(names.slice(4)).toEqual(names.slice(4).sort((a, b) => a.localeCompare(b)));
   expect(names).not.toContain('github.com/acme/empty');
-  expect(facts.slice(0, 3).map(list => list.querySelector<StatusPill>('pb-status-pill')!.status))
-    .toEqual(['ERROR', 'FAIL', 'No evidence']);
-  const noEvidence = facts[2].querySelector<StatusPill>('pb-status-pill')!;
+  const pills = rows.map(row => row.querySelector<StatusPill>('pb-status-pill')!);
+  expect(pills.slice(0, 3).map(pill => pill.status)).toEqual(['ERROR', 'FAIL', 'No evidence']);
+  expect(pills.every(pill => pill.variant === 'compact')).toBe(true);
+  const noEvidence = pills[2];
   await noEvidence.updateComplete;
   expect(noEvidence.shadowRoot?.querySelector('pb-icon')?.getAttribute('name')).toBe('dash');
-  expect(facts[2].querySelector('pb-rule-set-chip')).toBeNull();
+  expect(rows[2].querySelector<RuleSetSummary>('pb-rule-set-summary')!.sets).toEqual([]);
 
-  const deepLink = rows.find(row => row.querySelector('a')?.textContent === repository)!
-    .querySelector<HTMLAnchorElement>('a')!;
-  const latest = deepLink.closest('.release')!.querySelector('pb-key-value')!.shadowRoot!;
-  expect(latest.querySelector('dd')?.textContent).toBe('2.0');
-  expect([...latest.querySelectorAll<RuleSetChip>('pb-rule-set-chip')].map(chip => chip.label))
-    .toEqual(['Repository baseline', expect.stringContaining('Security and release readiness')]);
+  const latest = rows[names.indexOf(repository)];
+  const [deepLink, versionLink] = latest.querySelectorAll<HTMLAnchorElement>('a');
+  expect(versionLink.textContent).toBe('2.0');
+  expect(versionLink.getAttribute('href')).toBe(releasePath(repository, '2.0'));
+  const summary = latest.querySelector<RuleSetSummary>('pb-rule-set-summary')!;
+  await summary.updateComplete;
+  expect(summary.shadowRoot?.querySelector('button')?.textContent).toBe('2 Rule Sets');
+  const chips = [...summary.shadowRoot!.querySelectorAll<RuleSetChip>('pb-rule-set-chip')];
+  expect(chips.map(chip => chip.label)).toEqual([
+    expect.stringMatching(/^Repository baseline · v/),
+    expect.stringMatching(/Security and release readiness.* · v/),
+  ]);
+  expect(chips.map(chip => chip.href)).toEqual(summary.sets.map(set => ruleSetPath(set, set.version)));
   const recorded = latest.querySelector<RelativeTime>('pb-relative-time')!;
   await recorded.updateComplete;
   const tooltip = recorded.shadowRoot?.querySelector<Tooltip>('pb-tooltip')!;
   expect(tooltip.description).toContain('2026');
   expect(recorded.shadowRoot?.querySelector('time')?.getAttribute('datetime')).toBe(recorded.value);
 
-  const markup = facts.find(list => list.textContent?.includes('release-<'))!;
-  expect(markup.querySelector('dd')?.textContent?.length).toBeGreaterThan(200);
+  const markup = rows.find(row => row.querySelector('td a')?.textContent?.startsWith('release-<'))!;
+  expect(markup.querySelector('td a')?.textContent?.length).toBeGreaterThan(200);
   expect(markup.querySelector('img')).toBeNull();
-  const chip = markup.querySelector<RuleSetChip>('pb-rule-set-chip')!;
+  const markupSummary = markup.querySelector<RuleSetSummary>('pb-rule-set-summary')!;
+  await markupSummary.updateComplete;
+  const chip = markupSummary.shadowRoot!.querySelector<RuleSetChip>('pb-rule-set-chip')!;
   await chip.updateComplete;
   expect(chip.shadowRoot?.querySelector('a')?.textContent).toContain('<img');
   expect(chip.shadowRoot?.querySelector('img')).toBeNull();
@@ -102,5 +117,5 @@ test('explains an empty release overview', async () => {
   const root = app.shadowRoot!.querySelector('pb-releases')!.shadowRoot!;
   await vi.waitFor(() => expect(root.querySelector('pb-empty-state')).not.toBeNull());
   expect(root.querySelector('pb-empty-state')).toHaveProperty('message', 'No release has been recorded yet.');
-  expect(root.querySelector('.release')).toBeNull();
+  expect(root.querySelector('pb-data-table')).toBeNull();
 });

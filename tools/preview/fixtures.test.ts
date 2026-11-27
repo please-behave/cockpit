@@ -290,7 +290,9 @@ test('serves paged release summaries and repository history in the client shape'
     }
   }
   const history = body<ReleaseSummary[]>(fixtureTargets.releaseHistory);
-  expect(history.map(entry => entry.version)).toEqual(['2.0', '1.11', '1.9']);
+  expect(history.map(entry => entry.version)).toEqual(['2.0', '1.11', '1.9', '1.8']);
+  expect(history[0].evidence?.completed_rule_sets).toHaveLength(2);
+  expect(history.at(-1)?.evidence).toBeNull();
   expect(history[0]).toEqual(all.find(entry => entry.repository === history[0].repository));
   expect(body<ReleaseSummary[]>('/v0/releases?repository=unknown')).toEqual([]);
   expect(respond('/v0/releases/latest?before=invalid')?.status).toBe(400);
