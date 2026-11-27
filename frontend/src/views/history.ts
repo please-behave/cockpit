@@ -46,10 +46,9 @@ export class HistoryView extends CockpitView<Summary[]> {
         block-size: 1px;
       }
 
-      .end, pb-error-state {
+      pb-error-state {
         margin-block-start: var(--space-4);
       }
-
     }
   `];
 
@@ -204,7 +203,6 @@ export class HistoryView extends CockpitView<Summary[]> {
           message="Cockpit could not load older attestations." retryable
           @retry=${this.retryMore}></pb-error-state>`
         : nothing}
-      ${this.ended ? html`<p class="end muted">No older attestations exist.</p>` : nothing}
       <p class="assistive" role="status">${this.loadingMore || this.moreFailed ? nothing
         : this.ended ? `All ${count} loaded.` : `${count} loaded.`}</p>
     `;

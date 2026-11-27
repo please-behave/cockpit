@@ -176,14 +176,14 @@ test('loads follow-up pages with the cursor until a short page ends the list', a
   await reach(view);
   expect(page).toHaveBeenLastCalledWith({ before: lastOfFirst, limit: 100 }, expect.any(AbortSignal));
   expect(await rowCount(view)).toBe(200);
-  expect(view.shadowRoot!.querySelector('.end')).toBeNull();
   expect(announcement(view)).toBe('200 attestations loaded.');
 
   page.mockResolvedValueOnce([summary(800), summary(799)]);
   await reach(view);
   expect(page).toHaveBeenLastCalledWith({ before: 'id-0801', limit: 100 }, expect.any(AbortSignal));
   expect(await rowCount(view)).toBe(202);
-  expect(view.shadowRoot!.querySelector('.end')!.textContent).toBe('No older attestations exist.');
+  expect(view.shadowRoot!.textContent).not.toContain('No older attestations exist.');
+  expect(view.shadowRoot!.querySelector('[role=status]:not(.assistive)')).toBeNull();
   expect(announcement(view)).toBe('All 202 attestations loaded.');
 
   observers[0].reach();
@@ -196,10 +196,11 @@ test('loads follow-up pages with the cursor until a short page ends the list', a
 });
 
 // Verifies REQ-0022.
-test('does not load more after a short first page and states that nothing older exists', async () => {
+test('announces a short first page as the end without a visible message', async () => {
   page.mockResolvedValue(range(1, 1));
   const view = await mount();
-  expect(view.shadowRoot!.querySelector('.end')!.textContent).toBe('No older attestations exist.');
+  expect(view.shadowRoot!.textContent).not.toContain('No older attestations exist.');
+  expect(view.shadowRoot!.querySelector('[role=status]:not(.assistive)')).toBeNull();
   expect(announcement(view)).toBe('All 1 attestation loaded.');
   observers[0].reach();
   await view.updateComplete;
@@ -227,7 +228,7 @@ test('stops when a full page adds no new row instead of asking for it again', as
   page.mockResolvedValueOnce(firstPage);
   await reach(view);
   expect(await rowCount(view)).toBe(100);
-  expect(view.shadowRoot!.querySelector('.end')).not.toBeNull();
+  expect(announcement(view)).toBe('All 100 attestations loaded.');
   observers[0].reach();
   await view.updateComplete;
   expect(page).toHaveBeenCalledTimes(2);
@@ -248,7 +249,7 @@ test('loads one page at a time and checks the sentinel again after each page', a
   const rows = await rowCount(view);
 
   complete([summary(800)]);
-  await vi.waitFor(() => expect(view.shadowRoot!.querySelector('.end')).not.toBeNull());
+  await vi.waitFor(() => expect(announcement(view)).toBe('All 101 attestations loaded.'));
   expect(await rowCount(view)).toBe(rows + 1);
   expect(observers[0].observed.has(sentinel(view))).toBe(true);
 });
@@ -273,7 +274,7 @@ test('keeps loaded rows on a failed later page, offers an inline retry and conti
 
   page.mockResolvedValueOnce([summary(800)]);
   error.shadowRoot!.querySelector('button')!.click();
-  await vi.waitFor(() => expect(view.shadowRoot!.querySelector('.end')).not.toBeNull());
+  await vi.waitFor(() => expect(announcement(view)).toBe('All 101 attestations loaded.'));
   expect(view.shadowRoot!.querySelector('pb-error-state')).toBeNull();
   expect(await rowCount(view)).toBe(101);
   expect(page).toHaveBeenLastCalledWith({ before: 'id-0801', limit: 100 }, expect.any(AbortSignal));
