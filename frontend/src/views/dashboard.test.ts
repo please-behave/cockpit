@@ -319,3 +319,44 @@ test('does nothing while hidden and refreshes when shown after more than 5 minut
   setVisibility('visible');
   expect(overview).toHaveBeenCalledTimes(2);
 });
+
+// Verifies REQ-0020.
+test('refreshes at the stored interval and applies a changed interval from then on', async () => {
+  vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] });
+  localStorage.setItem('cockpit-refresh-interval', '30000');
+  overview.mockResolvedValue(repositories(entry('a/one')));
+  const view = await mount();
+
+  const states: RefreshState[] = [];
+  view.addEventListener('refresh-state', event => states.push((event as CustomEvent<RefreshState>).detail));
+
+  await vi.advanceTimersByTimeAsync(29_000);
+  expect(overview).toHaveBeenCalledTimes(1);
+  await vi.advanceTimersByTimeAsync(2_000);
+  await vi.waitFor(() => expect(overview).toHaveBeenCalledTimes(2));
+  await vi.waitFor(() => expect(states.at(-1)?.interval).toBe(30_000));
+
+  view.setRefreshInterval(10_000);
+  expect(localStorage.getItem('cockpit-refresh-interval')).toBe('10000');
+  await vi.advanceTimersByTimeAsync(11_000);
+  await vi.waitFor(() => expect(overview).toHaveBeenCalledTimes(3));
+  await vi.waitFor(() => expect(states.at(-1)?.interval).toBe(10_000));
+
+  view.setRefreshInterval(1234);
+  expect(localStorage.getItem('cockpit-refresh-interval')).toBe('10000');
+  localStorage.clear();
+});
+
+// Verifies REQ-0020.
+test('refreshes at the default interval without usable storage', async () => {
+  vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] });
+  vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('denied'); });
+  vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('denied'); });
+  overview.mockResolvedValue(repositories(entry('a/one')));
+  const view = await mount();
+  await vi.advanceTimersByTimeAsync(299_000);
+  expect(overview).toHaveBeenCalledTimes(1);
+  await vi.advanceTimersByTimeAsync(2_000);
+  await vi.waitFor(() => expect(overview).toHaveBeenCalledTimes(2));
+  expect(() => view.setRefreshInterval(30_000)).not.toThrow();
+});

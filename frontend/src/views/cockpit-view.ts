@@ -5,13 +5,17 @@ import { controlStyles } from '../styles/controls';
 import { disclosureStyles } from '../styles/disclosure';
 import { linkStyles } from '../styles/links';
 import { textStyles } from '../styles/text';
+import {
+  defaultRefreshInterval, isRefreshInterval, storedRefreshInterval, storeRefreshInterval,
+} from '../refresh-interval';
 
-const refreshInterval = 300_000;
 
 export type RefreshState = {
-  view: Element & { refresh(): void };
+  view: Element & { refresh(): void; setRefreshInterval(interval: number): void };
   updatedAt: Date;
   busy: boolean;
+  interval: number;
+  cycleStart: number;
   toolbar?: TemplateResult;
 };
 
@@ -68,7 +72,9 @@ export abstract class CockpitView<T = never> extends LitElement {
   private updatedAt?: Date;
   private timer?: number;
   private hiddenSince?: number;
-  private announced?: { updatedAt?: Date; refreshing: boolean };
+  private interval = defaultRefreshInterval;
+  private cycleStart = Date.now();
+  private announced?: Pick<RefreshState, 'interval' | 'cycleStart' | 'busy'> & { updatedAt?: Date };
 
   /** Top-level views hide the headline visually; it stays exposed and focusable. */
   protected get headingVisible(): boolean { return true; }
@@ -83,6 +89,7 @@ export abstract class CockpitView<T = never> extends LitElement {
     super.connectedCallback();
     if (this.data === undefined) void this.load();
     if (this.refreshable) {
+      this.interval = storedRefreshInterval();
       this.announced = undefined;
       this.requestUpdate();
       this.startTimer();
@@ -104,7 +111,12 @@ export abstract class CockpitView<T = never> extends LitElement {
 
   private startTimer() {
     window.clearInterval(this.timer);
-    this.timer = window.setInterval(() => this.refreshIfVisible(), refreshInterval);
+    this.cycleStart = Date.now();
+    this.timer = window.setInterval(() => {
+      this.cycleStart = Date.now();
+      this.refreshIfVisible();
+      this.requestUpdate();
+    }, this.interval);
   }
 
   private refreshIfVisible() {
@@ -118,8 +130,17 @@ export abstract class CockpitView<T = never> extends LitElement {
     }
     const since = this.hiddenSince;
     this.hiddenSince = undefined;
-    if (since !== undefined && Date.now() - since > refreshInterval) this.refreshIfVisible();
+    if (since !== undefined && Date.now() - since > this.interval) this.refreshIfVisible();
   };
+
+  /** Applies and stores the viewer's choice, and starts counting the new interval. */
+  setRefreshInterval(interval: number) {
+    if (!isRefreshInterval(interval)) return;
+    this.interval = interval;
+    storeRefreshInterval(interval);
+    this.startTimer();
+    this.requestUpdate();
+  }
 
   /** Reads immediately and restarts the interval. */
   refresh() {
@@ -172,14 +193,15 @@ export abstract class CockpitView<T = never> extends LitElement {
   }
 
   private announceRefresh() {
-    const { data, updatedAt, refreshing, announced } = this;
+    const { data, updatedAt, refreshing, interval, cycleStart, announced } = this;
     if (!this.refreshable || !updatedAt || data === undefined) return;
-    if (announced?.updatedAt === updatedAt && announced.refreshing === refreshing) return;
-    this.announced = { updatedAt, refreshing };
+    if (announced?.updatedAt === updatedAt && announced.busy === refreshing
+      && announced.interval === interval && announced.cycleStart === cycleStart) return;
+    this.announced = { updatedAt, busy: refreshing, interval, cycleStart };
     this.dispatchEvent(new CustomEvent<RefreshState>('refresh-state', {
       bubbles: true,
       composed: true,
-      detail: { view: this, updatedAt, busy: refreshing, toolbar: this.toolbar?.(data) },
+      detail: { view: this, updatedAt, busy: refreshing, interval, cycleStart, toolbar: this.toolbar?.(data) },
     }));
   }
 

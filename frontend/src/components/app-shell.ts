@@ -249,7 +249,10 @@ export class CockpitAppShell extends LitElement {
     if (!state) return nothing;
     return html`
       <pb-refresh-status .updatedAt=${state.updatedAt} .busy=${state.busy}
-        @refresh=${() => state.view.refresh()}></pb-refresh-status>
+        .interval=${state.interval} .cycleStart=${state.cycleStart}
+        @refresh=${() => state.view.refresh()}
+        @interval-change=${(event: CustomEvent<number>) => state.view.setRefreshInterval(event.detail)}>
+      </pb-refresh-status>
     `;
   }
 

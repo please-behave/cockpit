@@ -1,23 +1,32 @@
 id: REQ-0020
-name: Dashboard and History Refresh
+name: Overview Refresh
 area: operations
 description: >-
   While the browser tab is visible, the dashboard reads CON-0014 together
   with the newest ten entries of CON-0003, CON-0010 and CON-0013, and the
-  attestation history reads CON-0003 every 5 minutes and when the tab becomes visible
-  after it was hidden for longer than that. They do nothing while the tab is
+  attestation history reads CON-0003 at the viewer's refresh interval and when the tab
+  becomes visible after it was hidden for longer than that interval. They do nothing while the tab is
   hidden. The registered rules, the rule detail and the attestation detail do
   do not refresh. Every view reserves the toolbar row below the header from the
   first render. After a successful read, refreshable views show a status line
   at the end of that row, with a refresh button
-  named "Refresh" and the text "Updated a few seconds ago", "Updated 1 minute
+  named "Refresh", a small interval menu next to it and the text "Updated a few seconds ago", "Updated 1 minute
   ago", "Updated 2 minutes ago" and so on. The text stays on one line. The
   header and the start of the content stay in the same position across views,
   during loading, and as the age changes. The text updates at least every 10
   seconds without reading data, is no live region, and the exact time of the
   last read is available in a tooltip and as an accessible description. The
   button reads immediately, shows that it is working, accepts no further
-  request meanwhile and restarts the 5-minute interval. A refresh replaces
+  request meanwhile and restarts the interval. The interval menu is named
+  "Refresh interval", exposes its current value, is operable by keyboard and
+  offers 10 seconds, 30 seconds, 1 minute, 2 minutes and 5 minutes, with 5
+  minutes as the default. The choice applies to all refreshable views, is kept
+  in the browser's local storage under one key and falls back to the default
+  when storage is missing or fails. A ring around the refresh icon fills slowly
+  in the accent color towards the next refresh and empties after it, at every
+  interval. It is decorative, uses no other animation and advances in steps
+  when reduced motion is requested. Nothing else blinks or moves because of
+  the interval. A refresh replaces
   content in place and keeps the keyboard focus, the scroll position and the
   dashboard's active status filter. Repository rows and chips are identified
   by repository key (the repository and platform from CON-0014). If a

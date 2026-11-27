@@ -73,3 +73,74 @@ test('requests a refresh and ignores clicks while busy', async () => {
   button.click();
   expect(refresh).toHaveBeenCalledTimes(1);
 });
+
+const ring = (status: RefreshStatus) => status.shadowRoot!.querySelector<SVGElement>('.ring')!;
+const select = (status: RefreshStatus) => status.shadowRoot!.querySelector('select')!;
+
+// Verifies REQ-0020.
+test('names the interval menu, lists the intervals and exposes the current value', async () => {
+  const status = new RefreshStatus();
+  status.updatedAt = new Date();
+  status.interval = 120_000;
+  document.body.append(status);
+  await status.updateComplete;
+  const menu = select(status);
+  expect(menu.getAttribute('aria-label')).toBe('Refresh interval');
+  expect([...menu.options].map(option => option.textContent!.trim())).toEqual(
+    ['10 seconds', '30 seconds', '1 minute', '2 minutes', '5 minutes']);
+  expect(menu.value).toBe('120000');
+  expect(menu.selectedOptions[0].textContent!.trim()).toBe('2 minutes');
+});
+
+// Verifies REQ-0020.
+test('defaults to 5 minutes', async () => {
+  expect(select(await mount(new Date())).value).toBe('300000');
+});
+
+// Verifies REQ-0020.
+test('reports a chosen interval, which a native select lets the keyboard operate', async () => {
+  const status = await mount(new Date());
+  const chosen = vi.fn();
+  status.addEventListener('interval-change', event => chosen((event as CustomEvent<number>).detail));
+  const menu = select(status);
+  menu.focus();
+  menu.value = '10000';
+  menu.dispatchEvent(new Event('change'));
+  expect(chosen).toHaveBeenCalledWith(10_000);
+  expect(menu.tabIndex).toBe(0);
+});
+
+// Verifies REQ-0020.
+test.each([
+  ['start', 0, 30_000, 0],
+  ['middle', 15_000, 30_000, -15_000],
+  ['end', 30_000, 30_000, -30_000],
+  ['past the end', 45_000, 30_000, -30_000],
+])('fills the ring over the interval: %s', async (_name, elapsed, interval, delay) => {
+  vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'], now });
+  const status = new RefreshStatus();
+  status.updatedAt = now;
+  status.interval = interval;
+  status.cycleStart = now.getTime() - elapsed;
+  document.body.append(status);
+  await status.updateComplete;
+  expect(ring(status).style.getPropertyValue('--ring-duration')).toBe(`${interval}ms`);
+  expect(Number.parseFloat(ring(status).style.getPropertyValue('--ring-delay')) || 0).toBe(delay);
+  expect(ring(status).getAttribute('aria-hidden')).toBe('true');
+});
+
+// Verifies REQ-0020.
+test('restarts the ring when a new interval begins', async () => {
+  const status = await mount(new Date());
+  const first = ring(status);
+  status.cycleStart += 1000;
+  await status.updateComplete;
+  expect(ring(status)).not.toBe(first);
+});
+
+// Verifies REQ-0020.
+test('moves the ring in steps with reduced motion and uses no other animation on it', () => {
+  const css = RefreshStatus.styles.toString();
+  const reduced = css.slice(css.indexOf('prefers-reduced-motion'));
+  expect(reduced).toMatch(/\.ring circle\s*{\s*animation-timing-function: steps\(\d+\)/);
+});

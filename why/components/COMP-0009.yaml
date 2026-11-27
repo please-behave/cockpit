@@ -22,6 +22,7 @@ files:
   - frontend/src/components/pb-repository-map.ts
   - frontend/src/components/repository-summary.ts
   - frontend/src/needs-attention-preview.ts
+  - frontend/src/refresh-interval.ts
   - frontend/src/repository-health.ts
   - frontend/src/repository-map-preview.ts
   - frontend/src/views/cockpit-view.ts
