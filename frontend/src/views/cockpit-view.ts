@@ -1,6 +1,7 @@
 import { css, html, LitElement, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 import { ApiError } from '../api/client';
 import '../components/pb-error-state';
+import { controlStyles } from '../styles/controls';
 import { linkStyles } from '../styles/links';
 
 const refreshInterval = 300_000;
@@ -15,6 +16,7 @@ export type RefreshState = {
 export abstract class CockpitView<T = never> extends LitElement {
   static override styles: CSSResultGroup = css`
     ${linkStyles}
+    ${controlStyles}
 
     @layer base {
       h1 {

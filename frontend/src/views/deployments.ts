@@ -30,13 +30,6 @@ export class DeploymentsView extends CockpitView<Deployment[]> {
       :host { overflow-wrap: anywhere; }
 
       .controls {
-        padding: var(--panel-padding);
-        border: 1px solid var(--panel-border);
-        border-radius: var(--radius-panel);
-        background: var(--surface-raised);
-      }
-
-      .controls {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: var(--space-3) var(--space-4);
@@ -45,19 +38,9 @@ export class DeploymentsView extends CockpitView<Deployment[]> {
       label {
         display: grid;
         gap: var(--space-1);
-        font-weight: var(--weight-semibold);
       }
 
-      select {
-        min-inline-size: 0;
-        min-block-size: var(--target-min-size);
-        padding: var(--control-padding-block) var(--control-padding-inline);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-control);
-        background: var(--surface);
-        color: var(--text);
-        font: inherit;
-      }
+      select { min-inline-size: 0; }
 
       pb-data-table { margin-block-start: var(--space-4); }
       pb-data-table::part(scroll) { max-block-size: 78dvh; }
@@ -94,7 +77,7 @@ export class DeploymentsView extends CockpitView<Deployment[]> {
     const targets = new Map(entries.map(({ target }) => [targetKey(target), targetLabel(target)]));
     const repositories = new Set(entries.map(entry => entry.repository));
     return html`
-      <div class="controls" role="group" aria-label="Group and filter deployments">
+      <div class="controls panel" role="group" aria-label="Group and filter deployments">
         <label>Group by
           <select @change=${(event: Event) => this.change(event, 'groupBy')}>
             <option value="target">Target</option>

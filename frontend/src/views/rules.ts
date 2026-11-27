@@ -60,34 +60,18 @@ export class RulesView extends CockpitView<Registry> {
         display: grid;
         grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr));
         gap: var(--space-3);
-        padding: var(--panel-padding);
-        border: 1px solid var(--panel-border);
-        border-radius: var(--radius-panel);
-        background: var(--surface-raised);
       }
 
       label {
         display: grid;
         align-content: start;
         gap: var(--space-1);
-        font-weight: var(--weight-semibold);
       }
 
       input, select, button {
-        box-sizing: border-box;
         min-inline-size: 0;
         max-inline-size: 100%;
-        min-block-size: var(--target-min-size);
-        padding: var(--control-padding-block) var(--control-padding-inline);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-control);
-        background: var(--surface);
-        color: var(--text);
-        font: inherit;
       }
-
-      button { cursor: pointer; }
-      button:hover { background: var(--surface-hover); }
 
       section { margin-block: var(--space-6); }
       h2 { margin-block: 0 var(--space-3); }
@@ -294,7 +278,7 @@ export class RulesView extends CockpitView<Registry> {
     const sets = this.scope === 'local' ? [] : this.matching(data.sets, terms);
     const local = this.scope === 'set' ? [] : this.matching(data.local, terms);
     return html`
-      <div class="filters" role="group" aria-label="Filter registered rules">
+      <div class="filters panel" role="group" aria-label="Filter registered rules">
         <label>Search rules
           <input type="search" @input=${(event: Event) => this.filterChanged(event, 'query')}>
         </label>

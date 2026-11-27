@@ -19,13 +19,6 @@ export const versionSelectorStyles = css`
 
     .version-field select {
       max-inline-size: 100%;
-      min-block-size: var(--target-min-size);
-      padding: var(--control-padding-block) var(--control-padding-inline);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-control);
-      background: var(--surface);
-      color: var(--text);
-      font: inherit;
     }
   }
 `;

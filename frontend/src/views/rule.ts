@@ -91,9 +91,6 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
       .prompt {
         margin-block-start: var(--space-1);
         padding: var(--space-3);
-        border: 1px solid var(--panel-border);
-        border-radius: var(--radius-control);
-        background: var(--surface);
       }
       .introduction { overflow-wrap: anywhere; }
       pb-fact-strip { margin-block-start: var(--space-4); }
@@ -230,7 +227,7 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
             ${version.description ? html`<div><dt>Description</dt><dd class="plain-text">${version.description}</dd></div>` : nothing}
             ${version.kind === 'review' ? html`
               <div><dt>Blocking</dt><dd>${this.blockingBadge(version.blocking)}</dd></div>
-              <div><dt>Prompt</dt><dd class="prompt plain-text">${version.prompt}</dd></div>
+              <div><dt>Prompt</dt><dd class="prompt panel plain-text">${version.prompt}</dd></div>
             ` : nothing}
           </dl>
           ${knowledgeDocument(version.knowledge)}
