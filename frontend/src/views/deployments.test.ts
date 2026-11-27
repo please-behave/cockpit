@@ -40,8 +40,12 @@ async function open() {
   return { app, view, root: view.shadowRoot! };
 }
 
+function facts(container: ParentNode) {
+  return [...container.querySelectorAll('pb-key-value')].map(list => list.shadowRoot!);
+}
+
 function statuses(container: ParentNode) {
-  return [...container.querySelectorAll<StatusPill>('.deployment pb-status-pill')].map(pill => pill.status);
+  return facts(container).map(list => list.querySelector<StatusPill>('pb-status-pill')!.status);
 }
 
 test('shows all pages grouped by target with the worst evidence first', async () => {
@@ -56,34 +60,35 @@ test('shows all pages grouped by target with the worst evidence first', async ()
   const groups = [...root.querySelectorAll('section')];
   expect(groups.length).toBeGreaterThan(100);
   const group = groups[0];
-  const heading = group.querySelector('h2')!;
+  const heading = group.querySelector('pb-section > h2')!;
   expect(heading.textContent).toBe(owner + ' · production');
   expect(group.getAttribute('aria-labelledby')).toBe(heading.id);
-  expect(group.querySelector('header pb-status-pill')).toHaveProperty('status', 'ERROR');
-  expect(group.querySelector('header p')?.textContent).toContain('1 of 4');
+  expect(group.querySelector('pb-section pb-status-pill')).toHaveProperty('status', 'ERROR');
+  expect(group.querySelector('pb-section [slot=count]')?.textContent).toContain('1 of 4');
   expect(statuses(group)).toEqual(['ERROR', 'FAIL', 'No evidence', 'PASS']);
   expect(groups.some(group => group.querySelector('h2')?.textContent === 'github.com/acme/other-infrastructure · production')).toBe(true);
 
   const rows = [...root.querySelectorAll('.deployment')];
   expect(rows.some(row => row.querySelector('h3')!.textContent!.length > 100)).toBe(true);
-  expect(rows.some(row => row.textContent!.includes('<img'))).toBe(true);
+  expect(facts(root).some(list => list.textContent!.includes('<img'))).toBe(true);
   expect(root.querySelector('img')).toBeNull();
   const pass = group.querySelector('.deployment:last-child')!;
   expect(pass.querySelector('h3 a')?.getAttribute('href')).toBe(repositoryPath(repository));
-  expect(pass.querySelector('dl a')?.getAttribute('href')).toBe(releasePath(repository, '2.0'));
-  expect([...pass.querySelectorAll<RuleSetChip>('pb-rule-set-chip')].map(chip => chip.label))
+  const [passFacts] = facts(pass);
+  expect(passFacts.querySelector('dl a')?.getAttribute('href')).toBe(releasePath(repository, '2.0'));
+  expect([...passFacts.querySelectorAll<RuleSetChip>('pb-rule-set-chip')].map(chip => chip.label))
     .toEqual(['Repository baseline', expect.stringContaining('Security and release readiness')]);
-  const time = pass.querySelector<RelativeTime>('pb-relative-time')!;
+  const time = passFacts.querySelector<RelativeTime>('pb-relative-time')!;
   await time.updateComplete;
   expect(time.shadowRoot?.querySelector('time')?.dateTime).toBe(time.value);
 
-  const commit = root.querySelector<Tooltip>('.deployment pb-tooltip')!;
+  const commit = facts(root).map(list => list.querySelector<Tooltip>('pb-tooltip')).find(Boolean)!;
   expect(commit.querySelector('code')?.textContent).toBe(commit.description.slice(0, 7));
-  const missing = rows.find(row => row.querySelector('dd')?.textContent === 'v3.0')!;
-  expect(statuses(missing)).toEqual(['release not recorded']);
+  const missing = facts(root).find(list => list.querySelector('dd')?.textContent === 'v3.0')!;
+  expect(missing.querySelector('pb-status-pill')).toHaveProperty('status', 'release not recorded');
   expect(missing.querySelector('dl a, pb-rule-set-chip')).toBeNull();
   for (const status of ['ERROR', 'FAIL', 'release not recorded', 'No evidence', 'PASS']) {
-    const pill = [...root.querySelectorAll<StatusPill>('.deployment pb-status-pill')].find(pill => pill.status === status)!;
+    const pill = facts(root).map(list => list.querySelector<StatusPill>('pb-status-pill')!).find(pill => pill.status === status)!;
     await pill.updateComplete;
     expect(pill.shadowRoot?.textContent).toContain(status);
     expect(pill.shadowRoot?.querySelector('[aria-hidden="true"]')?.textContent).toMatch(/^[!×○–✓]$/);
@@ -121,7 +126,7 @@ test('changes grouping and combines labelled filters without losing focus', asyn
   expect(root.querySelector('[role="status"]')?.textContent).toBe('0 matching deployments');
   await change(selects[2], '');
   expect(statuses(root)).toEqual(['No evidence']);
-  expect(root.querySelector('header pb-status-pill')).toHaveProperty('status', 'No evidence');
+  expect(root.querySelector('pb-section pb-status-pill')).toHaveProperty('status', 'No evidence');
   await change(selects[1], '');
   await change(selects[3], 'release not recorded');
   expect(statuses(root)).toEqual(['release not recorded', 'release not recorded']);
@@ -133,7 +138,7 @@ test('follows a recorded version link to its release detail', async () => {
   const { app, root } = await open();
   await vi.waitFor(() => expect(root.querySelector('.deployment')).not.toBeNull());
   const path = releasePath(repository, '2.0');
-  [...root.querySelectorAll<HTMLAnchorElement>('dl a')].find(link => link.getAttribute('href') === path)!.click();
+  facts(root).flatMap(list => [...list.querySelectorAll<HTMLAnchorElement>('dl a')]).find(link => link.getAttribute('href') === path)!.click();
   await app.updateComplete;
   expect(window.location.pathname + window.location.search).toBe(path);
   expect(app.shadowRoot!.querySelector('pb-release')).not.toBeNull();

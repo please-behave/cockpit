@@ -2,8 +2,11 @@ import { css, html, nothing, type CSSResult } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 import { releases, type ReleaseSummary } from '../api/client';
 import '../components/pb-empty-state';
+import type { KeyValueItem } from '../components/pb-key-value';
+import '../components/pb-key-value';
 import '../components/pb-relative-time';
 import '../components/pb-rule-set-chip';
+import '../components/pb-section';
 import '../components/pb-status-pill';
 import '../components/pb-tooltip';
 import { CockpitView } from './cockpit-view';
@@ -17,13 +20,10 @@ export const releaseListStyles = css`
   @layer components {
     :host { overflow-wrap: anywhere; }
 
-    .releases, .sets {
+    .releases {
       list-style: none;
       padding: 0;
       margin: 0;
-    }
-
-    .releases {
       display: grid;
       gap: var(--space-2);
     }
@@ -39,66 +39,42 @@ export const releaseListStyles = css`
       background: var(--surface-raised);
     }
 
-    h2.release-title {
-      margin: 0;
-      font-size: inherit;
-    }
-
     .release > a {
       justify-self: start;
       font-weight: var(--weight-semibold);
     }
 
-    dl {
-      display: grid;
-      grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr)) minmax(0, 2fr);
-      gap: var(--space-2) var(--space-4);
-      margin: 0;
-    }
-    dt { color: var(--text-muted); }
-    dd { margin: 0; }
-
-    .sets {
-      display: flex;
-      flex-wrap: wrap;
-      gap: var(--space-1);
-    }
-
-    .sets li { max-inline-size: 100%; }
-
     @media (max-width: 52rem) {
       .release { grid-template-columns: minmax(0, 1fr); }
-
-      dl {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .evidence, .rule-sets { grid-column: 1 / -1; }
     }
   }
 `;
 
 function releaseRow(entry: ReleaseSummary, overview: boolean) {
   const sets = entry.evidence?.completed_rule_sets ?? [];
+  const items: KeyValueItem[] = [
+    overview ? { term: 'Newest version',
+      description: html`<a data-route href=${releasePath(entry.repository, entry.version)}>${entry.version}</a>` }
+      : { term: 'Commit', description: html`<pb-tooltip .description=${entry.commit}>
+        <code>${entry.commit.slice(0, 7)}</code></pb-tooltip>` },
+    { term: 'Recorded', description: html`<pb-relative-time .value=${entry.received_at}></pb-relative-time>` },
+    { term: 'Evidence', description: html`<pb-status-pill .status=${entry.evidence?.overall ?? 'No evidence'}></pb-status-pill>` },
+  ];
+  if (sets.length) items.push({
+    term: 'Completed Rule Sets',
+    fullWidth: true,
+    description: html`<ul class="chips" role="list">${sets.map(set => html`
+      <li><pb-rule-set-chip .label=${set.name} .href=${ruleSetPath(set, set.version)}></pb-rule-set-chip></li>
+    `)}</ul>`,
+  });
   return html`
     <li class="release">
       ${overview
-        ? html`<h2 class="release-title"><a data-route href=${repositoryPath(entry.repository)}>${entry.repository}</a></h2>`
+        ? html`<pb-section compact><h2 slot="heading">
+          <a data-route href=${repositoryPath(entry.repository)}>${entry.repository}</a>
+        </h2></pb-section>`
         : html`<a data-route href=${releasePath(entry.repository, entry.version)}>${entry.version}</a>`}
-      <dl>
-        ${overview ? html`<div><dt>Newest version</dt><dd><a data-route href=${releasePath(entry.repository, entry.version)}>${entry.version}</a></dd></div>`
-          : html`<div><dt>Commit</dt><dd><pb-tooltip .description=${entry.commit}>
-            <code>${entry.commit.slice(0, 7)}</code></pb-tooltip></dd></div>`}
-        <div><dt>Recorded</dt><dd><pb-relative-time .value=${entry.received_at}></pb-relative-time></dd></div>
-        <div class="evidence"><dt>Evidence</dt><dd><pb-status-pill .status=${entry.evidence?.overall ?? 'No evidence'}></pb-status-pill></dd></div>
-        ${sets.length === 0 ? nothing : html`
-          <div class="rule-sets">
-            <dt>Completed Rule Sets</dt>
-            <dd><ul class="sets" role="list">${sets.map(set => html`
-              <li><pb-rule-set-chip .label=${set.name} .href=${ruleSetPath(set, set.version)}></pb-rule-set-chip></li>
-            `)}</ul></dd>
-          </div>`}
-      </dl>
+      <pb-key-value .items=${items}></pb-key-value>
     </li>
   `;
 }

@@ -5,6 +5,8 @@ import {
 import '../components/pb-badge';
 import type { DataTableColumn } from '../components/pb-data-table';
 import '../components/pb-data-table';
+import '../components/pb-key-value';
+import '../components/pb-section';
 import '../components/pb-status-pill';
 import '../components/pb-time';
 import '../components/pb-widget';
@@ -23,13 +25,14 @@ function object(value: unknown): Record<string, unknown> | undefined {
 
 function field(label: string, value: unknown) {
   const content = text(value);
-  return content ? html`<div><dt>${label}</dt><dd class="plain-text">${content}</dd></div>` : nothing;
+  return content ? { term: label, description: content } : undefined;
 }
 
 function listField(label: string, values: (string | TemplateResult)[]) {
-  return values.length ? html`<div><dt>${label}</dt><dd><ul>
-    ${values.map(value => html`<li class="plain-text">${value}</li>`)}
-  </ul></dd></div>` : nothing;
+  return values.length ? {
+    term: label,
+    description: html`<ul>${values.map(value => html`<li>${value}</li>`)}</ul>`,
+  } : undefined;
 }
 
 function knowledgeDocument(knowledge: Record<string, unknown> = {}) {
@@ -53,9 +56,9 @@ function knowledgeDocument(knowledge: Record<string, unknown> = {}) {
       return ruleSet && rationale ? [html`${ruleSet} · ${rationale}`] : [];
     })),
     listField('References', entries(knowledge.references).map(text).filter(value => value !== undefined)),
-  ];
-  return fields.some(value => value !== nothing)
-    ? html`<h3>Knowledge</h3><dl class="knowledge">${fields}</dl>` : nothing;
+  ].filter(value => value !== undefined);
+  return fields.length
+    ? html`<h3>Knowledge</h3><pb-key-value prose .items=${fields}></pb-key-value>` : nothing;
 }
 
 function memberRow(member: RegisteredRuleSetVersion['members'][number], role: string) {
@@ -96,7 +99,7 @@ function memberList(version: RegisteredRuleSetVersion) {
 function repositoryList(repositories: RuleSetCompliance[]) {
   return html`
     <section aria-labelledby="repositories">
-      <h2 id="repositories">Repositories at check</h2>
+      <pb-section><h2 slot="heading" id="repositories">Repositories at check</h2></pb-section>
       ${repositories.length ? html`<ul class="repositories" role="list">
         ${repositories.map(binding => html`<li>
           <pb-widget .heading=${binding.repository} heading-level="3">
@@ -127,8 +130,7 @@ export class RuleSetView extends CockpitView<RuleSetDetail> {
       .plain-text { white-space: pre-wrap; }
       :host { overflow-wrap: anywhere; }
       pb-widget, section { margin-block-start: var(--space-4); }
-      h2, h3 { margin-block: 0; }
-      h3 { margin-block-start: var(--space-4); }
+      h3 { margin-block: var(--space-4) 0; }
       article > h3:first-child { margin-block-start: 0; }
       .binding {
         display: flex;
@@ -143,24 +145,10 @@ export class RuleSetView extends CockpitView<RuleSetDetail> {
         font-size: var(--type-meta);
         line-height: var(--line-meta);
       }
-      .knowledge { margin-block: var(--space-2) 0; }
-      .knowledge > div + div { margin-block-start: var(--space-2); }
-      .knowledge dt { font-weight: var(--weight-semibold); }
-      dd { margin-inline-start: 0; }
-      .knowledge ul, .non-passing { padding-inline-start: var(--space-4); }
-      .knowledge ul { margin-block: 0; }
+      pb-key-value { margin-block-start: var(--space-2); }
       .repositories { list-style: none; padding: 0; }
-      .non-passing { margin-block-end: 0; }
+      .non-passing { margin-block-end: 0; padding-inline-start: var(--space-4); }
       .non-passing li + li { margin-block-start: var(--space-2); }
-
-      @media (min-width: 40rem) {
-        .knowledge > div {
-          display: grid;
-          grid-template-columns: minmax(0, 12rem) minmax(0, 1fr);
-          column-gap: var(--space-4);
-          align-items: baseline;
-        }
-      }
     }
   `];
 

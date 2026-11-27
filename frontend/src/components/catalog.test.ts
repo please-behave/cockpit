@@ -4,6 +4,8 @@ import './pb-data-table';
 import './pb-empty-state';
 import './pb-error-state';
 import './pb-fact-strip';
+import './pb-key-value';
+import './pb-section';
 import './pb-status-pill';
 import './pb-time';
 import './pb-widget';
@@ -33,6 +35,11 @@ test('renders the component catalog and keeps long, markup-like values inert', a
     <pb-data-table .label=${longValue} .columns=${[longValue]}></pb-data-table>
     <pb-fact-strip .items=${[{ term: longValue, description: longValue }]}></pb-fact-strip>
     <pb-fact-strip></pb-fact-strip>
+    <pb-key-value .items=${[
+      { term: longValue, description: longValue },
+      { term: 'Link', description: html`<a href="/">Overview</a>` },
+    ]}></pb-key-value>
+    <pb-section><h2 slot="heading">Overview</h2></pb-section>
     <pb-empty-state .heading=${longValue} .message=${longValue}></pb-empty-state>
     <pb-error-state .heading=${longValue} .message=${longValue}></pb-error-state>
     <pb-error-state .heading=${longValue} .message=${longValue} retryable></pb-error-state>
@@ -46,7 +53,7 @@ test('renders the component catalog and keeps long, markup-like values inert', a
   `, document.body);
 
   const components = document.body.querySelectorAll<LitElement>('pb-status-pill, pb-data-table, '
-    + 'pb-fact-strip, pb-empty-state, pb-error-state, pb-time, pb-widget');
+    + 'pb-fact-strip, pb-key-value, pb-section, pb-empty-state, pb-error-state, pb-time, pb-widget');
   await Promise.all([...components].map(component => component.updateComplete));
 
   const roots = (tag: string) => [...document.body.querySelectorAll(tag)].map(element => element.shadowRoot!);
@@ -67,6 +74,16 @@ test('renders the component catalog and keeps long, markup-like values inert', a
   expect(definitions.querySelector('dt')?.textContent).toBe(longValue);
   expect(definitions.querySelector('dd')?.textContent).toBe(longValue);
   expect(noDefinitions.querySelector('dl')?.children).toHaveLength(0);
+  const [keyValue] = roots('pb-key-value');
+  expect([...keyValue.querySelectorAll('dl > div')].map(pair => [...pair.children].map(child => child.localName)))
+    .toEqual([['dt', 'dd'], ['dt', 'dd']]);
+  expect(keyValue.querySelector('dt')?.textContent).toBe(longValue);
+  expect(keyValue.querySelector('dd')?.textContent).toBe(longValue);
+  expect(keyValue.querySelector('dd a')?.textContent).toBe('Overview');
+  const [section] = roots('pb-section');
+  expect(section.querySelector<HTMLSlotElement>('slot[name="heading"]')?.assignedElements()[0]?.localName)
+    .toBe('h2');
+  expect(section.querySelector('.count, a')).toBeNull();
   const [emptyState] = roots('pb-empty-state');
   const [errorState, retryState] = roots('pb-error-state');
   for (const root of [emptyState, errorState, retryState]) {
@@ -84,14 +101,16 @@ test('renders the component catalog and keeps long, markup-like values inert', a
   const heading = widget.querySelector('h3')!;
   expect(region.getAttribute('aria-labelledby')).toBe(heading.id);
   expect(heading.textContent).toBe(longValue);
-  expect(widget.querySelector('.count')?.textContent).toBe('0');
-  expect(widget.querySelector('header a')?.getAttribute('href')).toBe('/rules');
-  expect(widget.querySelector('header a')?.textContent).toBe(longValue);
+  const widgetHeader = widget.querySelector('pb-section')!.shadowRoot!;
+  expect(widgetHeader.querySelector('.count')?.textContent).toBe('0');
+  expect(widgetHeader.querySelector('a')?.getAttribute('href')).toBe('/rules');
+  expect(widgetHeader.querySelector('a')?.textContent).toBe(longValue);
+  expect(widgetHeader.querySelector('img')).toBeNull();
   expect(widget.querySelector<HTMLSlotElement>('slot:not([name])')?.assignedElements()[0]?.textContent)
     .toBe('View rule');
   expect(widget.host.hasAttribute('accent')).toBe(true);
   expect(minimalWidget.querySelector('h2')?.textContent).toBe('Overview');
-  expect(minimalWidget.querySelector('.count, header a')).toBeNull();
+  expect(minimalWidget.querySelector('pb-section')!.shadowRoot!.querySelector('.count, a')).toBeNull();
   expect(minimalWidget.host.hasAttribute('accent')).toBe(false);
 
   for (const component of components) {

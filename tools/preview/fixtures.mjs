@@ -252,6 +252,7 @@ const setHistories = sets.map(({ registration, members, description }) => {
       ],
       admission: ['Applies across languages and build systems.', 'Reports an actionable result.'],
       execution_points: 'Run in CI so each repository reports its current state.',
+      references: [`https://example.test/standards/${'long-reference-'.repeat(12)}`],
     }),
   ];
   if (registration.id === 'markup') return [

@@ -46,9 +46,10 @@ test.each([repositoryPath(repository), '/releases/repository?repository=github.c
     const versions = [...root.querySelectorAll('.release > a')];
     expect(versions.map(link => link.textContent)).toEqual(['2.0', '1.11', '1.9']);
     expect(versions[0].getAttribute('href')).toBe(releasePath(repository, '2.0'));
-    expect([...root.querySelectorAll<StatusPill>('.release pb-status-pill')].map(pill => pill.status))
+    const releaseFacts = [...root.querySelectorAll('.release pb-key-value')].map(list => list.shadowRoot!);
+    expect(releaseFacts.map(list => list.querySelector<StatusPill>('pb-status-pill')!.status))
       .toEqual(['PASS', 'ERROR', 'PASS']);
-    const commit = root.querySelector<Tooltip>('.release pb-tooltip')!;
+    const commit = releaseFacts[0].querySelector<Tooltip>('pb-tooltip')!;
     await commit.updateComplete;
     expect(commit.description).toMatch(/^[0-9a-f]{40}$/);
     expect(commit.querySelector('code')?.textContent).toBe(commit.description.slice(0, 7));
@@ -96,20 +97,21 @@ test('shows each current target with its release or commit and reported evidence
   expect(headings).toContain('github.com/acme/other-infrastructure · production');
   expect(headings).toContain('github.com/acme/infrastructure · test-102');
   expect(headings.some(heading => heading!.length > 100)).toBe(true);
-  expect(new Set(rows.map(row => row.querySelector<StatusPill>('pb-status-pill')?.status)))
+  const facts = rows.map(row => row.querySelector('pb-key-value')!.shadowRoot!);
+  expect(new Set(facts.map(list => list.querySelector<StatusPill>('pb-status-pill')?.status)))
     .toEqual(new Set(['ERROR', 'release not recorded', 'No evidence', 'PASS']));
   expect(rows[0].querySelector('h3')?.textContent).toBe('github.com/acme/infrastructure · rollback');
 
-  const missingRelease = rows[1];
+  const missingRelease = facts[1];
   expect(missingRelease.querySelector('dd')?.textContent).toBe('3.0');
   expect(missingRelease.querySelector('a, pb-rule-set-chip')).toBeNull();
-  const missingEvidence = rows[2];
+  const missingEvidence = facts[2];
   const commit = missingEvidence.querySelector<Tooltip>('pb-tooltip')!;
   expect(commit.description).toBe('9'.repeat(40));
   expect(commit.querySelector('code')?.textContent).toBe('9999999');
   expect(missingEvidence.querySelector('a, pb-rule-set-chip')).toBeNull();
 
-  const production = rows[headings.indexOf('github.com/acme/infrastructure · production')];
+  const production = facts[headings.indexOf('github.com/acme/infrastructure · production')];
   const version = production.querySelector('a')!;
   expect(version.textContent).toBe('2.0');
   expect(version.getAttribute('href')).toBe(releasePath(repository, '2.0'));

@@ -49,23 +49,24 @@ test('lists the latest releases across pages with attention first and escapes st
   expect(root!.querySelector('h1.assistive')?.textContent).toBe('Releases');
   const rows = [...root!.querySelectorAll('.release')];
   expect(rows).toHaveLength(110);
-  const names = rows.map(row => row.querySelector('h2')!.textContent!.trim());
+  const facts = rows.map(row => row.querySelector('pb-key-value')!.shadowRoot!);
+  const names = rows.map(row => row.querySelector('pb-section > h2')!.textContent!.trim());
   expect(names.slice(0, 4)).toEqual([
     'github.com/acme/evidence-error', 'github.com/acme/failing-evidence', 'github.com/acme/missing-evidence',
     expect.stringMatching(/^github.com\/.{100,}/),
   ]);
   expect(names.slice(4)).toEqual(names.slice(4).sort((a, b) => a.localeCompare(b)));
   expect(names).not.toContain('github.com/acme/empty');
-  expect(rows.slice(0, 3).map(row => row.querySelector<StatusPill>('pb-status-pill')!.status))
+  expect(facts.slice(0, 3).map(list => list.querySelector<StatusPill>('pb-status-pill')!.status))
     .toEqual(['ERROR', 'FAIL', 'No evidence']);
-  const noEvidence = rows[2].querySelector<StatusPill>('pb-status-pill')!;
+  const noEvidence = facts[2].querySelector<StatusPill>('pb-status-pill')!;
   await noEvidence.updateComplete;
   expect(noEvidence.shadowRoot?.querySelector('[aria-hidden="true"]')?.textContent).toBe('–');
-  expect(rows[2].querySelector('pb-rule-set-chip')).toBeNull();
+  expect(facts[2].querySelector('pb-rule-set-chip')).toBeNull();
 
   const deepLink = rows.find(row => row.querySelector('a')?.textContent === repository)!
     .querySelector<HTMLAnchorElement>('a')!;
-  const latest = deepLink.closest('.release')!;
+  const latest = deepLink.closest('.release')!.querySelector('pb-key-value')!.shadowRoot!;
   expect(latest.querySelector('dd')?.textContent).toBe('2.0');
   expect([...latest.querySelectorAll<RuleSetChip>('pb-rule-set-chip')].map(chip => chip.label))
     .toEqual(['Repository baseline', expect.stringContaining('Security and release readiness')]);
@@ -75,7 +76,7 @@ test('lists the latest releases across pages with attention first and escapes st
   expect(tooltip.description).toContain('2026');
   expect(recorded.shadowRoot?.querySelector('time')?.getAttribute('datetime')).toBe(recorded.value);
 
-  const markup = rows.find(row => row.textContent?.includes('release-<'))!;
+  const markup = facts.find(list => list.textContent?.includes('release-<'))!;
   expect(markup.querySelector('dd')?.textContent?.length).toBeGreaterThan(200);
   expect(markup.querySelector('img')).toBeNull();
   const chip = markup.querySelector<RuleSetChip>('pb-rule-set-chip')!;

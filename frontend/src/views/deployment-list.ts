@@ -1,6 +1,8 @@
-import { css, html, nothing } from 'lit';
+import { css, html } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 import type { Deployment, DeploymentTarget } from '../api/client';
+import type { KeyValueItem } from '../components/pb-key-value';
+import '../components/pb-key-value';
 import '../components/pb-relative-time';
 import '../components/pb-rule-set-chip';
 import '../components/pb-status-pill';
@@ -38,24 +40,24 @@ function deploymentReference(entry: Deployment) {
 
 function deploymentRow(entry: Deployment, heading: 'repository' | 'target') {
   const sets = entry.evidence?.completed_rule_sets ?? [];
+  const items: KeyValueItem[] = [{ term: entry.version === null ? 'Commit' : 'Version', description: deploymentReference(entry) }];
+  if (heading === 'repository') items.push({ term: 'Target', description: targetLabel(entry.target) });
+  items.push(
+    { term: 'Recorded', description: html`<pb-relative-time .value=${entry.received_at}></pb-relative-time>` },
+    { term: 'Evidence', description: html`<pb-status-pill .status=${evidenceStatus(entry)}></pb-status-pill>` },
+  );
+  if (sets.length) items.push({
+    term: 'Completed Rule Sets',
+    fullWidth: true,
+    description: html`<ul class="chips" role="list">${sets.map(set => html`
+      <li><pb-rule-set-chip .label=${set.name} .href=${ruleSetPath(set, set.version)}></pb-rule-set-chip></li>
+    `)}</ul>`,
+  });
   return html`
     <li class="deployment">
       <h3>${heading === 'target' ? targetLabel(entry.target) : html`
           <a data-route href=${repositoryPath(entry.repository)}>${entry.repository}</a>`}</h3>
-      <dl>
-        <div><dt>${entry.version === null ? 'Commit' : 'Version'}</dt><dd>${deploymentReference(entry)}</dd></div>
-        ${heading === 'repository' ? html`
-            <div><dt>Target</dt><dd>${targetLabel(entry.target)}</dd></div>` : nothing}
-        <div><dt>Recorded</dt><dd><pb-relative-time .value=${entry.received_at}></pb-relative-time></dd></div>
-        <div><dt>Evidence</dt><dd><pb-status-pill .status=${evidenceStatus(entry)}></pb-status-pill></dd></div>
-        ${sets.length === 0 ? nothing : html`
-          <div class="rule-sets">
-            <dt>Completed Rule Sets</dt>
-            <dd><ul class="sets" role="list">${sets.map(set => html`
-              <li><pb-rule-set-chip .label=${set.name} .href=${ruleSetPath(set, set.version)}></pb-rule-set-chip></li>
-            `)}</ul></dd>
-          </div>`}
-      </dl>
+      <pb-key-value .items=${items}></pb-key-value>
     </li>`;
 }
 
@@ -74,27 +76,13 @@ export const deploymentListStyles = css`
       background: var(--surface-raised);
     }
 
-    .deployment dl {
+    .deployment h3 { font-size: inherit; margin: 0 0 var(--space-2); }
+    .deployments {
+      margin: 0;
+      padding: 0;
+      list-style: none;
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: var(--space-3) var(--space-4);
-    }
-
-    .deployment h3, .deployment dl, .deployment dd, .deployments, .sets { margin: 0; }
-    .deployment h3 { font-size: inherit; margin-block-end: var(--space-2); }
-    .deployment dt { color: var(--text-muted); }
-    .deployments, .sets { padding: 0; list-style: none; }
-    .deployments { display: grid; gap: var(--space-2); }
-    .deployment .rule-sets { grid-column: 1 / -1; }
-    .sets { display: flex; flex-wrap: wrap; gap: var(--space-1); }
-    .sets li { max-inline-size: 100%; }
-
-    @media (max-width: 52rem) {
-      .deployment dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    }
-
-    @media (max-width: 28rem) {
-      .deployment dl { grid-template-columns: minmax(0, 1fr); }
+      gap: var(--space-2);
     }
   }
 `;

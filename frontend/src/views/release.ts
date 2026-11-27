@@ -1,7 +1,7 @@
 import { css, html, nothing, type CSSResult } from 'lit';
 import { getRelease, type AuthMethod, type ReleaseDetail } from '../api/client';
 import '../components/pb-commit-link';
-import '../components/pb-fact-strip';
+import '../components/pb-key-value';
 import '../components/pb-rule-set-chip';
 import '../components/pb-status-pill';
 import '../components/pb-time';
@@ -61,7 +61,7 @@ export class ReleaseView extends CockpitView<ReleaseDetail> {
   static override styles = [CockpitView.styles as CSSResult, css`
     @layer components {
       :host { overflow-wrap: anywhere; }
-      pb-fact-strip { margin-block-end: var(--space-6); }
+      pb-key-value { margin-block-end: var(--space-6); }
       .evidence > p { margin-block: 0; }
       .evidence > p + p { margin-block-start: var(--space-2); }
       .evidence > p + .rule-sets { margin-block-start: var(--space-2); }
@@ -100,7 +100,7 @@ export class ReleaseView extends CockpitView<ReleaseDetail> {
     ] : [];
     return html`
       <p><a data-route href=${repositoryPath(this.repository)}>Back to repository</a></p>
-      ${release ? html`<pb-fact-strip .items=${items}></pb-fact-strip>${evidence(release)}` : nothing}
+      ${release ? html`<pb-key-value .items=${items}></pb-key-value>${evidence(release)}` : nothing}
     `;
   }
 }

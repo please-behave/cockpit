@@ -2,6 +2,7 @@ import { css, html, nothing, type CSSResult } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 import { deployments, type Deployment } from '../api/client';
 import '../components/pb-empty-state';
+import '../components/pb-section';
 import '../components/pb-status-pill';
 import { CockpitView } from './cockpit-view';
 import {
@@ -62,15 +63,9 @@ export class DeploymentsView extends CockpitView<Deployment[]> {
 
       section { margin-block-start: var(--space-6); }
 
-      header {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: baseline;
-        gap: var(--space-2) var(--space-4);
-        margin-block-end: var(--space-2);
-      }
+      pb-section { margin-block-end: var(--space-2); }
 
-      h2, p { margin: 0; }
+      p { margin: 0; }
 
       @media (max-width: 52rem) {
         .controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -153,10 +148,10 @@ export class DeploymentsView extends CockpitView<Deployment[]> {
         const status = evidenceStatus(rows[0]);
         const count = rows.filter(row => evidenceStatus(row) === status).length;
         return html`<section aria-labelledby=${`deployment-group-${index}`}>
-          <header>
-            <h2 id=${`deployment-group-${index}`}>${label}</h2>
-            <p><pb-status-pill .status=${status}></pb-status-pill> ${count} of ${rows.length}</p>
-          </header>
+          <pb-section>
+            <h2 slot="heading" id=${`deployment-group-${index}`}>${label}</h2>
+            <p slot="count"><pb-status-pill .status=${status}></pb-status-pill> ${count} of ${rows.length}</p>
+          </pb-section>
           ${deploymentList(rows, 'repository')}
         </section>`;
       })}

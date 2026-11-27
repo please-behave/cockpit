@@ -1,6 +1,7 @@
-import { css, LitElement, nothing } from 'lit';
+import { css, LitElement } from 'lit';
 import { html, literal } from 'lit/static-html.js';
-import { linkStyles } from '../styles/links';
+import type { SectionLink } from './pb-section';
+import './pb-section';
 
 const headingTags = {
   1: literal`h1`, 2: literal`h2`, 3: literal`h3`,
@@ -16,7 +17,7 @@ export class Widget extends LitElement {
     accent: { type: Boolean, reflect: true },
   };
 
-  static override styles = [linkStyles, css`
+  static override styles = css`
     @layer components {
       :host {
         display: block;
@@ -38,42 +39,17 @@ export class Widget extends LitElement {
         border-inline-start: var(--space-1) solid var(--brand-accent);
       }
 
-      header {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: baseline;
-        gap: var(--space-1) var(--space-3);
-      }
-
-      .heading {
-        min-inline-size: 0;
-        margin: 0;
-        font-size: var(--type-subsection);
-        line-height: var(--line-heading);
-      }
-
-      h1.heading, h2.heading { font-size: var(--type-section); }
-
       .heading:focus-visible, ::slotted(:focus-visible) {
         outline: var(--focus-ring);
         outline-offset: var(--focus-offset);
       }
-
-      .count {
-        color: var(--text-muted);
-        font-size: var(--type-meta);
-        line-height: var(--line-meta);
-        font-variant-numeric: tabular-nums;
-      }
-
-      a { margin-inline-start: auto; }
     }
-  `];
+  `;
 
   declare heading: string;
   declare headingLevel: keyof typeof headingTags;
   declare count?: number;
-  declare link?: { href: string; label: string };
+  declare link?: SectionLink;
   declare accent: boolean;
 
   constructor() {
@@ -95,12 +71,10 @@ export class Widget extends LitElement {
     const tag = headingTags[this.headingLevel] ?? headingTags[2];
     return html`
       <section aria-labelledby="widget-heading">
-        <header>
-          <${tag} id="widget-heading" class="heading" tabindex="-1"><slot name="heading">${this.heading}</slot></${tag}>
-          ${this.count == null ? nothing : html`<span class="count">${this.count}</span>`}
-          <slot name="metadata"></slot>
-          ${this.link ? html`<a data-route href=${this.link.href}>${this.link.label}</a>` : nothing}
-        </header>
+        <pb-section .count=${this.count} .link=${this.link}>
+          <${tag} slot="heading" id="widget-heading" class="heading" tabindex="-1"><slot name="heading">${this.heading}</slot></${tag}>
+          <slot name="metadata" slot="metadata"></slot>
+        </pb-section>
         <slot></slot>
       </section>
     `;

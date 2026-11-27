@@ -33,7 +33,10 @@ description: >-
   hierarchy. An optional header link and any interactive content in the
   widget are keyboard accessible and retain visible focus. Tables and
   widget views use a wider measure than detail views, and prose has a bounded
-  line length. Fine pointers use compact density and coarse pointers use
+  line length. Shared section headings retain their native heading levels and
+  support an optional count and keyboard-accessible link. Shared key-value lists
+  expose native term and description pairs and reflow to fit the available width.
+  Fine pointers use compact density and coarse pointers use
   comfortable density. Metadata is at least 0.75rem. Controls and standalone
   links provide targets at least 24 by 24 CSS pixels. Badges for the kinds
   `check` and `review`, for Blocking and for Non-blocking each have a tone of

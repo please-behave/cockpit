@@ -74,10 +74,16 @@ test('opens a Rule Set from Rules, escapes registered text, and shows exact memb
     .querySelector('pb-nav-tab[href="/rules"]')!.shadowRoot!.querySelector('a')!.getAttribute('aria-current')).toBe('page');
   expect(view.querySelector('h1')?.textContent).toBe(markup);
   expect(view.querySelector('img')).toBeNull();
+  const knowledge = view.querySelector('pb-key-value')!.shadowRoot!;
+  expect(knowledge.querySelector('img')).toBeNull();
+  expect(view.textContent).toContain(`Description ${markup}`);
+  expect(view.textContent).toContain('Version is unregistered.');
+  const repositories = view.querySelector('section[aria-labelledby="repositories"]')!;
+  expect(repositories.querySelector('pb-section > h2')?.id).toBe('repositories');
   for (const content of [
-    `Description ${markup}`, `Purpose ${markup}`,
-    'Build repositories', 'Shell checks', 'Protect the build', 'Run in CI', 'Version is unregistered.',
-  ]) expect(view.textContent).toContain(content);
+    `Purpose ${markup}`,
+    'Build repositories', 'Shell checks', 'Protect the build', 'Run in CI',
+  ]) expect(knowledge.textContent).toContain(content);
   const members = view.querySelector('article pb-data-table')!.shadowRoot!;
   expect(members.textContent).toContain(`Role ${markup}`);
   expect(members.querySelector('img')).toBeNull();
@@ -105,9 +111,9 @@ test('opens a Rule Set from Rules, escapes registered text, and shows exact memb
   expect(window.history.length).toBe(length);
   expect(fetch).toHaveBeenCalledTimes(requests);
   expect(view.textContent).toContain('Original set');
-  expect(view.textContent).toContain('Original purpose');
-  expect(view.textContent).not.toContain('Admission criteria');
-  expect(view.textContent).not.toContain(`Purpose ${markup}`);
+  expect(knowledge.textContent).toContain('Original purpose');
+  expect(knowledge.textContent).not.toContain('Admission criteria');
+  expect(knowledge.textContent).not.toContain(`Purpose ${markup}`);
   expect(view.querySelector('.non-passing a')!.getAttribute('href')).toBe(rulePath(member, '1.1'));
 });
 
@@ -116,7 +122,7 @@ test('supports historical deep links and falls back from an unavailable version'
   const { app } = open(ruleSetPath(identity, '1.2'));
   const historical = await detail(app);
   expect(historical.querySelector('select')!.value).toBe('1.2');
-  expect(historical.textContent).toContain('Original purpose');
+  expect(historical.querySelector('pb-key-value')!.shadowRoot!.textContent).toContain('Original purpose');
 
   app.remove();
   const { app: fallback } = open(ruleSetPath(identity, '9.0'));

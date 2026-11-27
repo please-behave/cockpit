@@ -32,7 +32,7 @@ async function mount(path: string) {
 
 async function open(path: string) {
   const root = await mount(path);
-  await vi.waitFor(() => expect(root.querySelector('pb-fact-strip')).not.toBeNull());
+  await vi.waitFor(() => expect(root.querySelector('pb-key-value')).not.toBeNull());
   return root;
 }
 
@@ -42,7 +42,7 @@ test('shows a complete release with its commit, sender, evidence link and Rule S
   const root = await open(releasePath(repository, '2.0'));
   expect(root.querySelector('h1:not(.assistive)')?.textContent).toBe('2.0');
   expect(root.querySelector('a[href="/repositories/detail?repository=github.com%2Facme%2Freturn-navigation"]')).not.toBeNull();
-  const facts = root.querySelector('pb-fact-strip')!.shadowRoot!;
+  const facts = root.querySelector('pb-key-value')!.shadowRoot!;
   const repositoryLink = facts.querySelector('a[href="/repositories/detail?repository=github.com%2Facme%2Freturn-navigation"]');
   expect(repositoryLink?.textContent).toBe(repository);
   expect(facts.textContent).toContain('ci@example.com');
@@ -50,7 +50,7 @@ test('shows a complete release with its commit, sender, evidence link and Rule S
   expect(facts.querySelector('pb-commit-link')).toHaveProperty('commit', expect.stringMatching(/^[0-9a-f]{40}$/));
   expect(facts.textContent).not.toContain('self-asserted');
   expect(pills(root)).toEqual(['PASS', 'Complete', 'Complete']);
-  const link = root.querySelector('pb-widget.evidence')?.shadowRoot?.querySelector('a[href^="/attestations/"]');
+  const link = root.querySelector('pb-widget.evidence')?.shadowRoot?.querySelector('pb-section')?.shadowRoot?.querySelector('a[href^="/attestations/"]');
   expect(link?.textContent).toBe('View attestation');
   expect([...root.querySelectorAll<RuleSetChip>('pb-rule-set-chip')].map(chip => chip.label))
     .toEqual(['Repository baseline · 1.0', expect.stringContaining('Security and release readiness')]);
@@ -69,7 +69,7 @@ test('states explicitly that a release has no evidence', async () => {
   const root = await open(releasePath('github.com/acme/missing-evidence', '1.0'));
   expect(pills(root)).toEqual(['No evidence']);
   expect(root.querySelector('pb-rule-set-chip')).toBeNull();
-  expect(root.querySelector('pb-widget.evidence')!.shadowRoot!.querySelector('a')).toBeNull();
+  expect(root.querySelector('pb-widget.evidence')!.shadowRoot!.querySelector('pb-section')!.shadowRoot!.querySelector('a')).toBeNull();
   expect(root.textContent).toContain('No attestation with results at check has been reported for this commit.');
 });
 
@@ -77,7 +77,7 @@ test('makes the weaker trust of an API-key sender visible and shows registered t
   const { repository: markupRepository, version } = (respond('/v0/releases/latest')!.body as { repository: string; version: string }[])
     .find(entry => entry.version.startsWith('release-<'))!;
   const root = await open(releasePath(markupRepository, version));
-  const facts = root.querySelector('pb-fact-strip')!.shadowRoot!;
+  const facts = root.querySelector('pb-key-value')!.shadowRoot!;
   expect(pills(facts)).toEqual(['API key']);
   expect(facts.textContent).toContain('self-asserted');
   expect(facts.textContent).toContain(markup);
