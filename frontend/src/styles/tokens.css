@@ -2,24 +2,24 @@
   :root {
     color-scheme: light dark;
 
-    --brand-primary: #251257;
-    --brand-accent: #FE603F;
-    --brand-light: #FDFAFA;
-
     --surface: light-dark(#FFFFFF, #15131C);
-    --surface-raised: light-dark(#F5F4F7, #23202C);
+    --surface-raised: light-dark(#F4F7FB, #202734);
     --surface-transparent: transparent;
     --border: light-dark(#77717F, #888291);
-    --border-subtle: light-dark(#C2BEC8, #4B4655);
+    --border-subtle: light-dark(#BCC8D8, #46556A);
     --text-muted: light-dark(#605B69, #B1AAB9);
-    --text: light-dark(#201D27, #F7F5F9);
+    --text: light-dark(#201D27, #FFFFFF);
 
-    --link: light-dark(#493080, #D2C2FF);
-    --surface-hover: light-dark(#ECE8F5, #302A3D);
-    --nav-current-text: light-dark(var(--brand-primary), #B9A8E8);
-    --nav-hover-surface: light-dark(#DDDCDE, #201D28);
-    --nav-current-hover-surface: light-dark(#E6E6E6, #131119);
-    --badge-surface: light-dark(#E5DDF6, #3B304F);
+    --accent-link: light-dark(#1459C7, #8AB8FF);
+    --accent-link-hover: light-dark(#103F98, #B7D4FF);
+    --accent-focus: light-dark(#2563EB, #7BAAFF);
+    --accent-fill: light-dark(#1C56BD, var(--accent-link));
+    --accent-text: var(--surface);
+    --accent-surface: light-dark(#EAF2FF, #243653);
+
+    --surface-hover: var(--accent-surface);
+    --nav-hover-surface: light-dark(var(--accent-surface), #10121B);
+    --badge-surface: var(--accent-surface);
     --badge-border: var(--border);
     --panel-surface: var(--surface-raised);
     --panel-border: var(--border-subtle);
@@ -27,9 +27,9 @@
     --chip-check-surface: light-dark(#DCF3F0, #12312F);
     --chip-check-text: light-dark(#0A4A45, #A4E6DD);
     --chip-check-border: light-dark(#2A7F78, #4DA89E);
-    --chip-review-surface: light-dark(#E3E6FA, #23274F);
-    --chip-review-text: light-dark(#262B75, #BEC5FF);
-    --chip-review-border: light-dark(#5560B8, #7A85E0);
+    --chip-review-surface: light-dark(#E3EDFC, var(--accent-surface));
+    --chip-review-text: light-dark(#173F80, var(--accent-link-hover));
+    --chip-review-border: light-dark(#3565AD, var(--accent-focus));
     --chip-blocking-surface: light-dark(#C5CDD8, #475268);
     --chip-blocking-text: light-dark(#0F1623, #F4F7FB);
     --chip-blocking-border: light-dark(#3A485C, #B4C0D4);
@@ -88,7 +88,7 @@
     --panel-padding: var(--space-3-5);
     --target-min-size: max(24px, 1.5rem);
 
-    --focus-ring: 0.125rem solid var(--text);
+    --focus-ring: 0.125rem solid var(--accent-focus);
     --focus-offset: 0.1875rem;
   }
 
@@ -124,7 +124,9 @@
 
   @media (forced-colors: active) {
     :root {
-      --link: LinkText;
+      --accent-link: LinkText;
+      --accent-link-hover: LinkText;
+      --nav-hover-surface: Canvas;
       --border: CanvasText;
       --border-subtle: CanvasText;
       --surface-hover: Canvas;

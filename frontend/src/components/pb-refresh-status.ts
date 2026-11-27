@@ -63,11 +63,16 @@ export class RefreshStatus extends LitElement {
       }
 
       .busy svg {
+        color: var(--accent-fill);
         animation: spin 1s linear infinite;
       }
 
       @keyframes spin {
         to { transform: rotate(360deg); }
+      }
+
+      @media (forced-colors: active) {
+        .busy svg { color: inherit; }
       }
 
       @media (prefers-reduced-motion: reduce) {

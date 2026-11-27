@@ -36,7 +36,11 @@ export class Widget extends LitElement {
       }
 
       :host([accent]) section {
-        border-inline-start: var(--space-1) solid var(--brand-accent);
+        border-inline-start: var(--space-1) solid var(--accent-fill);
+      }
+
+      @media (forced-colors: active) {
+        :host([accent]) section { border-inline-start-color: var(--border); }
       }
 
       .heading:focus-visible, ::slotted(:focus-visible) {

@@ -15,8 +15,6 @@ export class NavTab extends LitElement {
       }
 
       a {
-        --segment-hover: var(--nav-hover-surface);
-
         display: flex;
         flex: 1;
         align-items: center;
@@ -26,20 +24,18 @@ export class NavTab extends LitElement {
         box-sizing: border-box;
         padding: var(--space-1) var(--control-padding-inline);
         background: var(--surface-raised);
-        color: var(--link);
+        color: var(--accent-link);
         text-decoration: none;
       }
 
       a[aria-current="page"] {
-        --segment-hover: var(--nav-current-hover-surface);
-
         background: var(--surface);
-        color: var(--nav-current-text);
         font-weight: var(--weight-semibold);
       }
 
       a:hover {
-        background: var(--segment-hover);
+        background: var(--nav-hover-surface);
+        color: var(--accent-link-hover);
         outline: 1px solid var(--border);
         outline-offset: -1px;
       }

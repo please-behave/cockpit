@@ -55,7 +55,7 @@ function luminance(value) {
   return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
 }
 
-// Verifies REQ-0015 using the pairings in why:DEC-0009.
+// Verifies REQ-0015 using the shared palette from why:DEC-0028.
 test('declared token pairings meet the shared contrast minimums in both themes and use system colors when forced', () => {
   const path = new URL('../../../frontend/src/styles/tokens.css', import.meta.url);
   const stylesheet = parse(readFileSync(path, 'utf8'));
@@ -85,9 +85,12 @@ test('declared token pairings meet the shared contrast minimums in both themes a
     dark.set(prop, pair ? pair[2].trim() : value);
   });
 
+  const darkLogo = readFileSync(new URL('../../../frontend/brand/logo-dark.svg', import.meta.url), 'utf8');
+  const darkLogoOutline = darkLogo.match(/stroke="(#[\da-f]{6})"/i)?.[1];
+  assert.ok(darkLogoOutline, 'the dark logo has a visible outline');
   const textTokens = [
-    'text', 'text-muted', 'link', 'status-passed', 'status-failed', 'status-error',
-    'status-warning', 'status-not-run', 'status-allowed',
+    'text', 'text-muted', 'accent-link', 'accent-link-hover', 'status-passed',
+    'status-failed', 'status-error', 'status-warning', 'status-not-run', 'status-allowed',
   ];
   for (const [theme, tokens] of [
     ['light', light],
@@ -96,24 +99,26 @@ test('declared token pairings meet the shared contrast minimums in both themes a
     function token(name) {
       const value = tokens.get(`--${name}`);
       assert.ok(value, `${theme} is missing the ${name} token`);
-      const alias = value.match(/^var\((--[\w-]+)\)$/)?.[1];
-      return alias ? tokens.get(alias) : value;
+      const alias = value.match(/^var\(--([\w-]+)\)$/)?.[1];
+      return alias ? token(alias) : value;
     }
     function assertContrast(foreground, background, minimum) {
-      const [a, b] = [luminance(token(foreground)), luminance(token(background))];
+      const value = foreground.startsWith('#') ? foreground : token(foreground);
+      const [a, b] = [luminance(value), luminance(token(background))];
       const ratio = (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
       assert.ok(ratio >= minimum, `${theme} ${foreground} on ${background}: ${ratio.toFixed(2)} < ${minimum}`);
     }
 
-    for (const surface of ['surface', 'surface-raised']) {
+    for (const surface of ['surface', 'surface-raised', 'surface-hover', 'badge-surface', 'panel-surface']) {
       for (const text of textTokens) assertContrast(text, surface, 4.5);
-      assertContrast('border', surface, 3);
+      for (const boundary of ['border', 'accent-focus', 'accent-fill']) assertContrast(boundary, surface, 3);
+    }
+    for (const surface of ['surface', 'surface-raised']) {
       assertContrast('badge-border', surface, 3);
-      if (theme === 'dark') assertContrast('brand-light', surface, 3);
+      if (theme === 'dark') assertContrast(darkLogoOutline, surface, 3);
     }
-    for (const surface of ['surface-hover', 'badge-surface', 'panel-surface']) {
-      for (const text of ['text', 'text-muted', 'link']) assertContrast(text, surface, 4.5);
-    }
+    assertContrast('accent-text', 'accent-fill', 4.5);
+    assert.equal(tokens.get('--focus-ring'), '0.125rem solid var(--accent-focus)');
     assertContrast('badge-border', 'badge-surface', 3);
     for (const tone of ['check', 'review', 'blocking', 'neutral']) {
       assertContrast(`chip-${tone}-text`, `chip-${tone}-surface`, 4.5);
@@ -124,24 +129,20 @@ test('declared token pairings meet the shared contrast minimums in both themes a
       }
     }
     assert.equal(tokens.get('--panel-border'), 'var(--border-subtle)');
-    assert.equal(token('border-subtle'), theme === 'light' ? '#C2BEC8' : '#4B4655');
-    assertContrast('nav-current-text', 'surface', 4.5);
-    for (const [foreground, surface, hover] of [
-      ['link', 'surface-raised', 'nav-hover-surface'],
-      ['nav-current-text', 'surface', 'nav-current-hover-surface'],
-    ]) {
-      assert.ok(luminance(token(hover)) < luminance(token(surface)), `${theme} ${hover} darkens ${surface}`);
-      assertContrast(foreground, hover, 4.5);
-      assertContrast('border', hover, 3);
-      assertContrast('text', surface, 3);
-      assertContrast('text', hover, 3);
+    for (const surface of ['surface', 'surface-raised']) {
+      assert.ok(luminance(token('nav-hover-surface')) < luminance(token(surface)),
+        `${theme} navigation hover darkens ${surface}`);
     }
-    assertContrast('brand-primary', 'brand-accent', 4.5);
-    assertContrast('brand-light', 'brand-primary', 4.5);
+    assertContrast('accent-link-hover', 'nav-hover-surface', 4.5);
+    assertContrast('border', 'nav-hover-surface', 3);
+    assertContrast('accent-focus', 'nav-hover-surface', 3);
   }
 
   for (const [name, systemColor] of [
-    ['link', 'LinkText'],
+    ['accent-link', 'LinkText'],
+    ['accent-link-hover', 'LinkText'],
+    ['nav-hover-surface', 'Canvas'],
+    ['focus-ring', '0.125rem solid Highlight'],
     ['surface-hover', 'Canvas'],
     ['badge-surface', 'Canvas'],
     ['badge-border', 'CanvasText'],

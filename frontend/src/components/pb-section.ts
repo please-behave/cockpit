@@ -26,6 +26,7 @@ export class Section extends LitElement {
       ::slotted([slot="heading"]) {
         min-inline-size: 0;
         margin: 0;
+        color: var(--text);
         font-size: var(--type-subsection);
         line-height: var(--line-heading);
       }

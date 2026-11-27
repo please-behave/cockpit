@@ -20,10 +20,12 @@
   }
 
   a:any-link {
-    color: var(--link);
+    color: var(--accent-link);
     text-decoration: underline;
     text-underline-offset: 0.15em;
   }
+
+  a:any-link:hover { color: var(--accent-link-hover); }
 
   :focus-visible {
     outline: var(--focus-ring);
@@ -69,14 +71,21 @@
     padding: var(--control-padding-block) var(--control-padding-inline);
     border: 1px solid var(--border);
     border-radius: var(--radius-control);
-    background: var(--brand-primary);
-    color: var(--brand-light);
+    background: var(--accent-fill);
+    color: var(--accent-text);
     font-weight: var(--weight-semibold);
     text-decoration: none;
   }
 
   .sign-in-link:hover {
     text-decoration: underline;
+  }
+
+  @media (forced-colors: active) {
+    .sign-in-link {
+      background: var(--panel-surface);
+      color: var(--accent-link);
+    }
   }
 }
 

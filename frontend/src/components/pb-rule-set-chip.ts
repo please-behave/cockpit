@@ -27,7 +27,7 @@ export const ruleSetChipStyles = css`
     }
 
     @media (forced-colors: active) {
-      a.chip { color: var(--link); }
+      a.chip { color: var(--accent-link); }
     }
 
     .chip:focus-visible {

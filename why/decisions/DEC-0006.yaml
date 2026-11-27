@@ -2,7 +2,7 @@ id: DEC-0006
 name: Layered Design Tokens
 context: >-
   The application shell and static pages need a common styling foundation that
-  follows the [shared identity](https://github.com/please-behave/why/blob/main/why/decisions/DEC-0009.yaml).
+  follows the [shared identity](https://github.com/please-behave/why/blob/main/why/decisions/DEC-0028.yaml).
 decision: >-
   Keep semantic colors, including the shared subtle divider, and shared spacing,
   type sizes and line heights, radii, elevation, and content measures in CSS
