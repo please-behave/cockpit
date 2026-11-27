@@ -1,10 +1,11 @@
-import { css, html, LitElement } from 'lit';
+import { css, html, LitElement, nothing } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 import type { RepositoryOverviewEntry } from '../api/client';
 import { compareBySeverity, healthStatuses, repositoryHealth, stateLabels } from '../repository-health';
 import { linkStyles } from '../styles/links';
+import { textStyles } from '../styles/text';
 import { repositoryPath } from '../views/router';
-import { shortName } from './pb-short-name';
+import { ownerName, shortName } from './pb-short-name';
 import './pb-commit-link';
 import './pb-icon';
 import './pb-relative-time';
@@ -26,7 +27,7 @@ function attentionReason(entry: RepositoryOverviewEntry) {
 export class NeedsAttention extends LitElement {
   static override properties = { repositories: { attribute: false } };
 
-  static override styles = [linkStyles, css`
+  static override styles = [linkStyles, textStyles, css`
     @layer components {
       ul {
         display: grid;
@@ -72,11 +73,7 @@ export class NeedsAttention extends LitElement {
 
       p { margin: 0; }
 
-      .reason {
-        color: var(--text-muted);
-        font-size: var(--type-meta);
-        line-height: var(--line-meta);
-      }
+      .organization { overflow-wrap: anywhere; }
     }
   `];
 
@@ -96,6 +93,7 @@ export class NeedsAttention extends LitElement {
           <ul role="list">
             ${repeat(attention, entry => JSON.stringify([entry.repository, entry.platform]), entry => {
               const { repository } = entry;
+              const organization = ownerName(repository);
               const health = repositoryHealth(entry);
               const { icon, label } = healthStatuses[health];
               return html`
@@ -107,7 +105,8 @@ export class NeedsAttention extends LitElement {
                         aria-label=${repository}>${shortName(repository)}</a>
                     </pb-tooltip>
                   </div>
-                  <p class="reason">${attentionReason(entry)}</p>
+                  ${organization ? html`<p class="organization meta">${organization}</p>` : nothing}
+                  <p class="reason meta">${attentionReason(entry)}</p>
                 </li>
               `;
             })}

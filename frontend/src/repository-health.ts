@@ -38,7 +38,7 @@ function compareCodePoints(left: string, right: string): number {
   return leftPoints.length - rightPoints.length;
 }
 
-function compareText(left: string, right: string): number {
+export function compareText(left: string, right: string): number {
   // Lower-case code points ignore case without a locale, so ordering stays deterministic across browsers.
   return compareCodePoints(left.toLowerCase(), right.toLowerCase()) || compareCodePoints(left, right);
 }

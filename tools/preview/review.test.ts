@@ -15,7 +15,8 @@ test('covers the app views, fixture detail addresses and standalone preview page
   const appRoutes = routes.filter((path: string) => !standalone.includes(path));
   expect(appRoutes.map((path: string) => routeFor(path).view).sort()).toEqual([
     'dashboard', 'dashboard', 'dashboard', 'dashboard', 'dashboard', 'dashboard', 'dashboard', 'dashboard',
-    'dashboard', 'dashboard', 'deployments', 'deployments', 'detail', 'history', 'history', 'not-found', 'release',
+    'dashboard', 'dashboard', 'dashboard', 'deployments', 'deployments', 'detail', 'history', 'history', 'not-found',
+    'release',
     'releases', 'releases', 'repository', 'repository', 'rule', 'rule-set', 'rules',
   ]);
   for (const path of appRoutes) {

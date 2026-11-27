@@ -387,6 +387,16 @@ test('serves the repository map fixtures with every health group and a long unbr
     latest_release: null,
     latest_deployment: null,
   });
+  expect(repositories.find(entry => entry.repository.startsWith('github.com/<img '))).toMatchObject({
+    repository: expect.stringMatching(/\/gadget$/),
+    state: 'unknown',
+  });
+});
+
+test('serves a single organization across platforms for the dashboard preview', () => {
+  const { repositories } = body<RepositoryOverview>(fixtureTargets.repositoryOverview + '?preview=dashboard-single-organization');
+  expect(new Set(repositories.map(entry => entry.repository.split('/').at(-2)))).toEqual(new Set(['acme']));
+  expect(new Set(repositories.map(entry => entry.platform))).toEqual(new Set(['github', null]));
 });
 
 test('serves needs-attention fixtures with an unbroken name and a populated all-clear overview', () => {

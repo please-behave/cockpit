@@ -14,7 +14,7 @@ import '../components/pb-repository-map';
 import '../components/pb-stat-tile';
 import '../components/pb-relative-time';
 import '../components/pb-widget';
-import { healthStatuses, repositoryHealth, type RepositoryHealth } from '../repository-health';
+import { healthStatuses, type RepositoryHealth } from '../repository-health';
 import { CockpitView } from './cockpit-view';
 
 interface DashboardData extends RepositoryOverview {
@@ -125,7 +125,6 @@ export class DashboardView extends CockpitView<DashboardData> {
 
     const requested = new URLSearchParams(this.search).get('status');
     const filter = statuses.find(status => status === requested);
-    const matching = filter ? repositories.filter(entry => repositoryHealth(entry) === filter) : repositories;
     const clearFilter = filter ? { href: this.filterPath(), label: 'Clear status filter' } : undefined;
 
     return html`
@@ -139,7 +138,7 @@ export class DashboardView extends CockpitView<DashboardData> {
         </pb-widget>
         <pb-needs-attention .repositories=${repositories}></pb-needs-attention>
         <pb-activity-feed .entries=${activity} .failed=${activityFailed}></pb-activity-feed>
-        <pb-repository-map .repositories=${matching} .setsByRepository=${setsByRepository}
+        <pb-repository-map .repositories=${repositories} .filter=${filter} .setsByRepository=${setsByRepository}
           .link=${clearFilter}></pb-repository-map>
       </div>
     `;

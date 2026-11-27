@@ -14,6 +14,8 @@ export const reviewCases = [
     'Status tiles, attention rows, activity entries and repository chips for 1,000 repositories', true],
   ['Dashboard (filtered)', '/?status=failed', 'pb-dashboard', dashboardEntries,
     'Status tiles, attention rows, activity entries and matching repository chips'],
+  ['Dashboard (single organization)', '/?preview=dashboard-single-organization', 'pb-dashboard', dashboardEntries,
+    'Status tiles, attention rows, activity entries and repository chips'],
   ['Dashboard (all clear)', '/?preview=dashboard-clear', 'pb-dashboard', dashboardEntries,
     'Status tiles, activity entries and repository chips'],
   ['Dashboard (no matches)', '/?preview=dashboard-clear&status=failed', 'pb-dashboard', dashboardEntries,

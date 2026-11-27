@@ -586,6 +586,11 @@ const dashboardOverviews = {
     repositories: repositoryOverview.repositories.filter(entry =>
       entry.latest_check?.overall === 'PASS' && (entry.state === 'current' || entry.state === 'pending')),
   },
+  'dashboard-single-organization': {
+    ...repositoryOverview,
+    repositories: repositoryOverview.repositories.filter(entry =>
+      entry.repository.startsWith('github.com/acme/') || entry.repository.startsWith('gitlab.com/acme/')),
+  },
   'dashboard-unsynced': {
     heartbeat: { completed_at: null, stale: true },
     repositories: repositoryOverview.repositories.filter(entry => entry.heartbeat_completed_at === null),
@@ -653,7 +658,8 @@ export function respond(target) {
     if (searchParams.get('preview') === 'repository-map') {
       const longName = repositoryEntry([`github.com/acme/${'long-repository-name-'.repeat(10)}map`, 'current', 'PASS'],
         repositoryFixtures.length);
-      return json(200, { ...repositoryOverview, repositories: [...repositoryOverview.repositories, longName] });
+      const markupOwner = repositoryEntry([`github.com/${markup}/gadget`, 'unknown'], repositoryFixtures.length + 1);
+      return json(200, { ...repositoryOverview, repositories: [...repositoryOverview.repositories, longName, markupOwner] });
     }
     if (searchParams.get('preview') === 'needs-attention') {
       const longName = repositoryEntry([`github.com/acme/${'long-repository-name-'.repeat(10)}unknown`, 'unknown'],

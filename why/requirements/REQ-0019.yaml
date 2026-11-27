@@ -37,9 +37,11 @@ description: >-
   offers no preview.
 
   The Needs attention widget shows every repository whose health is failed,
-  warning or unknown, ordered by health severity and then by name. Each row
+  warning or unknown, ordered across the overview by health severity, then
+  by canonical repository name and platform. Each row
   shows the health symbol and text label, the shortened repository name
-  linked to its repository page (REQ-0033), and one reason. Unknown health
+  linked to its repository page (REQ-0033), its organization as muted text
+  when available, and one reason. Unknown health
   explains that the evidence status is unknown. Never integrated repositories
   show that state. Otherwise a reported FAIL or ERROR takes precedence over
   an overdue step and shows the verdict, shortened commit and relative ledger
@@ -47,10 +49,19 @@ description: >-
   shows the reached and total configured steps. When no repository needs
   attention, the widget shows an all-clear message and the number checked.
 
-  The Repository map presents one chip per repository identity in a wrapping
-  list ordered by health severity, then name. A recognized status query
-  filters only the map. An absent or unrecognized value shows every
-  repository. The current filter is visible and exposed to assistive
+  The Repository map presents one chip per repository identity in wrapping
+  lists grouped by the owner segment of the repository identifier. When the
+  overview has multiple organizations, each visible section has a heading
+  below the map heading showing its organization and counts by health across
+  the full overview. A single organization has no heading. A missing owner
+  is shown as "No organization" when section headings are present. Sections
+  are ordered by their worst health in the overview, then organization
+  name. Within a section, chips are ordered by health severity, shortened
+  repository name and platform. Text is compared by lower-cased code points,
+  with case-only ties broken by original code points. A recognized status
+  query filters only the map and hides sections with no matching chips.
+  An absent or unrecognized value shows every repository. The current filter
+  is visible and exposed to assistive
   technology. The map offers a link to clear it and explains when no
   repository matches. Each chip links to the repository page, shows the
   shortened name and a distinct health symbol, and names the full repository
@@ -92,8 +103,8 @@ decisions:
   - DEC-0001
   - DEC-0002
   - DEC-0011
-  - DEC-0017
   - DEC-0018
+  - DEC-0020
   - why:DEC-0009
   - why:DEC-0024
   - why:DEC-0025

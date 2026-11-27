@@ -1,0 +1,27 @@
+id: DEC-0020
+name: Group the Repository Map by Organization
+context: >-
+  The Repository map sorted by canonical repository name within each health
+  group, while chips showed only the last segment. A change of owner looked
+  like an unexplained restart of the alphabetical order.
+decision: >-
+  Keep status counts, Needs attention and the Repository map based on the
+  same health groups. Status counts and Needs attention cover the full
+  overview. Keep the global attention order by severity, canonical repository
+  name and platform, and display the organization beside each repository's
+  details. Group map chips by the owner segment of their repository
+  identifiers. Show organization headings and health counts when the
+  overview has multiple organizations. Order sections by worst health and
+  organization name, and chips within each section by severity, shortened
+  repository name and platform. Compare text by lower-cased code points,
+  breaking case-only ties by original code points. Keep the shareable status
+  query scoped to the map and hide sections with no matching chips. Compute
+  section counts and severity from the full overview. Keep evidence, release,
+  deployment and completed Rule Set details in the map preview and
+  repository views. Show sync status alongside the refresh control.
+rationale: >-
+  Organization headings explain the ordering and distinguish equal
+  repository names. Health counts retain the context for each visible
+  organization when the map is filtered.
+supersedes:
+  - DEC-0017

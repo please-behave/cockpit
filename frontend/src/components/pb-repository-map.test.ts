@@ -1,6 +1,6 @@
 import { afterEach, expect, test, vi } from 'vitest';
 import { fixtureTargets, respond } from '../../../tools/preview/fixtures.mjs';
-import type { RepositoryOverview, RepositoryRuleSets } from '../api/client';
+import type { RepositoryOverview, RepositoryOverviewEntry, RepositoryRuleSets } from '../api/client';
 import { releasePath, repositoryPath, Router, ruleSetPath } from '../views/router';
 import type { CommitLink } from './pb-commit-link';
 import type { RelativeTime } from './pb-relative-time';
@@ -15,9 +15,9 @@ const { repositories } = respond(fixtureTargets.repositoryMap)!.body as Reposito
 const completed = respond(fixtureTargets.completedRuleSets)!.body as RepositoryRuleSets[];
 const fixture = (name: string) => repositories.find(entry => entry.repository.endsWith(`/${name}`))!;
 
-async function mount() {
+async function mount(entries: RepositoryOverviewEntry[] = [...repositories].reverse()) {
   const map = new RepositoryMap();
-  map.repositories = [...repositories].reverse();
+  map.repositories = entries;
   map.setsByRepository = new Map(completed.map(({ repository, sets }) => [repository, sets]));
   document.body.append(map);
   await map.updateComplete;
@@ -47,27 +47,60 @@ afterEach(() => {
 });
 
 // Verifies REQ-0015, REQ-0017 and REQ-0019.
-test('uses the widget frame and orders each supplied repository by severity then canonical name', async () => {
+test('groups the map by worst health, with a heading and counts for each organization', async () => {
   const { root, chips } = await mount();
   const widget = root.querySelector<Widget>('pb-widget')!;
   await widget.updateComplete;
   expect(widget.shadowRoot!.querySelector('section')?.getAttribute('aria-labelledby')).toBe('widget-heading');
   expect(widget.shadowRoot!.querySelector('h2')?.textContent).toBe('Repository map');
   expect(root.querySelectorAll('ul > li')).toHaveLength(repositories.length);
+  const failed = repositories.find(entry => entry.latest_check?.overall === 'FAIL')!.repository;
+  const markupOwner = '<img src=x onerror=alert(1)>';
+  expect([...root.querySelectorAll('h3')].map(heading => heading.textContent)).toEqual([
+    'acme', failed.split('/').at(-2), markupOwner, 'b>',
+  ]);
+  expect(root.querySelector('h3 img')).toBeNull();
+  expect([...root.querySelectorAll('.counts span')].slice(0, 4).map(span => span.textContent)).toEqual([
+    '3 failed', '1 warning', '3 unknown', '3 passed',
+  ]);
   expect(chips.map(chip => chip.entry!.repository)).toEqual([
     'github.com/acme/gadget',
     'github.com/acme/no-records',
     'github.com/acme/overdue-final',
-    repositories.find(entry => entry.latest_check?.overall === 'FAIL')!.repository,
     'github.com/acme/widget',
+    'gitlab.com/acme/elsewhere',
     'github.com/acme/never-synced',
     'github.com/acme/stale-sync',
-    'gitlab.com/acme/elsewhere',
-    repositories.find(entry => entry.repository.includes('<img'))!.repository,
     repositories.find(entry => entry.repository.includes('long-repository-name-'))!.repository,
     'github.com/acme/pending',
     'github.com/acme/return-navigation',
+    failed,
+    `github.com/${markupOwner}/gadget`,
+    repositories.find(entry => entry.repository.startsWith('<b>'))!.repository,
   ]);
+});
+
+test('breaks case-only ties by original code points in organization, repository and platform order', async () => {
+  const base = fixture('pending');
+  const entries = [
+    ['gitlab.com/alpha/z', 'gitlab'],
+    ['gitlab.com/Alpha/a', 'gitlab'],
+    ['github.com/Alpha/a', 'github'],
+    ['gitlab.com/Alpha/A', 'gitlab'],
+    ['github.com/Alpha/a', 'GitHub'],
+  ].map(([repository, platform]) => ({ ...base, repository, platform }));
+  const { root, chips } = await mount(entries);
+  expect([...root.querySelectorAll('h3')].map(heading => heading.textContent)).toEqual(['Alpha', 'alpha']);
+  expect(chips.map(chip => chip.entry)).toEqual([entries[3], entries[4], entries[2], entries[1], entries[0]]);
+});
+
+test('omits the organization heading for an overview with one organization', async () => {
+  const { repositories: single } = respond(
+    fixtureTargets.repositoryOverview + '?preview=dashboard-single-organization',
+  )!.body as RepositoryOverview;
+  const { root, chips } = await mount(single);
+  expect(root.querySelector('h3')).toBeNull();
+  expect(chips).toHaveLength(single.length);
 });
 
 test.each([
@@ -187,7 +220,7 @@ test('previews on the first tap, navigates on the second and dismisses on outsid
 // Verifies REQ-0004.
 test('renders fixture markup as text in the chip and preview', async () => {
   const { chips } = await mount();
-  const chip = chips.find(chip => chip.entry!.repository.includes('<img'))!;
+  const chip = chips.find(chip => chip.entry!.repository.startsWith('<b>'))!;
   const root = chip.shadowRoot!;
   expect(root.querySelector('.short')?.textContent).toContain('<img');
   expect(root.querySelector('.preview-name')?.textContent).toBe(chip.entry!.repository);

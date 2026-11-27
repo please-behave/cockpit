@@ -201,6 +201,18 @@ test.each([
   expect(tiles(view).find(tile => tile.active)?.status).toBe(status === 'bogus' ? undefined : status);
 });
 
+test('keeps the organization heading and full counts when the filter hides every other section', async () => {
+  overview.mockResolvedValue(fixtures);
+  const view = await mount('?status=warning');
+  expect(names(view)).toEqual(['github.com/acme/widget']);
+  const root = map(view).shadowRoot!;
+  expect([...root.querySelectorAll('h3')].map(heading => heading.textContent)).toEqual(['acme']);
+  expect([...root.querySelectorAll('.counts span')].map(span => span.textContent)).toEqual([
+    '3 failed', '1 warning', '3 unknown', '2 passed',
+  ]);
+  expect(map(view).link).toEqual({ href: '/', label: 'Clear status filter' });
+});
+
 test.each([
   ['failed', 'dashboard-clear'],
   ['warning', 'dashboard-clear'],

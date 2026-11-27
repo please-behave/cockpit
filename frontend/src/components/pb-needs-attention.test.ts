@@ -50,6 +50,7 @@ test('lists every non-passed repository by severity then name with linked names 
     expect(link.getAttribute('href')).toBe(repositoryPath(repository));
     expect(link.getAttribute('aria-label')).toBe(repository);
     expect(link.textContent).toBe(repository.split('/').at(-1));
+    expect(text(row.querySelector('.organization.meta'))).toBe(repository.split('/').at(-2));
     expect(text(row.querySelector('.status'))).toBe(label);
     expect(row.querySelector('pb-icon')?.getAttribute('name')).toBe(icon);
   });
@@ -99,9 +100,10 @@ test.each([
 });
 
 // Verifies REQ-0004.
-test('renders markup in the repository name as text', async () => {
-  const entry = { ...longName, repository: 'github.com/acme/<img src=x>' };
+test('renders markup in the organization and repository name as text', async () => {
+  const entry = { ...longName, repository: 'github.com/<img src=owner>/<img src=x>' };
   const root = await mount([entry]);
   expect(root.querySelector('.repository')?.textContent).toBe('<img src=x>');
+  expect(root.querySelector('.organization')?.textContent).toBe('<img src=owner>');
   expect(root.querySelector('img')).toBeNull();
 });

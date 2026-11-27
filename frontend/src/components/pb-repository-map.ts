@@ -1,20 +1,69 @@
-import { css, html, LitElement } from 'lit';
+import { css, html, LitElement, nothing } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 import type { CompletedRuleSet, RepositoryOverviewEntry } from '../api/client';
-import { compareBySeverity } from '../repository-health';
+import { compareText, healthStatuses, repositoryHealth, type RepositoryHealth } from '../repository-health';
 import './pb-repo-chip';
 import type { SectionLink } from './pb-section';
+import { ownerName, shortName } from './pb-short-name';
 import './pb-widget';
+
+interface Organization {
+  name: string;
+  counts: Record<RepositoryHealth, number>;
+  worstRank: number;
+  matching: RepositoryOverviewEntry[];
+}
+
+const statuses = Object.keys(healthStatuses) as RepositoryHealth[];
+
+function groupRepositories(repositories: readonly RepositoryOverviewEntry[], filter?: RepositoryHealth) {
+  const groups = new Map<string, Organization>();
+  for (const entry of repositories) {
+    const name = ownerName(entry.repository);
+    const health = repositoryHealth(entry);
+    const { rank } = healthStatuses[health];
+    let group = groups.get(name);
+    if (!group) {
+      group = { name, counts: { failed: 0, warning: 0, 'not-run': 0, passed: 0 }, worstRank: rank, matching: [] };
+      groups.set(name, group);
+    }
+    group.counts[health]++;
+    group.worstRank = Math.min(group.worstRank, rank);
+    if (!filter || health === filter) group.matching.push(entry);
+  }
+  return groups;
+}
+
+function compareChips(left: RepositoryOverviewEntry, right: RepositoryOverviewEntry) {
+  return healthStatuses[repositoryHealth(left)].rank - healthStatuses[repositoryHealth(right)].rank ||
+    compareText(shortName(left.repository), shortName(right.repository)) ||
+    compareText(left.platform ?? '', right.platform ?? '');
+}
 
 export class RepositoryMap extends LitElement {
   static override properties = {
     repositories: { attribute: false },
     setsByRepository: { attribute: false },
     link: { attribute: false },
+    filter: { attribute: false },
   };
 
   static override styles = css`
     @layer components {
+      .organizations, section {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .organizations { gap: var(--space-4); }
+      section { gap: var(--space-2); }
+
+      .counts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-1) var(--space-2);
+      }
+
       ul {
         display: flex;
         flex-wrap: wrap;
@@ -34,6 +83,7 @@ export class RepositoryMap extends LitElement {
   `;
 
   declare link?: SectionLink;
+  declare filter?: RepositoryHealth;
   declare repositories: readonly RepositoryOverviewEntry[];
   declare setsByRepository: ReadonlyMap<string, readonly CompletedRuleSet[]>;
 
@@ -44,17 +94,34 @@ export class RepositoryMap extends LitElement {
   }
 
   override render() {
-    const sorted = [...this.repositories].sort(compareBySeverity);
+    const groups = groupRepositories(this.repositories, this.filter);
+    const visible = [...groups.values()].filter(group => group.matching.length)
+      .sort((left, right) => left.worstRank - right.worstRank || compareText(left.name, right.name));
     return html`
       <pb-widget heading="Repository map" .link=${this.link}>
-        ${sorted.length ? html`
-          <ul role="list">
-            ${repeat(sorted, entry => JSON.stringify([entry.repository, entry.platform]), entry => html`
-              <li><pb-repo-chip .entry=${entry}
-                .completedSets=${this.setsByRepository.get(entry.repository)}></pb-repo-chip></li>
+        ${visible.length ? html`
+          <div class="organizations">
+            ${repeat(visible, group => group.name, group => html`
+              <section>
+                ${groups.size > 1 ? html`
+                  <pb-section>
+                    <h3 slot="heading">${group.name || 'No organization'}</h3>
+                    <p slot="count" class="counts">
+                      ${statuses.map(status => html`<span>${group.counts[status]} ${healthStatuses[status].label}</span>`)}
+                    </p>
+                  </pb-section>
+                ` : nothing}
+                <ul role="list">
+                  ${repeat(group.matching.sort(compareChips),
+                    entry => JSON.stringify([entry.repository, entry.platform]), entry => html`
+                      <li><pb-repo-chip .entry=${entry}
+                        .completedSets=${this.setsByRepository.get(entry.repository)}></pb-repo-chip></li>
+                    `)}
+                </ul>
+              </section>
             `)}
-          </ul>
-        ` : html`<p>${this.link ? 'No repositories match this status.' : 'No repositories'}</p>`}
+          </div>
+        ` : html`<p>${this.filter ? 'No repositories match this status.' : 'No repositories'}</p>`}
       </pb-widget>
     `;
   }
