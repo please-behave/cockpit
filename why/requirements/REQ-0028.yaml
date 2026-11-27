@@ -11,7 +11,7 @@ description: >-
   bound version, makes the full name available, and links to that version
   on the Rule Set detail page of REQ-0029. Names render as escaped text.
   Repositories without completed sets show no Rule Set chips. The chips
-  use the filled platinum-blue Rule Set tokens in both themes and system
+  use the shared filled Rule Set tokens in both themes and system
   colors in forced-colors mode, and follow REQ-0015.
 rationale: >-
   Viewers can see which shared Rule Sets a repository fully meets using the

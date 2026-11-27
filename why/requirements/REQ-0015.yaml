@@ -2,11 +2,12 @@ id: REQ-0015
 name: Shared Visual Identity
 area: identity
 description: >-
-  The application shell and sign-in page use the logo, semantic colors, and
-  contrast pairings defined by the shared visual identity. They follow the
-  browser's preferred color scheme, retain visible keyboard focus, and remain
-  usable at 320 CSS pixels and 200 percent zoom. The shell exposes banner,
-  navigation, and main landmarks with a keyboard-accessible skip link.
+  The cockpit uses the palette and contrast pairings defined by the shared
+  visual identity consistently across views. The application shell and
+  sign-in page use the shared logo, follow the browser's preferred color
+  scheme, retain visible keyboard focus, and remain usable at 320 CSS pixels
+  and 200 percent zoom. The shell exposes banner, navigation, and main
+  landmarks with a keyboard-accessible skip link.
   The header presents adjoining, full-height navigation segments labeled
   "Please Behave Dashboard", "Attestations", "Releases", "Deployments", and
   "Rules" on the raised surface. At desktop widths and default zoom the header
@@ -14,9 +15,10 @@ description: >-
   Segments wrap when space is constrained and stay free of underlines in every state.
   A compact toolbar directly below the header reserves a row on every view and
   provides space for view-specific controls and the refresh status of REQ-0020.
-  The current segment uses the page surface and semibold brand text, and
-  exposes aria-current="page", including on attestation detail, repository
-  release history, release detail and rule detail routes.
+  The current segment uses the page surface and semibold text so it is
+  distinguishable beyond color alone. It exposes aria-current="page",
+  including on attestation detail, repository release history, release detail
+  and rule detail routes.
   Hover slightly darkens the segment surface and adds a thin outline. Keyboard
   focus uses a thicker inset ring. The headline of the dashboard, attestations,
   releases, deployments and rules views is hidden visually but remains exposed
@@ -40,21 +42,20 @@ description: >-
   Fine pointers use compact density and coarse pointers use
   comfortable density. Metadata is at least 0.75rem. Controls and standalone
   links provide targets at least 24 by 24 CSS pixels. Badges for the kinds
-  `check` and `review`, for Blocking and for Non-blocking each have a tone of
-  their own: a tinted surface with text and border of the same hue. Their text contrasts with the badge surface and with
-  the page and raised surfaces, and their borders contrast with the badge
-  surface and with those surfaces. The tones are teal for `check`, indigo for
-  `review`, a strong slate for Blocking and a light neutral gray for
-  Non-blocking. The label always states the meaning; the status colors are never
-  used for badges. Other badges keep the plain badge look. The current segment uses brand-primary text in light mode
-  and a lighter indigo in dark mode. The brand accent is reserved for small
-  accents.
-  In forced colors, links use LinkText on Canvas, hover, badge, and panel
-  surfaces, including every badge tone, use Canvas with CanvasText for text and
-  borders. Navigation retains
-  semibold current text, a hover outline, and an inset focus ring using system
-  colors. Normal text pairings meet 4.5:1 and meaningful boundaries meet 3:1,
-  using the browser's system palette in forced-colors mode.
+  `check` and `review`, for Blocking and for Non-blocking each have a
+  distinct tone in both themes. Each tone pairs a tinted surface with text
+  and a border of the same hue. Badge text and borders contrast with the badge
+  surface and with the page and raised surfaces. The label always states the
+  meaning. Badge styling uses only the badge tones or the plain badge look.
+  Status colors are reserved for outcome indicators. The brand accent is
+  reserved for small accents.
+  In forced-colors mode, links use the browser's system link color on the
+  system page background. Hover, badge, and panel surfaces use the system page
+  background with the system text color for text and borders, including every
+  badge tone. Navigation retains semibold current text, a hover outline, and
+  an inset focus ring using system colors. In both themes and in forced-colors
+  mode, normal text pairings meet 4.5:1 and meaningful boundaries meet 3:1
+  under WCAG 2.2 AA.
   Interface icons use shared SVG artwork and inherit the surrounding text
   color. Icons paired with text are hidden from assistive technology.
   Standalone icons expose an accessible name.

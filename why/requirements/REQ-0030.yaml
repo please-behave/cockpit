@@ -17,9 +17,9 @@ description: >-
   The evidence status shows the reported outcome or “No evidence” as compact
   text with an icon. The Rule Set summary gives the count of completed Rule
   Sets when present. Its pointer- and keyboard-accessible preview shows a
-  platinum-blue chip for each completed Rule Set. Each chip names the bound
-  version and links to it on the Rule Set detail page of REQ-0029. Both views
-  follow REQ-0004, REQ-0015, REQ-0016 and REQ-0018.
+  chip styled with the shared Rule Set tokens for each completed Rule Set.
+  Each chip names the bound version and links to it on the Rule Set detail
+  page of REQ-0029. Both views follow REQ-0004, REQ-0015, REQ-0016 and REQ-0018.
 rationale: >-
   Viewers can find each repository's releases and see what evidence was
   reported for the released commits.
