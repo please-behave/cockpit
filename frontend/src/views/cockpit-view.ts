@@ -2,7 +2,9 @@ import { css, html, LitElement, nothing, type CSSResultGroup, type TemplateResul
 import { ApiError } from '../api/client';
 import '../components/pb-error-state';
 import { controlStyles } from '../styles/controls';
+import { disclosureStyles } from '../styles/disclosure';
 import { linkStyles } from '../styles/links';
+import { textStyles } from '../styles/text';
 
 const refreshInterval = 300_000;
 
@@ -17,6 +19,8 @@ export abstract class CockpitView<T = never> extends LitElement {
   static override styles: CSSResultGroup = css`
     ${linkStyles}
     ${controlStyles}
+    ${disclosureStyles}
+    ${textStyles}
 
     @layer base {
       h1 {

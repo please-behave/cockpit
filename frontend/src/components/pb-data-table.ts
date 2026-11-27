@@ -1,6 +1,7 @@
 import { css, html, LitElement, nothing, type TemplateResult } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 import { linkStyles } from '../styles/links';
+import { textStyles } from '../styles/text';
 import './pb-icon';
 
 export interface DataTableRow {
@@ -42,6 +43,7 @@ export class DataTable<Row extends DataTableRow = DataTableRow> extends LitEleme
 
   static override styles = css`
     ${linkStyles}
+    ${textStyles}
 
     @layer components {
       :host {

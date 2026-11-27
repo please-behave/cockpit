@@ -59,7 +59,7 @@ export class RepositoryView extends CockpitView<RepositoryData> {
 
   static override styles = [CockpitView.styles as CSSResult, deploymentTableStyles, css`
     @layer components {
-      .canonical { margin-block: var(--space-2) 0; color: var(--text-muted); }
+      .canonical { margin-block: var(--space-2) 0; }
       section { margin-block-start: var(--space-6); }
       h2 { margin-block: 0 var(--space-2); }
       pb-data-table::part(execution-points) { min-inline-size: 10ch; }
@@ -92,7 +92,7 @@ export class RepositoryView extends CockpitView<RepositoryData> {
 
   protected override content(data?: RepositoryData) {
     return html`
-      <p class="canonical">${this.repository}</p>
+      <p class="canonical muted">${this.repository}</p>
       <section aria-labelledby="completed-rule-sets">
         <h2 id="completed-rule-sets">Completed Rule Sets</h2>
         ${data ? this.ruleSets(data.completedSets) : nothing}

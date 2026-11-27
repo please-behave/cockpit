@@ -57,7 +57,7 @@ function ruleCell(result: Result) {
   if (!rule?.version || !hasRegisteredVersion(result)) return label;
   return html`
     <a data-route href=${rulePath(rule, rule.version)}>${label}</a>
-    <div part="rule-version"><code>${rule.version}</code></div>
+    <div part="rule-version" class="muted regular"><code>${rule.version}</code></div>
   `;
 }
 
@@ -123,10 +123,6 @@ export class DetailView extends CockpitView<Detail> {
         min-inline-size: 12ch;
       }
 
-      pb-data-table::part(rule-version) {
-        color: var(--text-muted);
-        font-weight: normal;
-      }
     }
   `];
 

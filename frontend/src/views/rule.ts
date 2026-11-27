@@ -54,7 +54,7 @@ function knowledgeDocument(knowledge: Record<string, unknown> | undefined) {
     return [html`<div><dt>${label}</dt>
       <dd class="plain-text">${paragraph ?? html`<ul>${entries}</ul>`}</dd></div>`];
   });
-  return sections.length > 0 ? html`<h3>Knowledge</h3><dl class="knowledge">${sections}</dl>` : nothing;
+  return sections.length > 0 ? html`<h3>Knowledge</h3><dl class="knowledge definitions meta-terms">${sections}</dl>` : nothing;
 }
 
 export class RuleView extends CockpitView<RegisteredVersion[]> {
@@ -69,15 +69,8 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
       dl { margin-block: var(--space-4); }
       dl:last-child { margin-block-end: 0; }
       dl > div + div { margin-block-start: var(--space-3); }
-      dt { font-weight: var(--weight-semibold); }
       dd { margin-inline-start: 0; }
       ul { margin-block: 0; padding-inline-start: var(--space-4); }
-      .knowledge dt {
-        color: var(--text-muted);
-        font-size: var(--type-meta);
-        line-height: var(--line-meta);
-      }
-
       @media (min-width: 40rem) {
         .knowledge > div {
           display: grid;
@@ -99,9 +92,6 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
         display: flex;
         flex-wrap: wrap;
         gap: var(--space-3) var(--space-6);
-        color: var(--text-muted);
-        font-size: var(--type-meta);
-        line-height: var(--line-meta);
         overflow-wrap: anywhere;
       }
 
@@ -182,7 +172,7 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
     return html`
       ${version.description ? html`<p class="introduction plain-text">${version.description}</p>` : nothing}
       <pb-fact-strip .items=${facts}></pb-fact-strip>
-      <dl class="identity">
+      <dl class="identity definitions meta">
         <div><dt>Repository</dt><dd>
           <pb-tooltip hint .description=${version.source}><code>${shortName(version.source)}</code></pb-tooltip>
         </dd></div>
@@ -197,7 +187,7 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
     const sets = version.rule_sets ?? [];
     const repository = repositoryUrl(version.source);
     return html`
-      <dl class="memberships">
+      <dl class="memberships definitions">
         <dt>Part of</dt>
         <dd>${sets.length > 0 ? sets.map(set => html`
           <pb-rule-set-chip .label=${`${set.name || set.id} · ${set.version}`}
@@ -219,7 +209,7 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
         ?data-requested-version=${version.version === requested}>
         ${latest ? html`<pb-badge slot="metadata">Latest</pb-badge>` : nothing}
         <article>
-          <dl>
+          <dl class="definitions">
             ${version.name ? html`<div><dt>Name</dt><dd class="plain-text">${version.name}</dd></div>` : nothing}
             <div><dt>Kind</dt><dd><pb-badge tone=${version.kind}>${version.kind}</pb-badge></dd></div>
             <div><dt>Registered</dt><dd><pb-time .value=${version.registered_at}></pb-time></dd></div>

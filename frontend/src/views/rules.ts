@@ -76,44 +76,14 @@ export class RulesView extends CockpitView<Registry> {
       section { margin-block: var(--space-6); }
       h2 { margin-block: 0 var(--space-3); }
 
-      details {
-        margin-block: var(--space-2);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-control);
-        background: var(--surface);
-      }
-
-      summary {
-        padding: var(--space-3) var(--space-4);
-        border-radius: var(--radius-control);
-        background: var(--surface-raised);
-        color: var(--text);
-        cursor: pointer;
-        overflow-wrap: anywhere;
-      }
-
-      summary:focus-visible {
-        outline-offset: calc(-1 * var(--focus-offset));
-      }
-
-      .set {
-        border-color: var(--rule-set);
-      }
-
-      .set summary {
-        background: var(--rule-set-surface);
-        color: var(--rule-set-text);
-      }
+      details { margin-block: var(--space-2); }
+      summary { overflow-wrap: anywhere; }
 
       .facts {
         display: flex;
         flex-wrap: wrap;
         gap: var(--space-1) var(--space-4);
         margin-block-start: var(--space-1);
-      }
-
-      .incomplete {
-        font-weight: var(--weight-semibold);
       }
 
       .group-content {
@@ -239,7 +209,7 @@ export class RulesView extends CockpitView<Registry> {
       };
     });
     return html`
-      <details class=${setGroup ? 'set' : 'local'} ?open=${open}>
+      <details class=${setGroup ? 'disclosure set' : 'disclosure local'} ?open=${open}>
         <summary>
           <strong>${setGroup
             ? html`<a data-route href=${ruleSetPath(setGroup.set)}>${group.label}</a>`
@@ -249,7 +219,7 @@ export class RulesView extends CockpitView<Registry> {
               <span>Version ${setGroup.set.version}</span>
               <span>${countLabel(setGroup.set.member_count, 'rule', 'rules')}</span>
               <span>${countLabel(setGroup.repositories.length, 'repository', 'repositories')}</span>
-              ${setGroup.incomplete ? html`<span class="incomplete">Repository not compliant</span>` : nothing}
+              ${setGroup.incomplete ? html`<span class="incomplete strong">Repository not compliant</span>` : nothing}
             </span>
           ` : nothing}
         </summary>

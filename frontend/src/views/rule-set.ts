@@ -69,7 +69,7 @@ function memberRow(member: RegisteredRuleSetVersion['members'][number], role: st
     role,
     cells: [
       html`<a data-route href=${rulePath(member, member.version)}>${label}</a>
-        ${member.enabled ? nothing : html`<div part="member-status">Disabled</div>`}`,
+        ${member.enabled ? nothing : html`<div part="member-status" class="meta">Disabled</div>`}`,
       role,
     ],
   };
@@ -140,11 +140,6 @@ export class RuleSetView extends CockpitView<RuleSetDetail> {
       }
       pb-data-table::part(member-rule) { min-inline-size: 10ch; }
       pb-data-table::part(member-role) { white-space: pre-wrap; }
-      pb-data-table::part(member-status), .registered {
-        color: var(--text-muted);
-        font-size: var(--type-meta);
-        line-height: var(--line-meta);
-      }
       pb-key-value { margin-block-start: var(--space-2); }
       .repositories { list-style: none; padding: 0; }
       .non-passing { margin-block-end: 0; padding-inline-start: var(--space-4); }
@@ -180,7 +175,7 @@ export class RuleSetView extends CockpitView<RuleSetDetail> {
         <pb-widget .heading=${`Version ${selected.version}`} ?accent=${latest}>
           <div slot="metadata" class="binding">
             ${latest ? html`<pb-badge>Latest</pb-badge>` : nothing}
-            <span class="registered">Registered <pb-time .value=${selected.registered_at}></pb-time></span>
+            <span class="registered meta">Registered <pb-time .value=${selected.registered_at}></pb-time></span>
           </div>
           <article>
             ${knowledgeDocument(selected.knowledge)}
