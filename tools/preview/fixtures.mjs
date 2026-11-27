@@ -190,19 +190,22 @@ for (let number = total; number >= 1; number -= 1) {
 
 const latest = history.slice(0, newest.length);
 
+const baselineSet = { source: ruleSource, path: 'sets/baseline', id: 'baseline', version: '1.0', name: 'Repository baseline' };
+const originalBaseline = { ...baselineSet, version: '0.9', name: 'Original repository baseline' };
+const markupSet = { source: ruleSource, path: 'sets/markup', id: 'markup', version: '1.0', name: `Publisher baseline ${markup}` };
+const securitySet = { source: ruleSource, path: 'sets/security', id: 'security', version: '2.0', name: 'Security and release readiness for shared repositories with additional compliance requirements' };
+const licensingSet = { source: ruleSource, path: 'sets/licensing', id: 'licensing', version: '1.0', name: 'Licensing' };
 const completedRuleSets = [{
   repository: latest.find(summary => summary.repository.includes(markup)).repository,
-  sets: [{ source: ruleSource, path: 'sets/markup', id: 'markup', version: '1.0', name: `Publisher baseline ${markup}` }],
+  sets: [markupSet],
 }, {
   repository: 'github.com/acme/return-navigation',
-  sets: [
-    { source: ruleSource, path: 'sets/baseline', id: 'baseline', version: '1.0', name: 'Repository baseline' },
-    { source: ruleSource, path: 'sets/security', id: 'security', version: '2.0', name: 'Security and release readiness for shared repositories with additional compliance requirements' },
-    { source: ruleSource, path: 'sets/licensing', id: 'licensing', version: '1.0', name: 'Licensing' },
-  ],
+  sets: [baselineSet, securitySet, licensingSet],
+}, {
+  repository: 'github.com/acme/pending',
+  sets: [originalBaseline],
 }];
 
-const [markupSet, baselineSet, securitySet, licensingSet] = completedRuleSets.flatMap(entry => entry.sets);
 const sets = [
   { registration: markupSet, members: ['markup'] },
   {
@@ -218,7 +221,7 @@ const setScan = { through: Date.UTC(2026, 10, 25) * 1000, registrations: sets.le
 const nonPassingRule = rules.find(([rule]) => rule.id === 'design-review').at(-1);
 const failedBaseline = {
   repository: 'github.com/acme/failed-baseline',
-  version: '0.9',
+  version: originalBaseline.version,
   registered: true,
   complete: false,
   non_passing_members: [{
@@ -243,7 +246,7 @@ function setVersion(registration, memberRules, description, knowledge) {
 const setHistories = sets.map(({ registration, members, description }) => {
   const memberRules = members.map(id => rules.find(([rule]) => rule.id === id).at(-1));
   if (registration.id === 'baseline') return [
-    setVersion({ ...registration, version: failedBaseline.version, name: 'Original repository baseline' },
+    setVersion(originalBaseline,
       [nonPassingRule], 'Early baseline for shared reviews.', { purpose: 'Establish the first review checks.', future: { ignored: true } }),
     setVersion(registration, memberRules, description, {
       purpose: 'Establish a common standard for repository maintenance.',

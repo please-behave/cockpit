@@ -119,6 +119,7 @@ export class Tooltip extends LitElement {
   private listeners?: AbortController;
   private coordinates?: CSSStyleDeclaration;
   private pointerOverTrigger = false;
+  private pointerOverPreview = false;
   private tapped = false;
 
   constructor() {
@@ -131,6 +132,7 @@ export class Tooltip extends LitElement {
 
   override disconnectedCallback() {
     this.pointerOverTrigger = false;
+    this.pointerOverPreview = false;
     this.dismiss();
     super.disconnectedCallback();
   }
@@ -168,10 +170,16 @@ export class Tooltip extends LitElement {
   }
 
   private move(event: PointerEvent) {
-    if (!this.externalTrigger || event.pointerType === 'touch' || event.composedPath().includes(this.popup)) return;
+    if (!this.externalTrigger || event.pointerType === 'touch') return;
+    if (event.composedPath().includes(this.popup)) {
+      this.pointerOverPreview = true;
+      return;
+    }
+    const wasOverPreview = this.pointerOverPreview;
+    this.pointerOverPreview = false;
     // A stretched link can receive pointer events outside the visible label.
     const over = this.overTrigger(event);
-    if (over === this.pointerOverTrigger) return;
+    if (over === this.pointerOverTrigger && !wasOverPreview) return;
     if (over) {
       this.pointerOverTrigger = true;
       this.scheduleHover();
@@ -188,6 +196,7 @@ export class Tooltip extends LitElement {
   private leave(event: PointerEvent) {
     if (event.pointerType === 'touch') return;
     this.pointerOverTrigger = false;
+    this.pointerOverPreview = false;
     if (!this.trigger.matches(':focus-visible') && !(this.interactive && this.focusInPreview)) this.dismiss();
   }
 
@@ -200,8 +209,8 @@ export class Tooltip extends LitElement {
 
   private focusLeft(event: FocusEvent) {
     const next = event.relatedTarget;
-    if (this.interactive && next instanceof Node &&
-        (this.contains(next) || this.renderRoot.contains(next))) return;
+    if (this.interactive && (this.pointerOverTrigger || this.pointerOverPreview ||
+        (next instanceof Node && (this.contains(next) || this.renderRoot.contains(next))))) return;
     this.dismiss();
   }
 
@@ -213,6 +222,10 @@ export class Tooltip extends LitElement {
   private activate(event: PointerEvent) {
     if (!event.composedPath().includes(this.trigger)) return;
     if (this.externalTrigger) {
+      if (this.interactive && this.trigger instanceof HTMLButtonElement) {
+        this.open();
+        return;
+      }
       if (event.pointerType !== 'touch' || !this.overTrigger(event)) return;
       if (this.trigger instanceof HTMLAnchorElement && (this.interactive ? !this.tapped : this.popup.hidden)) {
         // Let the first tap reveal the complete value and a second follow the link.

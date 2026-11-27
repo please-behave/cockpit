@@ -47,10 +47,10 @@ test.each([fixtureTargets.repositoryOverview, fixtureTargets.latest, fixtureTarg
 
 test('serves completed Rule Sets in the client shape, including short, long and untrusted names', () => {
   const repositories = body<RepositoryRuleSets[]>(fixtureTargets.completedRuleSets);
-  const latest = body<Summary[]>(fixtureTargets.latest);
-  expect(latest.some(summary => !repositories.some(entry => entry.repository === summary.repository))).toBe(true);
+  const overview = body<RepositoryOverview>(fixtureTargets.repositoryOverview).repositories;
+  expect(overview.some(summary => !repositories.some(entry => entry.repository === summary.repository))).toBe(true);
   for (const { repository, sets } of repositories) {
-    expect(latest.some(summary => summary.repository === repository)).toBe(true);
+    expect(overview.some(summary => summary.repository === repository)).toBe(true);
     expect(sets.length).toBeGreaterThan(0);
     for (const { source, path, id, version, name } of sets) {
       expect([source, path, id, name].every(isString)).toBe(true);
@@ -218,6 +218,7 @@ test('serves Rule Sets, latest rule memberships and current repository complianc
     const bindings = body<RuleSetCompliance[]>(fixtureTargets.ruleSetCompliance[index]);
     if (set.id === 'baseline') expect(bindings).toEqual([
       expect.objectContaining({ complete: false, version: '0.9', non_passing_members: [expect.objectContaining({ status: 'WARN' })] }),
+      expect.objectContaining({ repository: 'github.com/acme/pending', complete: true, version: '0.9' }),
       expect.objectContaining({ complete: true, version: '1.0' }),
     ]);
     if (set.id === 'unbound') expect(bindings).toEqual([]);

@@ -4,8 +4,7 @@ import type { ErrorState } from '../components/pb-error-state';
 import type { RepositoryTile } from '../components/pb-repository-tile';
 import type { CockpitTime } from '../components/pb-time';
 import { fixtureTargets, respond } from '../../../tools/preview/fixtures.mjs';
-import type { RuleSetChip } from '../components/pb-rule-set-chip';
-import type { Tooltip } from '../components/pb-tooltip';
+import type { RuleSetSummary } from '../components/pb-rule-set-summary';
 import { DashboardView } from './dashboard';
 import { repositoryPath } from './router';
 
@@ -52,38 +51,26 @@ const tiles = (view: DashboardView) =>
   [...view.shadowRoot!.querySelectorAll<RepositoryTile>('ul.tiles > li > pb-repository-tile')];
 const names = (view: DashboardView) => tiles(view).map(tile => tile.entry!.repository);
 
-// Verifies REQ-0004, REQ-0015 and REQ-0028.
-test('summarizes three completed sets in one linked chip with accessible names', async () => {
-  const name = '<img src=x onerror=alert(1)> Shared security rules';
-  const set = { source: 'github.com/acme/rules', path: 'sets/security', id: 'security', version: '1.0', name };
+// Verifies REQ-0028.
+test('passes the completed sets and repository link to the summary and clears it on refresh', async () => {
+  const set = { source: 'github.com/acme/rules', path: 'sets/security', id: 'security', version: '1.0', name: 'Security' };
+  const sets = [set, { ...set, id: 'licensing', name: 'Licensing' }];
   overview.mockResolvedValue(repositories(entry('a/one'), entry('a/two')));
-  completed.mockResolvedValue([{ repository: 'a/one', sets: [
-    set, { ...set, id: 'licensing', name: 'Licensing' }, { ...set, id: 'baseline', name: 'Repository baseline' },
-  ] }]);
+  completed.mockResolvedValue([{ repository: 'a/one', sets }]);
 
   const view = await mount();
   const [one, two] = tiles(view);
   expect(one.entry!.repository).toBe('a/one');
-  const chips = one.shadowRoot!.querySelectorAll<RuleSetChip>('pb-rule-set-chip');
-  expect(chips).toHaveLength(1);
-  expect(two.shadowRoot!.querySelector('pb-rule-set-chip')).toBeNull();
-  const [chip] = chips;
-  await chip.updateComplete;
-  const link = chip.shadowRoot!.querySelector('a[data-route]')!;
-  const tooltip = chip.shadowRoot!.querySelector<Tooltip>('pb-tooltip')!;
-  await tooltip.updateComplete;
-  const description = `${name}, Licensing, Repository baseline`;
-  expect(link.textContent).toBe('3 Rule Sets');
-  expect(link.getAttribute('href')).toBe(repositoryPath('a/one'));
-  expect(link.getAttribute('aria-description')).toBe(description);
-  expect(tooltip.shadowRoot!.querySelector('[role=tooltip]')?.textContent?.trim()).toBe(description);
-  expect(tooltip.shadowRoot!.querySelector('img')).toBeNull();
+  const summary = one.shadowRoot!.querySelector<RuleSetSummary>('pb-rule-set-summary')!;
+  expect(summary.sets).toEqual(sets);
+  expect(summary.href).toBe(repositoryPath('a/one'));
+  expect(two.shadowRoot!.querySelector('pb-rule-set-summary')).toBeNull();
 
   completed.mockResolvedValue([]);
   view.refresh();
   await vi.waitFor(() => {
     expect(completed).toHaveBeenCalledTimes(2);
-    expect(tiles(view).every(tile => tile.shadowRoot!.querySelector('pb-rule-set-chip') === null)).toBe(true);
+    expect(tiles(view).every(tile => tile.shadowRoot!.querySelector('pb-rule-set-summary') === null)).toBe(true);
   });
 });
 

@@ -1,11 +1,10 @@
-import { css, html, nothing } from 'lit';
-import type { CompletedRuleSet, RepositoryOverviewEntry } from '../api/client';
+import { css, html, nothing, type TemplateResult } from 'lit';
+import type { RepositoryOverviewEntry } from '../api/client';
 import { stateLabels } from '../repository-health';
-import { releasePath, repositoryPath } from '../views/router';
+import { releasePath } from '../views/router';
 import { ownerName } from './pb-short-name';
 import './pb-commit-link';
 import './pb-relative-time';
-import './pb-rule-set-chip';
 import './pb-status-pill';
 
 export const repositorySummaryStyles = css`
@@ -26,20 +25,17 @@ export const repositorySummaryStyles = css`
       gap: var(--space-2);
     }
 
-    .identifiers pb-rule-set-chip {
+    .identifiers pb-rule-set-summary {
       flex: none;
     }
   }
 `;
 
-export function repositoryIdentifiers(repository: string, completedSets: readonly CompletedRuleSet[] = []) {
+export function repositoryIdentifiers(repository: string, sets: TemplateResult | typeof nothing) {
   const owner = ownerName(repository);
-  const count = completedSets.length;
-  return owner || count ? html`<div class="identifiers">
+  return owner || sets !== nothing ? html`<div class="identifiers">
     ${owner ? html`<span class="owner">${owner}</span>` : nothing}
-    ${count ? html`<pb-rule-set-chip
-      .label=${`${count} Rule ${count === 1 ? 'Set' : 'Sets'}`} .href=${repositoryPath(repository)}
-      .description=${completedSets.map(set => set.name).join(', ')}></pb-rule-set-chip>` : nothing}
+    ${sets}
   </div>` : nothing;
 }
 

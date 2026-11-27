@@ -4,6 +4,7 @@ import { healthStatuses, repositoryHealth } from '../repository-health';
 import { linkStyles } from '../styles/links';
 import { repositoryPath } from '../views/router';
 import { shortName } from './pb-short-name';
+import { completedRuleSetChips, ruleSetListStyles } from './pb-rule-set-summary';
 import { repositoryEvidence, repositoryIdentifiers, repositorySummaryStyles, repositoryVerdict } from './repository-summary';
 import './pb-icon';
 import './pb-tooltip';
@@ -14,7 +15,7 @@ export class RepoChip extends LitElement {
     completedSets: { attribute: false },
   };
 
-  static override styles = [linkStyles, repositorySummaryStyles, css`
+  static override styles = [linkStyles, repositorySummaryStyles, ruleSetListStyles, css`
     @layer components {
       :host {
         display: block;
@@ -79,7 +80,8 @@ export class RepoChip extends LitElement {
         </a>
         <div class="preview" slot="preview">
           <span class="preview-name">${repository}</span>
-          ${repositoryIdentifiers(repository, completedSets)}
+          ${repositoryIdentifiers(repository, nothing)}
+          ${completedRuleSetChips(completedSets ?? [])}
           <div>${repositoryVerdict(entry)}</div>
           ${repositoryEvidence(entry)}
         </div>

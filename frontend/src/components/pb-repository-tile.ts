@@ -4,6 +4,7 @@ import { repositoryHealth } from '../repository-health';
 import { linkStyles } from '../styles/links';
 import { repositoryPath } from '../views/router';
 import { repositoryEvidence, repositoryIdentifiers, repositorySummaryStyles, repositoryVerdict } from './repository-summary';
+import './pb-rule-set-summary';
 import './pb-tooltip';
 
 export class RepositoryTile extends LitElement {
@@ -68,7 +69,7 @@ export class RepositoryTile extends LitElement {
         outline-offset: var(--focus-offset);
       }
 
-      pb-commit-link, pb-relative-time, pb-rule-set-chip, .release-link {
+      pb-commit-link, pb-relative-time, pb-rule-set-summary, .release-link {
         position: relative;
         z-index: 1;
       }
@@ -87,7 +88,8 @@ export class RepositoryTile extends LitElement {
 
     return html`
       <div class="tile ${repositoryHealth(entry)}">
-        ${repositoryIdentifiers(repository, completedSets)}
+        ${repositoryIdentifiers(repository, completedSets?.length ? html`
+          <pb-rule-set-summary .sets=${completedSets} .href=${path}></pb-rule-set-summary>` : nothing)}
         <div class="title">
           <pb-tooltip external-trigger .description=${repository}>
             <a class="repository" data-route href=${path}>

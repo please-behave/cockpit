@@ -1,7 +1,7 @@
 import { afterEach, expect, test, vi } from 'vitest';
 import { fixtureTargets, respond } from '../../../tools/preview/fixtures.mjs';
 import type { RepositoryOverview, RepositoryRuleSets } from '../api/client';
-import { releasePath, repositoryPath, Router } from '../views/router';
+import { releasePath, repositoryPath, Router, ruleSetPath } from '../views/router';
 import type { CommitLink } from './pb-commit-link';
 import type { RelativeTime } from './pb-relative-time';
 import type { RepoChip } from './pb-repo-chip';
@@ -119,11 +119,17 @@ test('shows reported evidence, waiting details and completed Rule Sets when pres
   expect(preview.textContent).toContain('Reported');
   expect(preview.querySelector<CommitLink>('pb-commit-link')?.commit).toBe(entry.latest_check!.commit);
   expect(preview.querySelector<RelativeTime>('pb-relative-time')?.value).toBe(entry.latest_check!.received_at);
-  const sets = preview.querySelector<RuleSetChip>('pb-rule-set-chip')!;
-  expect(sets.label).toBe('3 Rule Sets');
-  expect(sets.href).toBe(repositoryPath(entry.repository));
-  expect(sets.description).toBe(completed.find(item => item.repository === entry.repository)!.sets
-    .map(set => set.name).join(', '));
+  const chips = [...preview.querySelectorAll<RuleSetChip>('pb-rule-set-chip')];
+  const sets = completed.find(item => item.repository === entry.repository)!.sets;
+  expect(chips.map(chip => [chip.label, chip.href])).toEqual(
+    sets.map(set => [`${set.name} · v${set.version}`, ruleSetPath(set, set.version)]),
+  );
+  expect(preview.querySelector('pb-rule-set-summary')).toBeNull();
+  for (const chip of chips) {
+    await chip.updateComplete;
+    expect(chip.shadowRoot!.querySelector('a')).not.toBeNull();
+    expect(chip.shadowRoot!.querySelector('pb-tooltip')).toBeNull();
+  }
 
   const { preview: waiting } = await mountChip('widget');
   const report = fixture('widget');

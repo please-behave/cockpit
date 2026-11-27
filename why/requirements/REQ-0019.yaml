@@ -60,9 +60,9 @@ description: >-
   health symbol, and names the full repository and health to assistive
   technology. Hover, keyboard focus and the first touch tap open a preview
   with the full name and the same owner, state, verdict, evidence, release,
-  deployment and completed Rule Set summary as the tile, where applicable.
-  Preview controls are keyboard accessible. The second tap on the chip
-  follows its link, as in REQ-0017.
+  and deployment as the tile, where applicable, plus the direct completed
+  Rule Set links of REQ-0028. Preview controls are keyboard accessible. The
+  second tap on the chip follows its link, as in REQ-0017.
 rationale: >-
   Viewers can identify missing or stale evidence and see the reported check
   verdict for each repository.
