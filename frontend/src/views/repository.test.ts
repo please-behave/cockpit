@@ -97,40 +97,39 @@ test('lists only this repository’s completed sets with links to their bound ve
 test('shows each current target with its release or commit and reported evidence', async () => {
   const { app, root } = await open(repositoryPath(repository));
   const section = root.querySelector('section[aria-labelledby="deployments"]')!;
-  const rows = [...section.querySelectorAll('.deployment')];
+  const table = section.querySelector<DataTable>('pb-data-table')!;
+  await table.updateComplete;
+  const rows = [...table.shadowRoot!.querySelectorAll<HTMLTableRowElement>('tbody tr')];
   expect(rows).toHaveLength(108);
-  const headings = rows.map(row => row.querySelector('h3')?.textContent);
+  const headings = rows.map(row => row.cells[0].textContent?.trim());
   expect(new Set(headings).size).toBe(rows.length);
   expect(headings).toContain('github.com/acme/infrastructure · production');
   expect(headings).toContain('github.com/acme/other-infrastructure · production');
   expect(headings).toContain('github.com/acme/infrastructure · test-102');
   expect(headings.some(heading => heading!.length > 100)).toBe(true);
-  const facts = rows.map(row => row.querySelector('pb-key-value')!.shadowRoot!);
-  expect(new Set(facts.map(list => list.querySelector<StatusPill>('pb-status-pill')?.status)))
+  expect(new Set(rows.map(list => list.querySelector<StatusPill>('pb-status-pill')?.status)))
     .toEqual(new Set(['ERROR', 'release not recorded', 'No evidence', 'PASS']));
-  expect(rows[0].querySelector('h3')?.textContent).toBe('github.com/acme/infrastructure · rollback');
+  expect(headings[0]).toBe('github.com/acme/infrastructure · rollback');
 
-  const missingRelease = facts[1];
-  expect(missingRelease.querySelector('dd')?.textContent).toBe('3.0');
-  expect(missingRelease.querySelector('a, pb-rule-set-chip')).toBeNull();
-  const missingEvidence = facts[2];
-  const commit = missingEvidence.querySelector<Tooltip>('pb-tooltip')!;
+  const missingRelease = rows[1];
+  expect(missingRelease.cells[1].textContent?.trim()).toMatch(/^unrecorded-<img/);
+  expect(missingRelease.cells[1].querySelector('a, img')).toBeNull();
+  expect(missingRelease.querySelector('pb-rule-set-summary')).toHaveProperty('sets', []);
+  const missingEvidence = rows[2];
+  const commit = missingEvidence.cells[1].querySelector<Tooltip>('pb-tooltip')!;
   expect(commit.description).toBe('9'.repeat(40));
   expect(commit.querySelector('code')?.textContent).toBe('9999999');
-  expect(missingEvidence.querySelector('a, pb-rule-set-chip')).toBeNull();
+  expect(missingEvidence.querySelector('pb-rule-set-summary')).toHaveProperty('sets', []);
 
-  const production = facts[headings.indexOf('github.com/acme/infrastructure · production')];
+  const production = rows[headings.indexOf('github.com/acme/infrastructure · production')];
   const version = production.querySelector('a')!;
   expect(version.textContent).toBe('2.0');
   expect(version.getAttribute('href')).toBe(releasePath(repository, '2.0'));
   const time = production.querySelector<RelativeTime>('pb-relative-time')!;
   expect(time.shadowRoot?.querySelector('time')?.dateTime).toBe(time.value);
-  const chips = [...production.querySelectorAll<RuleSetChip>('pb-rule-set-chip')];
-  expect(chips.map(chip => chip.label))
-    .toEqual(['Repository baseline', expect.stringContaining('Security and release readiness')]);
+  const summary = production.querySelector<RuleSetSummary>('pb-rule-set-summary')!;
   const entries = respond('/v0/deployments')!.body as Deployment[];
-  expect(chips.map(chip => chip.href))
-    .toEqual(entries[0].evidence!.completed_rule_sets.map(set => ruleSetPath(set, set.version)));
+  expect(summary.sets).toEqual(entries[0].evidence!.completed_rule_sets);
   version.click();
   await app.updateComplete;
   expect(app.shadowRoot!.querySelector('pb-release')).not.toBeNull();

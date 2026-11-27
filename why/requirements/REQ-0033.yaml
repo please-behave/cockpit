@@ -10,9 +10,9 @@ description: >-
   section lists that repository's releases under REQ-0030 through CON-0011.
   Existing /releases/repository addresses open the same repository page.
   The Deployments section reads all pages of current deployments through
-  CON-0013 filtered by the exact canonical name. It shows one row per target
-  owner and name, using the reference, release link when recorded, receipt
-  time, reported evidence status and linked Rule Set chips of REQ-0034.
+  CON-0013 filtered by the exact canonical name. Its table shows one row per
+  target owner and name, using the reference, release link when recorded, receipt
+  time, reported evidence status and Rule Set summary of REQ-0034.
   Rows needing attention appear first. The section links to the Deployments tab.
   The Attestations section uses CON-0001 for the newest attestation of each
   execution-point combination in that repository, including a row for attestations without
@@ -20,8 +20,8 @@ description: >-
   CON-0003, filtered by the exact canonical name and in ledger order. The rows
   show execution points, the reported time, commit and overall status, and the
   reported time links to the attestation detail. Each section explains when
-  no records exist. Long names wrap within the available width and all
-  sections follow REQ-0004, REQ-0015 and REQ-0016. The attestation tables
+  no records exist. Long names wrap within the available width or show their
+  full value in a tooltip. All sections follow REQ-0004, REQ-0015 and REQ-0016. The attestation tables
   keep the time, commit and status on one line in their scrollable regions.
   The latest combinations table can be sorted by execution points, reported
   time, commit or overall status under REQ-0018. The recent attestations table

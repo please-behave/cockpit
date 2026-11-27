@@ -12,7 +12,7 @@ import { shortName } from '../components/pb-short-name';
 import '../components/pb-status-pill';
 import '../components/pb-time';
 import { CockpitView } from './cockpit-view';
-import { compareEvidence, deploymentList, deploymentListStyles, targetLabel } from './deployment-list';
+import { compareEvidence, deploymentTableStyles, repositoryDeploymentTable, targetLabel } from './deployment-table';
 import { releaseTable } from './releases';
 import { ruleSetPath } from './router';
 
@@ -57,7 +57,7 @@ function attestationRow(summary: Summary) {
 export class RepositoryView extends CockpitView<RepositoryData> {
   static override properties = { repository: { attribute: false } };
 
-  static override styles = [CockpitView.styles as CSSResult, deploymentListStyles, css`
+  static override styles = [CockpitView.styles as CSSResult, deploymentTableStyles, css`
     @layer components {
       .canonical { margin-block: var(--space-2) 0; color: var(--text-muted); }
       section { margin-block-start: var(--space-6); }
@@ -121,7 +121,7 @@ export class RepositoryView extends CockpitView<RepositoryData> {
   }
 
   private currentDeployments(entries: Deployment[]) {
-    return entries.length ? deploymentList(entries, 'target') : html`
+    return entries.length ? repositoryDeploymentTable(entries) : html`
       <pb-empty-state heading="No deployments"
         message="No deployments have been recorded for this repository."></pb-empty-state>`;
   }

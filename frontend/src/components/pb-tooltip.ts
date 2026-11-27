@@ -232,7 +232,7 @@ export class Tooltip extends LitElement {
         event.preventDefault();
         this.tapped = true;
         this.open();
-      } else if (this.trigger instanceof HTMLButtonElement) {
+      } else if (this.trigger instanceof HTMLButtonElement || this.trigger.matches('span[tabindex="0"]')) {
         this.open();
       }
       return;

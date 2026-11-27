@@ -120,6 +120,24 @@ test('keeps a slotted link as the only control with keyboard and touch access', 
   expect(tap()).toBe(true);
 });
 
+test('reveals the full value of truncated text on touch', async () => {
+  const component = new Tooltip();
+  component.externalTrigger = true;
+  component.description = 'Full version';
+  const label = document.createElement('span');
+  label.tabIndex = 0;
+  label.textContent = component.description;
+  component.append(label);
+  document.body.append(component);
+  await component.updateComplete;
+  const tooltip = component.shadowRoot!.querySelector<HTMLElement>('[role="tooltip"]')!;
+  expect(tooltip.hidden).toBe(true);
+  pointer(label, 'click', 'touch');
+  expect(tooltip.hidden).toBe(false);
+  pointer(document.body, 'pointerdown', 'touch');
+  expect(tooltip.hidden).toBe(true);
+});
+
 test('positions above a trigger near the bottom and clamps to the viewport edge', async () => {
   const { component, trigger, tooltip } = await mount();
   const viewport = document.documentElement;

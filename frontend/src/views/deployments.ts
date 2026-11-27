@@ -1,18 +1,16 @@
-import { css, html, nothing, type CSSResult } from 'lit';
-import { repeat } from 'lit/directives/repeat.js';
+import { css, html, type CSSResult } from 'lit';
 import { deployments, type Deployment } from '../api/client';
 import '../components/pb-empty-state';
-import '../components/pb-section';
-import '../components/pb-status-pill';
 import { CockpitView } from './cockpit-view';
 import {
-  compareEvidence, deploymentList, deploymentListStyles, evidenceStatus, statuses, targetKey, targetLabel,
-} from './deployment-list';
+  compareEvidence, deploymentTableStyles, evidenceStatus, groupedDeploymentTable, statuses, targetKey, targetLabel,
+  type DeploymentGroup,
+} from './deployment-table';
 
 type GroupBy = 'target' | 'repository';
 
 function groupDeployments(entries: Deployment[], groupBy: GroupBy) {
-  const groups = new Map<string, { key: string; label: string; rows: Deployment[] }>();
+  const groups = new Map<string, DeploymentGroup>();
   for (const entry of entries) {
     const byTarget = groupBy === 'target';
     const key = byTarget ? targetKey(entry.target) : entry.repository;
@@ -27,7 +25,7 @@ function groupDeployments(entries: Deployment[], groupBy: GroupBy) {
 }
 
 export class DeploymentsView extends CockpitView<Deployment[]> {
-  static override styles = [CockpitView.styles as CSSResult, deploymentListStyles, css`
+  static override styles = [CockpitView.styles as CSSResult, deploymentTableStyles, css`
     @layer components {
       :host { overflow-wrap: anywhere; }
 
@@ -61,9 +59,8 @@ export class DeploymentsView extends CockpitView<Deployment[]> {
         font: inherit;
       }
 
-      section { margin-block-start: var(--space-6); }
-
-      pb-section { margin-block-end: var(--space-2); }
+      pb-data-table { margin-block-start: var(--space-4); }
+      pb-data-table::part(scroll) { max-block-size: 78dvh; }
 
       p { margin: 0; }
 
@@ -142,19 +139,8 @@ export class DeploymentsView extends CockpitView<Deployment[]> {
     return html`
       ${this.controls(entries)}
       <p class="assistive" role="status">${matching.length} matching ${matching.length === 1 ? 'deployment' : 'deployments'}</p>
-      ${groups.length > 0 ? nothing : html`<pb-empty-state heading="No matching deployments"
-        message="Try changing the filters."></pb-empty-state>`}
-      ${repeat(groups, group => group.key, ({ label, rows }, index) => {
-        const status = evidenceStatus(rows[0]);
-        const count = rows.filter(row => evidenceStatus(row) === status).length;
-        return html`<section aria-labelledby=${`deployment-group-${index}`}>
-          <pb-section>
-            <h2 slot="heading" id=${`deployment-group-${index}`}>${label}</h2>
-            <p slot="count"><pb-status-pill .status=${status}></pb-status-pill> ${count} of ${rows.length}</p>
-          </pb-section>
-          ${deploymentList(rows, 'repository')}
-        </section>`;
-      })}
+      ${groups.length > 0 ? groupedDeploymentTable(groups, this.groupBy) : html`
+        <pb-empty-state heading="No matching deployments" message="Try changing the filters."></pb-empty-state>`}
     `;
   }
 }

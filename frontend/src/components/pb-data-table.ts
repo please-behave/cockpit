@@ -75,10 +75,17 @@ export class DataTable<Row extends DataTableRow = DataTableRow> extends LitEleme
         white-space: nowrap;
       }
 
-      .fill a {
+      .fill :is(a, span[tabindex="0"]) {
+        display: inline-block;
+        max-inline-size: 100%;
         overflow: hidden;
         text-overflow: ellipsis;
         vertical-align: top;
+      }
+
+      .fill span[tabindex="0"]:focus-visible {
+        outline: var(--focus-ring);
+        outline-offset: calc(-1 * var(--focus-offset));
       }
 
       .scroll:focus-visible {
@@ -203,7 +210,7 @@ export class DataTable<Row extends DataTableRow = DataTableRow> extends LitEleme
         : html`<td class=${mode ?? nothing} part=${part ?? nothing}>${row.cells[index]}</td>`)}</tr>`,
     );
     return html`
-      <div class="scroll" role="region" aria-labelledby="caption" tabindex="0" @scroll=${this.rememberScroll}>
+      <div class="scroll" part="scroll" role="region" aria-labelledby="caption" tabindex="0" @scroll=${this.rememberScroll}>
         <table>
           <caption id="caption">${this.label}</caption>
           <thead>

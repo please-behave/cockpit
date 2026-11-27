@@ -1,13 +1,15 @@
 // Verifies REQ-0004, REQ-0015, REQ-0016 and REQ-0034.
 import { afterEach, expect, test, vi } from 'vitest';
 import { CockpitApp } from '../components/app';
+import type { DataTable } from '../components/pb-data-table';
+import type { RuleSetSummary } from '../components/pb-rule-set-summary';
 import type { RelativeTime } from '../components/pb-relative-time';
 import type { RuleSetChip } from '../components/pb-rule-set-chip';
 import type { StatusPill } from '../components/pb-status-pill';
 import type { Tooltip } from '../components/pb-tooltip';
 import { respond } from '../../../tools/preview/fixtures.mjs';
 import type { DeploymentsView } from './deployments';
-import { releasePath, repositoryPath } from './router';
+import { releasePath, repositoryPath, ruleSetPath } from './router';
 
 const repository = 'github.com/acme/return-navigation';
 const owner = 'github.com/acme/infrastructure';
@@ -40,57 +42,69 @@ async function open() {
   return { app, view, root: view.shadowRoot! };
 }
 
-function facts(container: ParentNode) {
-  return [...container.querySelectorAll('pb-key-value')].map(list => list.shadowRoot!);
+function table(root: ParentNode) {
+  return root.querySelector<DataTable>('pb-data-table');
 }
 
-function statuses(container: ParentNode) {
-  return facts(container).map(list => list.querySelector<StatusPill>('pb-status-pill')!.status);
+function rows(root: ParentNode) {
+  return [...(table(root)?.shadowRoot?.querySelectorAll<HTMLTableRowElement>('tbody tr:has(td)') ?? [])];
+}
+
+function statuses(root: ParentNode) {
+  return rows(root).map(row => row.querySelector<StatusPill>('pb-status-pill')!.status);
 }
 
 test('shows all pages grouped by target with the worst evidence first', async () => {
   const fetch = mockPreview();
   const { root } = await open();
-  await vi.waitFor(() => expect(root.querySelectorAll('.deployment')).toHaveLength(115));
+  await vi.waitFor(() => expect(rows(root)).toHaveLength(115));
   expect(root.activeElement).toBe(root.querySelector('h1.assistive'));
   expect(root.querySelector('h1')?.textContent).toBe('Deployments');
   expect(fetch.mock.calls.map(([path]) => path)).toEqual([
     '/v0/deployments?limit=100', '/v0/deployments?limit=100&before=16',
   ]);
-  const groups = [...root.querySelectorAll('section')];
+  const grid = table(root)!.shadowRoot!;
+  expect([...grid.querySelectorAll('thead th')].map(cell => cell.textContent?.trim()))
+    .toEqual(['Repository', 'Version or commit', 'Recorded', 'Evidence', 'Completed Rule Sets']);
+  const groups = [...grid.querySelectorAll('tbody')];
   expect(groups.length).toBeGreaterThan(100);
   const group = groups[0];
-  const heading = group.querySelector('pb-section > h2')!;
-  expect(heading.textContent).toBe(owner + ' · production');
-  expect(group.getAttribute('aria-labelledby')).toBe(heading.id);
-  expect(group.querySelector('pb-section pb-status-pill')).toHaveProperty('status', 'ERROR');
-  expect(group.querySelector('pb-section [slot=count]')?.textContent).toContain('1 of 4');
-  expect(statuses(group)).toEqual(['ERROR', 'FAIL', 'No evidence', 'PASS']);
-  expect(groups.some(group => group.querySelector('h2')?.textContent === 'github.com/acme/other-infrastructure · production')).toBe(true);
+  const heading = group.querySelector('th[scope="rowgroup"]')!;
+  expect(heading.textContent).toContain(owner + ' · production');
+  expect(heading.querySelector('pb-status-pill')).toHaveProperty('status', 'ERROR');
+  expect(heading.textContent).toContain('1 of 4');
+  expect([...group.querySelectorAll('td pb-status-pill')].map(pill => (pill as StatusPill).status))
+    .toEqual(['ERROR', 'FAIL', 'No evidence', 'PASS']);
+  expect(groups.some(group => group.querySelector('th')?.textContent?.includes('github.com/acme/other-infrastructure · production'))).toBe(true);
 
-  const rows = [...root.querySelectorAll('.deployment')];
-  expect(rows.some(row => row.querySelector('h3')!.textContent!.length > 100)).toBe(true);
-  expect(facts(root).some(list => list.textContent!.includes('<img'))).toBe(true);
-  expect(root.querySelector('img')).toBeNull();
-  const pass = group.querySelector('.deployment:last-child')!;
-  expect(pass.querySelector('h3 a')?.getAttribute('href')).toBe(repositoryPath(repository));
-  const [passFacts] = facts(pass);
-  expect(passFacts.querySelector('dl a')?.getAttribute('href')).toBe(releasePath(repository, '2.0'));
-  expect([...passFacts.querySelectorAll<RuleSetChip>('pb-rule-set-chip')].map(chip => chip.label))
-    .toEqual(['Repository baseline', expect.stringContaining('Security and release readiness')]);
-  const time = passFacts.querySelector<RelativeTime>('pb-relative-time')!;
+  expect(rows(root).some(row => row.querySelector('th a')!.textContent!.length > 100)).toBe(true);
+  expect(rows(root).some(row => row.cells[1].textContent!.includes('<img'))).toBe(true);
+  expect(grid.querySelector('img')).toBeNull();
+  const pass = group.rows[group.rows.length - 1];
+  expect(pass.cells[0].querySelector('a')?.getAttribute('href')).toBe(repositoryPath(repository));
+  expect(pass.cells[1].querySelector('a')?.getAttribute('href')).toBe(releasePath(repository, '2.0'));
+  const summary = pass.querySelector<RuleSetSummary>('pb-rule-set-summary')!;
+  await summary.updateComplete;
+  expect(summary.shadowRoot?.querySelector('button')?.textContent).toBe('2 Rule Sets');
+  const chips = [...summary.shadowRoot!.querySelectorAll<RuleSetChip>('pb-rule-set-chip')];
+  expect(chips.map(chip => chip.label)).toEqual([
+    expect.stringContaining('Repository baseline'), expect.stringContaining('Security and release readiness'),
+  ]);
+  expect(chips.map(chip => chip.href)).toEqual(summary.sets.map(set => ruleSetPath(set, set.version)));
+  const time = pass.querySelector<RelativeTime>('pb-relative-time')!;
   await time.updateComplete;
   expect(time.shadowRoot?.querySelector('time')?.dateTime).toBe(time.value);
 
-  const commit = facts(root).map(list => list.querySelector<Tooltip>('pb-tooltip')).find(Boolean)!;
+  const commit = grid.querySelector<Tooltip>('pb-tooltip:has(code)')!;
   expect(commit.querySelector('code')?.textContent).toBe(commit.description.slice(0, 7));
-  const missing = facts(root).find(list => list.querySelector('dd')?.textContent === 'v3.0')!;
+  const missing = rows(root).find(row => row.cells[1].textContent?.trim() === 'v3.0')!;
   expect(missing.querySelector('pb-status-pill')).toHaveProperty('status', 'release not recorded');
-  expect(missing.querySelector('dl a, pb-rule-set-chip')).toBeNull();
+  expect(missing.cells[1].querySelector('a')).toBeNull();
+  expect(missing.querySelector('pb-rule-set-summary')).toHaveProperty('sets', []);
   for (const [status, icon] of [
     ['ERROR', 'error'], ['FAIL', 'cross'], ['release not recorded', 'circle'], ['No evidence', 'dash'], ['PASS', 'check'],
   ]) {
-    const pill = facts(root).map(list => list.querySelector<StatusPill>('pb-status-pill')!).find(pill => pill.status === status)!;
+    const pill = [...grid.querySelectorAll<StatusPill>('td pb-status-pill')].find(pill => pill.status === status)!;
     await pill.updateComplete;
     expect(pill.shadowRoot?.textContent).toContain(status);
     expect(pill.shadowRoot?.querySelector('pb-icon')?.getAttribute('name')).toBe(icon);
@@ -111,13 +125,19 @@ test('changes grouping and combines labelled filters without losing focus', asyn
     control.value = value;
     control.dispatchEvent(new Event('change', { bubbles: true }));
     await view.updateComplete;
+    await table(root)?.updateComplete;
     expect(root.activeElement).toBe(control);
     expect(control.value).toBe(value);
   }
 
   await change(selects[0], 'repository');
-  const repositoryGroup = [...root.querySelectorAll('section')].find(group => group.querySelector('h2')?.textContent === repository)!;
-  expect(repositoryGroup.querySelectorAll('.deployment').length).toBeGreaterThan(100);
+  const grid = table(root)!.shadowRoot!;
+  expect(grid.querySelector('thead th')?.textContent?.trim()).toBe('Target');
+  const heading = grid.querySelector(`th[scope="rowgroup"] a[href="${repositoryPath(repository)}"]`)!;
+  expect(heading.textContent).toBe(repository);
+  const repositoryGroup = heading.closest('tbody')!;
+  expect(repositoryGroup.rows.length).toBeGreaterThan(100);
+  expect(repositoryGroup.rows[1].cells[0].textContent?.trim()).toBe(owner + ' · rollback');
   await change(selects[1], production);
   expect(statuses(root)).toEqual(['ERROR', 'FAIL', 'No evidence', 'PASS']);
   await change(selects[2], repository);
@@ -128,7 +148,7 @@ test('changes grouping and combines labelled filters without losing focus', asyn
   expect(root.querySelector('[role="status"]')?.textContent).toBe('0 matching deployments');
   await change(selects[2], '');
   expect(statuses(root)).toEqual(['No evidence']);
-  expect(root.querySelector('pb-section pb-status-pill')).toHaveProperty('status', 'No evidence');
+  expect(table(root)?.shadowRoot?.querySelector('th[scope="rowgroup"] pb-status-pill')).toHaveProperty('status', 'No evidence');
   await change(selects[1], '');
   await change(selects[3], 'release not recorded');
   expect(statuses(root)).toEqual(['release not recorded', 'release not recorded']);
@@ -138,9 +158,9 @@ test('changes grouping and combines labelled filters without losing focus', asyn
 test('follows a recorded version link to its release detail', async () => {
   mockPreview();
   const { app, root } = await open();
-  await vi.waitFor(() => expect(root.querySelector('.deployment')).not.toBeNull());
+  await vi.waitFor(() => expect(rows(root).length).toBeGreaterThan(0));
   const path = releasePath(repository, '2.0');
-  facts(root).flatMap(list => [...list.querySelectorAll<HTMLAnchorElement>('dl a')]).find(link => link.getAttribute('href') === path)!.click();
+  table(root)!.shadowRoot!.querySelector<HTMLAnchorElement>(`a[href="${path}"]`)!.click();
   await app.updateComplete;
   expect(window.location.pathname + window.location.search).toBe(path);
   expect(app.shadowRoot!.querySelector('pb-release')).not.toBeNull();
