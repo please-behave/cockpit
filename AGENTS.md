@@ -23,12 +23,24 @@
 
 ### On-request UI review
 
-An independent review of the interface runs only when someone requests it; it finds what a single change cannot show. The per-issue duty above stays the measurements before and after a change.
+An independent review of the interface runs only when someone requests it. Use the general review by default or the consistency and comprehension review when requested. The per-issue duty above stays the measurements before and after a change.
+
+#### General review
 
 - Scope: take the scope that was named. Without one, review the dashboard, releases, deployments and attestations at 1440 and 320 CSS pixels in the light theme.
 - Procedure: start the fixture preview and open `/preview/review`. Read the measured numbers before looking at images. Judge each view against the [interface principles](https://github.com/please-behave/why/blob/main/brand/interface-principles.md), the question the view answers according to its requirement in `why/requirements/`, hierarchy, density, consistency, states and keyboard focus.
-- Report: list findings ranked by weight, at most about fifteen. Give each finding where it occurs, its evidence marked as measured or as impression, the principle or requirement it touches and a small suggestion. End with what was and was not checked.
-- Edit nothing and create no issues; the review only reports.
+- Aim for at most about fifteen findings.
+
+#### Consistency and comprehension review
+
+- Start with the [open cockpit issues](https://github.com/please-behave/cockpit/issues?q=is%3Aissue+is%3Aopen). For each observation an open issue already covers, name the matching issue instead of reporting the observation again.
+- Start the [fixture preview](README.md#build-and-test) and open `/preview/review`. Read the view manifest at `/preview/review-cases.json` and the sheet's consistency inventory before looking at any image.
+- Go through every manifest view, including detail pages and fixture states. Compare forms, popups and visible formats across views and judge each against the applicable [display forms rules](https://github.com/please-behave/why/blob/main/brand/interface-principles.md#display-forms). Report every uncovered deviation with the relevant inventory entry as evidence. Inspect the view directly for details the inventory does not capture and note any gaps in the evidence.
+- For each view, list what a first-time viewer could not understand, including unexplained terms or abbreviations, unlabeled values and controls whose effect is unstated. Mark each observation as measured or as impression.
+
+#### Report
+
+Rank findings by weight. Give each finding a location, evidence marked as measured or as impression, the principle or requirement it touches and a small suggestion. End with what was and was not checked. Edit nothing and create no issues.
 
 ## GitHub issues
 
