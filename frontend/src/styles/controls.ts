@@ -28,3 +28,30 @@ export const controlStyles = css`
     }
   }
 `;
+
+export const iconControlStyles = css`
+  @layer components {
+    .icon-control {
+      box-sizing: border-box;
+      display: grid;
+      place-items: center;
+      inline-size: var(--icon-control-size);
+      block-size: var(--icon-control-size);
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: var(--surface-raised);
+      color: inherit;
+      cursor: pointer;
+    }
+
+    .icon-control:hover {
+      background: var(--surface-hover);
+    }
+
+    .icon-control:focus-visible {
+      outline: var(--focus-ring);
+      outline-offset: calc(-2 * var(--focus-offset));
+    }
+  }
+`;

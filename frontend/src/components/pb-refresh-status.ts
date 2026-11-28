@@ -1,6 +1,7 @@
 import { css, html, LitElement, svg, type PropertyValues } from 'lit';
 import { keyed } from 'lit/directives/keyed.js';
 import { defaultRefreshInterval, refreshIntervalLabel, refreshIntervals } from '../refresh-interval';
+import { iconControlStyles } from '../styles/controls';
 import { describeTime } from './pb-time';
 import { relativeTime } from './pb-relative-time';
 import './pb-tooltip';
@@ -29,6 +30,8 @@ export class RefreshStatus extends LitElement {
   };
 
   static override styles = css`
+    ${iconControlStyles}
+
     @layer components {
       :host {
         display: inline-flex;
@@ -44,29 +47,11 @@ export class RefreshStatus extends LitElement {
 
       button {
         position: relative;
-        display: grid;
-        place-items: center;
-        inline-size: var(--space-8);
-        aspect-ratio: 1;
-        padding: 0;
-        border: 0;
-        background: var(--surface);
-        color: inherit;
-        cursor: pointer;
-      }
-
-      button:hover {
-        background: var(--surface-hover);
       }
 
       button[aria-disabled='true'] {
         color: var(--text-muted);
         cursor: progress;
-      }
-
-      button:focus-visible {
-        outline: var(--focus-ring);
-        outline-offset: calc(-2 * var(--focus-offset));
       }
 
       svg.icon {
@@ -100,32 +85,24 @@ export class RefreshStatus extends LitElement {
         position: relative;
         display: grid;
         place-items: center;
-        inline-size: var(--target-min-size);
-        block-size: var(--space-8);
-        background: var(--surface);
-      }
-
-      .interval:hover {
-        background: var(--surface-hover);
-      }
-
-      .interval:has(select:focus-visible) {
-        outline: var(--focus-ring);
-        outline-offset: calc(-2 * var(--focus-offset));
       }
 
       .interval svg {
+        position: absolute;
         inline-size: var(--space-3);
         block-size: auto;
         pointer-events: none;
       }
 
-      select {
-        position: absolute;
-        inset: 0;
-        inline-size: 100%;
-        opacity: 0;
-        cursor: pointer;
+      select.icon-control {
+        appearance: none;
+        font: inherit;
+        /* The closed control shows only the indicator, including in forced colors. */
+        text-indent: var(--icon-control-size);
+      }
+
+      option {
+        text-indent: 0;
       }
 
       .busy svg.icon {
@@ -215,7 +192,7 @@ export class RefreshStatus extends LitElement {
         datetime=${this.updatedAt.toISOString()}>${updatedText(this.updatedAt, new Date())}</time></pb-tooltip>
       <span class="controls">
         <pb-tooltip external-trigger description="Refresh">
-          <button type="button" class=${this.busy ? 'busy' : ''} aria-label="Refresh"
+          <button type="button" class=${this.busy ? 'icon-control busy' : 'icon-control'} aria-label="Refresh"
             aria-disabled=${this.busy ? 'true' : 'false'} @click=${this.refresh}>
             ${keyed(this.cycleStart, html`
               <svg class="ring" viewBox="0 0 32 32" aria-hidden="true">
@@ -227,11 +204,11 @@ export class RefreshStatus extends LitElement {
         </pb-tooltip>
         <pb-tooltip external-trigger .description=${`Refresh every ${refreshIntervalLabel(this.interval)}`}>
           <span class="interval">
-            <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 4h8L6 9z"/></svg>
-            <select aria-label="Refresh interval" @change=${this.chooseInterval}>
+            <select class="icon-control" aria-label="Refresh interval" @change=${this.chooseInterval}>
               ${refreshIntervals.map(value => html`
                 <option value=${value} ?selected=${value === this.interval}>${refreshIntervalLabel(value)}</option>`)}
             </select>
+            <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 4h8L6 9z"/></svg>
           </span>
         </pb-tooltip>
       </span>

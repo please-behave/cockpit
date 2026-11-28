@@ -1,4 +1,5 @@
 import { css, html, LitElement, svg } from 'lit';
+import { iconControlStyles } from '../styles/controls';
 import { chooseTheme, effectiveTheme, watchSystemTheme, type Theme } from '../theme';
 import './pb-tooltip';
 
@@ -14,28 +15,9 @@ export class ThemeToggle extends LitElement {
   static override properties = { theme: { state: true } };
 
   static override styles = css`
+    ${iconControlStyles}
+
     @layer components {
-      button {
-        display: grid;
-        place-items: center;
-        inline-size: calc(var(--space-8) + var(--space-3));
-        aspect-ratio: 1;
-        padding: 0;
-        border: 0;
-        background: var(--surface-raised);
-        color: inherit;
-        cursor: pointer;
-      }
-
-      button:hover {
-        background: var(--surface-hover);
-      }
-
-      button:focus-visible {
-        outline: var(--focus-ring);
-        outline-offset: calc(-2 * var(--focus-offset));
-      }
-
       svg {
         inline-size: calc(var(--space-4) + var(--space-1));
         block-size: auto;
@@ -68,7 +50,7 @@ export class ThemeToggle extends LitElement {
     const action = dark ? 'Switch to light theme' : 'Switch to dark theme';
     return html`
       <pb-tooltip external-trigger .description=${action}>
-        <button type="button" aria-label=${action} @click=${this.toggleTheme}>
+        <button class="icon-control" type="button" aria-label=${action} @click=${this.toggleTheme}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             ${dark ? sun : moon}

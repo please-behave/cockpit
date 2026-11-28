@@ -26,6 +26,11 @@ description: >-
   Segments wrap when space is constrained and stay free of underlines in every state.
   A compact toolbar directly below the header reserves a row on every view and
   provides space for view-specific controls and the refresh status of REQ-0020.
+  At narrow widths the header uses tighter spacing and the reserved toolbar
+  row fits the refresh controls without adding an empty row. The theme toggle,
+  refresh button and interval menu share a size and surface treatment, with
+  larger targets for coarse pointers. The interval menu uses a custom indicator
+  and the same visible focus ring as the buttons in both themes and forced colors.
   The current segment uses the page surface and semibold text so it is
   distinguishable beyond color alone. It exposes aria-current="page",
   including on attestation detail, repository release history, release detail
@@ -35,8 +40,9 @@ description: >-
   releases, deployments and rules views is hidden visually but remains exposed
   to assistive technology and receives focus after navigation; detail pages show
   their headline.
-  The theme control and sign-out link appear as
-  separate actions at the end of the header.
+  The theme control and sign-out link appear as separate actions at the end
+  of the header, alongside the dashboard segment when the other segments
+  wrap to the following row.
   Text links in content and tables are underlined. In both themes, link text
   contrasts with the page, raised, hover, badge, and panel surfaces. Primary
   and muted text contrast with hover, badge, and panel surfaces. Badge borders

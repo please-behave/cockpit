@@ -43,6 +43,10 @@ export class CockpitAppShell extends LitElement {
         min-inline-size: 0;
       }
 
+      .sections {
+        display: contents;
+      }
+
       pb-nav-tab {
         flex: 1 0 auto;
         max-inline-size: 100%;
@@ -90,6 +94,46 @@ export class CockpitAppShell extends LitElement {
         padding-inline: var(--space-2);
       }
 
+      @media (max-width: 44rem) {
+        .bar {
+          --nav-padding-inline: var(--space-1);
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          font-size: var(--type-data);
+        }
+
+        nav { flex-wrap: nowrap; }
+        .sections {
+          display: flex;
+          flex: 1 0 auto;
+        }
+
+        .brand {
+          flex-shrink: 1;
+          min-inline-size: 0;
+          font-size: inherit;
+          overflow-wrap: anywhere;
+        }
+      }
+
+      @media (max-width: 34rem) {
+        nav {
+          display: grid;
+          grid-area: 1 / 1 / 3 / -1;
+          grid-template-columns: subgrid;
+        }
+
+        .sections {
+          grid-column: 1 / -1;
+          grid-row: 2;
+          flex-wrap: wrap;
+        }
+        .actions {
+          grid-area: 1 / 2;
+          align-content: center;
+        }
+      }
+
       .sign-out {
         padding: var(--space-1) var(--control-padding-inline);
       }
@@ -119,7 +163,7 @@ export class CockpitAppShell extends LitElement {
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: center;
         column-gap: var(--space-2);
-        min-block-size: var(--space-8);
+        min-block-size: var(--icon-control-size);
       }
 
       .view-controls {
@@ -129,15 +173,6 @@ export class CockpitAppShell extends LitElement {
         color: var(--text-muted);
         font-size: var(--type-meta);
         line-height: var(--line-meta);
-      }
-
-      @media (max-width: 32rem) {
-        .toolbar {
-          grid-template-rows: minmax(var(--target-min-size), auto) minmax(var(--space-8), auto);
-        }
-
-        .view-controls { grid-column: 1 / -1; }
-        pb-refresh-status { grid-column: 2; grid-row: 2; }
       }
 
       main {
@@ -269,18 +304,20 @@ export class CockpitAppShell extends LitElement {
               <img class="logo-dark" src=${logoDark} alt="">
               ${this.navLabel('Please Behave Dashboard')}
             </pb-nav-tab>
-            <pb-nav-tab href="/attestations" .active=${this.currentView === 'history' || this.currentView === 'detail'}>
-              ${this.navLabel('Attestations')}
-            </pb-nav-tab>
-            <pb-nav-tab href="/releases" .active=${['releases', 'repository', 'release'].includes(this.currentView)}>
-              ${this.navLabel('Releases')}
-            </pb-nav-tab>
-            <pb-nav-tab href="/deployments" .active=${this.currentView === 'deployments'}>
-              ${this.navLabel('Deployments')}
-            </pb-nav-tab>
-            <pb-nav-tab href="/rules" .active=${['rules', 'rule', 'rule-set'].includes(this.currentView)}>
-              ${this.navLabel('Rules')}
-            </pb-nav-tab>
+            <div class="sections">
+              <pb-nav-tab href="/attestations" .active=${this.currentView === 'history' || this.currentView === 'detail'}>
+                ${this.navLabel('Attestations')}
+              </pb-nav-tab>
+              <pb-nav-tab href="/releases" .active=${['releases', 'repository', 'release'].includes(this.currentView)}>
+                ${this.navLabel('Releases')}
+              </pb-nav-tab>
+              <pb-nav-tab href="/deployments" .active=${this.currentView === 'deployments'}>
+                ${this.navLabel('Deployments')}
+              </pb-nav-tab>
+              <pb-nav-tab href="/rules" .active=${['rules', 'rule', 'rule-set'].includes(this.currentView)}>
+                ${this.navLabel('Rules')}
+              </pb-nav-tab>
+            </div>
           </nav>
           <div class="actions">
             <pb-theme-toggle></pb-theme-toggle>

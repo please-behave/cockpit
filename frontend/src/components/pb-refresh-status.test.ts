@@ -98,6 +98,18 @@ test('defaults to 5 minutes', async () => {
   expect(select(await mount(new Date())).value).toBe('300000');
 });
 
+// Verifies REQ-0015.
+test('uses the shared icon control focus ring on the interval select itself', async () => {
+  const status = await mount(new Date());
+  const menu = select(status);
+  menu.focus();
+  expect(menu.matches('.icon-control:focus-visible')).toBe(true);
+  expect(status.shadowRoot!.querySelector('button')?.matches('.icon-control')).toBe(true);
+  const css = RefreshStatus.styles.toString();
+  expect(css).toMatch(/\.icon-control:focus-visible\s*{\s*outline: var\(--focus-ring\);/);
+  expect(css).toMatch(/select\.icon-control\s*{\s*appearance: none;/);
+});
+
 // Verifies REQ-0020.
 test('reports a chosen interval, which a native select lets the keyboard operate', async () => {
   const status = await mount(new Date());

@@ -88,6 +88,7 @@
     --control-padding-inline: var(--space-2-5);
     --panel-padding: var(--space-3-5);
     --target-min-size: max(24px, 1.5rem);
+    --icon-control-size: calc(var(--target-min-size) + var(--space-1));
 
     --focus-ring: 0.125rem solid var(--accent-focus);
     --focus-offset: 0.1875rem;
