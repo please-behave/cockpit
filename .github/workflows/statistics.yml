@@ -22,7 +22,7 @@ jobs:
         with:
           install_args: rust python node aqua:boyter/scc aqua:taiki-e/cargo-llvm-cov
           experimental: true
-          version: 2026.11.11
+          version: 2026.11.12
       - name: Build frontend assets
         run: |
           npm --prefix frontend ci --no-audit
