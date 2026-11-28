@@ -21,6 +21,7 @@ export class NavTab extends LitElement {
         justify-content: center;
         gap: var(--space-2);
         min-block-size: var(--target-min-size);
+        min-inline-size: var(--target-min-size);
         box-sizing: border-box;
         padding: var(--space-1) var(--nav-padding-inline, var(--control-padding-inline));
         background: var(--surface-raised);

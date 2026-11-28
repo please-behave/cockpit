@@ -8,8 +8,10 @@ description: >-
   exposes that direction through aria-sort. A row links the relative receipt
   time to the attestation in that column and offers the exact local time in
   a popup. It shows the repository as organization/repository, with the
-  repository segment opening the page of REQ-0033, then the first seven
-  characters of the commit and the overall outcome using REQ-0016.
+  repository segment opening the page of REQ-0033. The repository and
+  overall outcome (REQ-0016) are the first two columns and fit without
+  horizontal scrolling at 320 and 640 CSS pixels. The row also shows the
+  first seven characters of the commit. Cells in each row share a baseline.
   The repository link exposes the canonical value when shortened or clipped.
   A tooltip and assistive technology
   expose the full value of a shortened commit. The commit links to github.com

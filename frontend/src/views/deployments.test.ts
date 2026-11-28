@@ -67,7 +67,7 @@ test('shows all pages grouped by target with the worst evidence first', async ()
   const grid = table(root)!.shadowRoot!;
   expect(grid.querySelector('caption.assistive')?.textContent).toBe('Deployments');
   expect([...grid.querySelectorAll('thead th')].map(cell => cell.textContent?.trim()))
-    .toEqual(['Repository', 'Version or commit', 'Reported', 'Evidence', 'Completed Rule Sets']);
+    .toEqual(['Repository', 'Evidence', 'Version or commit', 'Reported', 'Completed Rule Sets']);
   const groups = [...grid.querySelectorAll('tbody')];
   expect(groups.length).toBeGreaterThan(100);
   const group = groups[0];
@@ -80,11 +80,11 @@ test('shows all pages grouped by target with the worst evidence first', async ()
   expect(groups.some(group => group.querySelector('th')?.textContent?.includes('github.com/acme/other-infrastructure · production'))).toBe(true);
 
   expect(rows(root).some(row => row.querySelector('th .repository-reference')!.textContent!.trim().length > 100)).toBe(true);
-  expect(rows(root).some(row => row.cells[1].textContent!.includes('<img'))).toBe(true);
+  expect(rows(root).some(row => row.cells[2].textContent!.includes('<img'))).toBe(true);
   expect(grid.querySelector('img')).toBeNull();
   const pass = group.rows[group.rows.length - 1];
   expect(pass.cells[0].querySelector('a')?.getAttribute('href')).toBe(repositoryPath(repository));
-  expect(pass.cells[1].querySelector('a')?.getAttribute('href')).toBe(releasePath(repository, '2.0'));
+  expect(pass.cells[2].querySelector('a')?.getAttribute('href')).toBe(releasePath(repository, '2.0'));
   const summary = pass.querySelector<RuleSetSummary>('pb-rule-set-summary')!;
   await summary.updateComplete;
   expect(summary.shadowRoot?.querySelector('button')?.textContent).toBe('2 Rule Sets');
@@ -99,9 +99,9 @@ test('shows all pages grouped by target with the worst evidence first', async ()
 
   const commit = grid.querySelector<Tooltip>('pb-tooltip:has(code)')!;
   expect(commit.querySelector('code')?.textContent).toBe(commit.description.slice(0, 7));
-  const missing = rows(root).find(row => row.cells[1].textContent?.trim() === 'v3.0')!;
+  const missing = rows(root).find(row => row.cells[2].textContent?.trim() === 'v3.0')!;
   expect(missing.querySelector('pb-status-pill')).toHaveProperty('status', 'release not recorded');
-  expect(missing.cells[1].querySelector('a')).toBeNull();
+  expect(missing.cells[2].querySelector('a')).toBeNull();
   expect(missing.querySelector('pb-rule-set-summary')).toHaveProperty('sets', []);
   for (const [status, icon, label] of [
     ['ERROR', 'error', 'Error'], ['FAIL', 'cross', 'Fail'], ['release not recorded', 'circle', 'Release not recorded'],

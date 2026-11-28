@@ -18,9 +18,11 @@ const evidenceColumns: DataTableColumn[] = [
 ];
 
 const overviewColumns: DataTableColumn[] = [
-  { label: 'Repository', mode: 'fill', part: 'repository' },
-  { label: 'Newest version', mode: 'fill', part: 'newest-version' },
-  ...evidenceColumns,
+  { label: 'Repository', mode: 'fill', part: 'identity' },
+  { label: 'Evidence', mode: 'content' },
+  { label: 'Newest version', mode: 'fill', part: 'version' },
+  { label: 'Reported', mode: 'content' },
+  { label: 'Completed Rule Sets', mode: 'content', part: 'completed-sets' },
 ];
 
 const historyColumns: DataTableColumn[] = [
@@ -38,20 +40,15 @@ function releaseRow(entry: ReleaseSummary, overview: boolean) {
     <a data-route href=${releasePath(entry.repository, entry.version)}>${entry.version}</a>
   </pb-tooltip>`;
   const commit = entry.commit.slice(0, 7);
-  const identity = overview ? [
-    repositoryReference(entry.repository),
-    version,
-  ] : [
-    version,
-    html`<pb-tooltip text-value .description=${entry.commit} .visibleText=${commit}><code>${commit}</code></pb-tooltip>`,
-  ];
+  const reported = html`<pb-relative-time .value=${entry.received_at}></pb-relative-time>`;
+  const evidence = html`<pb-status-pill .status=${entry.evidence?.overall ?? 'No evidence'}></pb-status-pill>`;
+  const sets = html`<pb-rule-set-summary .sets=${entry.evidence?.completed_rule_sets ?? []}></pb-rule-set-summary>`;
   return {
     key: overview ? entry.repository : entry.version,
-    cells: [
-      ...identity,
-      html`<pb-relative-time .value=${entry.received_at}></pb-relative-time>`,
-      html`<pb-status-pill .status=${entry.evidence?.overall ?? 'No evidence'}></pb-status-pill>`,
-      html`<pb-rule-set-summary .sets=${entry.evidence?.completed_rule_sets ?? []}></pb-rule-set-summary>`,
+    cells: overview ? [repositoryReference(entry.repository), evidence, version, reported, sets] : [
+      version,
+      html`<pb-tooltip text-value .description=${entry.commit} .visibleText=${commit}><code>${commit}</code></pb-tooltip>`,
+      reported, evidence, sets,
     ],
   };
 }
@@ -71,9 +68,6 @@ export class ReleasesView extends CockpitView<ReleaseSummary[]> {
   static override styles = [CockpitView.styles as CSSResult, css`
     @layer components {
       :host { overflow-anchor: none; }
-
-      pb-data-table::part(repository) { min-inline-size: 16ch; }
-      pb-data-table::part(newest-version) { inline-size: 20%; min-inline-size: 14ch; }
     }
   `];
 

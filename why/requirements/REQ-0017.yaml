@@ -12,7 +12,9 @@ description: >-
   "Repository" field. Repository references in dashboard widgets and
   evidence views show organization/repository on one line, linking the
   repository segment and exposing the canonical reference when shortened
-  or clipped. Its rules table uses the labels defined in REQ-0010.
+  or clipped. Where space is constrained, the organization is truncated
+  before the repository segment. The attestation rules table uses the labels
+  defined in REQ-0010.
 rationale: >-
   Viewers recognize long names quickly without losing the exact reported
   value.

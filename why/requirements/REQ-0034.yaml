@@ -19,13 +19,18 @@ description: >-
   time in an accessible popup. Evidence uses the outcome wording of REQ-0016,
   including "No evidence" for a known commit without evidence, or
   "Release not recorded" for an unresolved version, each with text and an icon.
-  A Rule Set summary shows the number of completed Rule Sets and opens a preview
-  with a linked "Name · major.minor" chip for each set's bound version.
+  The row identity and evidence are the first two columns and fit without
+  horizontal scrolling at 320 and 640 CSS pixels. Cells in each row share a
+  baseline. A Rule Set summary shows the number of completed Rule Sets
+  and opens a preview with a linked "Name · major.minor" chip for each set's
+  bound version.
   Viewers can group by target (the default) or repository and combine filters
   for target, repository and evidence status. A status line reports the number
   of matching deployments. Group header
-  rows show the worst visible status and how many of the deployments in the
-  group have that status, as "N of M deployments". Reported errors,
+  rows show the worst visible status and its count as "N of M deployments"
+  before the group name on one line. The group name truncates as needed and
+  exposes its full value in a popup. On narrow screens the count shows
+  "N of M" visually and retains the unit for assistive technology. Reported errors,
   failures and entries without evidence appear before passing entries.
   The view follows REQ-0004, REQ-0015 and REQ-0016.
 rationale: >-

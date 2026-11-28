@@ -70,7 +70,7 @@ async function tableRoot(view: HistoryView) {
 }
 
 const hrefs = (view: HistoryView) => [...view.shadowRoot!.querySelectorAll('pb-data-table')]
-  .flatMap(table => [...table.shadowRoot!.querySelectorAll<RelativeTime>('tbody td:first-child pb-relative-time')])
+  .flatMap(table => [...table.shadowRoot!.querySelectorAll<RelativeTime>('tbody td pb-relative-time')])
   .map(time => time.shadowRoot?.querySelector('a[data-route]')?.getAttribute('href'));
 
 async function rowCount(view: HistoryView) {
@@ -114,8 +114,8 @@ test('shows one row per attestation with its columns, links and tooltips', async
   const root = await tableRoot(view);
   expect(root.querySelector('caption.assistive')?.textContent).toBe('Attestations');
   expect([...root.querySelectorAll('thead th')].map(cell => cell.textContent?.trim()))
-    .toEqual(['Reported', 'Repository', 'Commit', 'Overall']);
-  expect([...root.querySelectorAll('thead th')].map(cell => cell.className)).toEqual(['content', 'fill', 'content', 'content']);
+    .toEqual(['Repository', 'Overall', 'Reported', 'Commit']);
+  expect([...root.querySelectorAll('thead th')].map(cell => cell.className)).toEqual(['fill', 'content', 'content', 'content']);
 
   const [first, second] = [...root.querySelectorAll('tbody tr')];
   const time = first.querySelector<RelativeTime>('pb-relative-time')!;

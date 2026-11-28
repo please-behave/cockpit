@@ -51,8 +51,9 @@ Open `/preview/repository-map` to exercise the repository map widget on its own.
 Open `/preview/review` to see every fixture view in light and dark at widths of
 1440, 1024, 640 and 320 CSS pixels. The measurements table reports how many
 entries fit in the initial 900-pixel viewport, header and toolbar heights,
-how many rendered entries have wrapped text, and page-level horizontal
-overflow. Each view lists the entries it counts. The frames scroll independently,
+how many rendered entries have wrapped text, and the largest horizontal scroll
+distance in the page or any nested scroll region. Each view lists the entries
+it counts. The frames scroll independently,
 and each row of frames can be scrolled horizontally. The 640-pixel width
 represents 200% zoom in a 1280-pixel window. Compare in the same browser with
 the same settings and fixture data.

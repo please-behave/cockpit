@@ -59,6 +59,7 @@ export class DataTable<Row extends DataTableRow = DataTableRow> extends LitEleme
       .scroll {
         /* Keep visually hidden cell labels inside the scrolling region. */
         position: relative;
+        container-type: inline-size;
         overflow-x: auto;
         overflow-y: hidden;
       }
@@ -81,15 +82,61 @@ export class DataTable<Row extends DataTableRow = DataTableRow> extends LitEleme
         white-space: nowrap;
       }
 
-      .fill :is(a, span[tabindex="0"]) {
+      /* Clipping the label preserves its inline baseline in the table row. */
+      .fill :is(a:not(.repository-name), span[tabindex="0"]) {
         display: inline-block;
         max-inline-size: 100%;
-        overflow: hidden;
+        overflow: clip;
         text-overflow: ellipsis;
-        vertical-align: top;
       }
 
-      .fill pb-tooltip[text-value]:not([external-trigger]) { vertical-align: top; }
+      [part="identity"] { min-inline-size: 16ch; }
+      [part="version"] { inline-size: 20%; min-inline-size: 14ch; }
+
+      [part="group-heading"]:has(.group-summary) {
+        position: sticky;
+        inset-inline-start: var(--control-padding-inline);
+        inline-size: calc(100cqi - 2 * var(--control-padding-inline));
+      }
+
+      .group-summary {
+        display: flex;
+        align-items: baseline;
+        gap: var(--space-1);
+        white-space: nowrap;
+      }
+
+      .group-summary > pb-tooltip { min-inline-size: 0; }
+      .group-count { flex: none; }
+
+      @container (max-width: 44rem) {
+        table:has([part="identity"]) { --control-padding-inline: calc(1.5 * var(--space-1)); }
+        [part="identity"] { min-inline-size: 14ch; }
+        [part="version"] {
+          inline-size: auto;
+          min-inline-size: 12ch;
+        }
+
+        thead :is([part="version"], [part="completed-sets"]) {
+          overflow-wrap: normal;
+          white-space: normal;
+        }
+      }
+
+      @container (max-width: 27rem) {
+        [part="identity"] {
+          inline-size: var(--narrow-identity-width, 13ch);
+          min-inline-size: var(--narrow-identity-width, 13ch);
+        }
+
+        .group-unit {
+          position: absolute;
+          inline-size: 1px;
+          block-size: 1px;
+          overflow: hidden;
+          clip-path: inset(50%);
+        }
+      }
 
       .fill span[tabindex="0"]:focus-visible {
         outline: var(--focus-ring);
@@ -112,7 +159,7 @@ export class DataTable<Row extends DataTableRow = DataTableRow> extends LitEleme
       caption, th, td {
         padding: var(--cell-padding-block) var(--control-padding-inline);
         text-align: start;
-        vertical-align: top;
+        vertical-align: baseline;
       }
 
       caption {

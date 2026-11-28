@@ -6,8 +6,11 @@ description: >-
   release. The visually hidden Releases caption names both the table and its
   scroll region for assistive technology. Each row shows the repository, its
   newest recorded version, the ledger receipt time labeled "Reported", the evidence
-  status and the completed Rule Set summary. Repositories with no evidence or a FAIL or ERROR outcome appear
-  first. Within each group, the initial order is by repository name. The
+  status and the completed Rule Set summary. Repository and evidence are
+  the first two columns and fit without horizontal scrolling at 320 and
+  640 CSS pixels. Cells in each row share a baseline. Repositories with no
+  evidence or a FAIL or ERROR outcome appear first. Within each group, the
+  initial order is by repository name. The
   repository name opens the repository page of REQ-0033, which shows a release
   history table in descending ledger receipt order. Each version opens the
   release detail page of REQ-0032. History rows show the version, the first

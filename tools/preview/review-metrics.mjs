@@ -78,6 +78,18 @@ function wraps(entry, styleFor) {
   return [...lines.values()].some(spansLines);
 }
 
+/** Largest horizontal scroll distance in the page or any nested scroll region. */
+function horizontalOverflow(document, styleFor) {
+  const page = document.documentElement;
+  let overflow = Math.max(0, page.scrollWidth - page.clientWidth);
+  for (const element of queryDeep(document.body, '*')) {
+    if (!element.clientWidth) continue;
+    const excess = element.scrollWidth - element.clientWidth;
+    if (excess > overflow && ['auto', 'scroll'].includes(styleFor(element).overflowX)) overflow = excess;
+  }
+  return overflow;
+}
+
 export function measure(document, entries) {
   const page = document.documentElement;
   const shell = queryDeep(document, 'pb-app-shell')[0]?.shadowRoot;
@@ -97,6 +109,6 @@ export function measure(document, entries) {
     header: height('header'),
     toolbar: height('.toolbar'),
     wrapped: rendered.filter(entry => wraps(entry, styleFor)).length,
-    overflow: Math.max(0, page.scrollWidth - page.clientWidth),
+    overflow: horizontalOverflow(document, styleFor),
   };
 }

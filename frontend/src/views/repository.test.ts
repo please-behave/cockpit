@@ -114,11 +114,11 @@ test('shows each current target with its release or commit and reported evidence
   expect(headings[0]).toBe('github.com/acme/infrastructure · rollback');
 
   const missingRelease = rows[1];
-  expect(missingRelease.cells[1].textContent?.trim()).toMatch(/^unrecorded-<img/);
-  expect(missingRelease.cells[1].querySelector('a, img')).toBeNull();
+  expect(missingRelease.cells[2].textContent?.trim()).toMatch(/^unrecorded-<img/);
+  expect(missingRelease.cells[2].querySelector('a, img')).toBeNull();
   expect(missingRelease.querySelector('pb-rule-set-summary')).toHaveProperty('sets', []);
   const missingEvidence = rows[2];
-  const commit = missingEvidence.cells[1].querySelector<Tooltip>('pb-tooltip')!;
+  const commit = missingEvidence.cells[2].querySelector<Tooltip>('pb-tooltip')!;
   expect(commit.description).toBe('9'.repeat(40));
   expect(commit.querySelector('code')?.textContent).toBe('9999999');
   expect(missingEvidence.querySelector('pb-rule-set-summary')).toHaveProperty('sets', []);

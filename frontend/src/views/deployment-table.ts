@@ -32,15 +32,15 @@ export function compareEvidence(a: Deployment, b: Deployment) {
 type Identity = 'repository' | 'target';
 
 const facts: DataTableColumn[] = [
-  { label: 'Version or commit', mode: 'fill', part: 'deployment-reference' },
-  { label: 'Reported', mode: 'content' },
   { label: 'Evidence', mode: 'content' },
-  { label: 'Completed Rule Sets', mode: 'content' },
+  { label: 'Version or commit', mode: 'fill', part: 'version' },
+  { label: 'Reported', mode: 'content' },
+  { label: 'Completed Rule Sets', mode: 'content', part: 'completed-sets' },
 ];
 
 const columns: Record<Identity, DataTableColumn[]> = {
-  repository: [{ label: 'Repository', mode: 'fill', part: 'deployment-identity' }, ...facts],
-  target: [{ label: 'Target', mode: 'fill', part: 'deployment-identity' }, ...facts],
+  repository: [{ label: 'Repository', mode: 'fill', part: 'identity' }, ...facts],
+  target: [{ label: 'Target', mode: 'fill', part: 'identity' }, ...facts],
 };
 
 function textWithPreview(value: string) {
@@ -67,9 +67,9 @@ function deploymentRow(entry: Deployment, identity: Identity, key: string = entr
     key,
     cells: [
       identity === 'target' ? textWithPreview(targetLabel(entry.target)) : repositoryReference(entry.repository),
+      html`<pb-status-pill .status=${evidenceStatus(entry)}></pb-status-pill>`,
       deploymentReference(entry),
       html`<pb-relative-time .value=${entry.received_at}></pb-relative-time>`,
-      html`<pb-status-pill .status=${evidenceStatus(entry)}></pb-status-pill>`,
       html`<pb-rule-set-summary .sets=${entry.evidence?.completed_rule_sets ?? []}></pb-rule-set-summary>`,
     ],
   };
@@ -84,10 +84,15 @@ export function groupedDeploymentTable(groups: DeploymentGroup[], groupBy: Ident
     const count = rows.filter(row => evidenceStatus(row) === status).length;
     const name = groupBy === 'repository'
       ? repositoryReference(label)
-      : label;
+      : textWithPreview(label);
     return {
       key,
-      heading: html`${name} · <pb-status-pill .status=${status}></pb-status-pill> · ${count} of ${rows.length} ${rows.length === 1 ? 'deployment' : 'deployments'}`,
+      heading: html`<span class="group-summary">
+        <pb-status-pill .status=${status}></pb-status-pill> ·
+        <span class="group-count">${count} of ${rows.length} <span
+          class="group-unit">${rows.length === 1 ? 'deployment' : 'deployments'}</span></span> ·
+        ${name}
+      </span>`,
       rows: rows.map(entry => deploymentRow(entry, identity,
         identity === 'target' ? targetKey(entry.target) : entry.repository)),
     };
@@ -103,7 +108,7 @@ export function repositoryDeploymentTable(entries: Deployment[]) {
 
 export const deploymentTableStyles = css`
   @layer components {
-    pb-data-table::part(deployment-identity) { min-inline-size: 16ch; }
-    pb-data-table::part(deployment-reference) { inline-size: 20%; min-inline-size: 14ch; }
+    /* Leave room for the longest outcome, “Release not recorded”. */
+    pb-data-table { --narrow-identity-width: clamp(8ch, 100cqi - 11rem, 13ch); }
   }
 `;

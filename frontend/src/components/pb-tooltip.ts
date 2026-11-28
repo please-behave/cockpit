@@ -10,6 +10,7 @@ export class Tooltip extends LitElement {
     hint: { type: Boolean },
     textValue: { type: Boolean, attribute: 'text-value', reflect: true },
     visibleText: { attribute: false },
+    clippingSelector: { type: String, attribute: 'clipping-selector' },
     externalTrigger: { type: Boolean, attribute: 'external-trigger', reflect: true },
     interactive: { type: Boolean },
   };
@@ -47,9 +48,8 @@ export class Tooltip extends LitElement {
       .value {
         display: inline-block;
         max-inline-size: 100%;
-        overflow: hidden;
+        overflow: clip;
         text-overflow: ellipsis;
-        vertical-align: top;
       }
 
       button:focus-visible, .value:focus-visible {
@@ -133,13 +133,15 @@ export class Tooltip extends LitElement {
   declare hint: boolean;
   declare textValue: boolean;
   declare visibleText?: string;
+  /** An adjacent part of the label, selected within the tooltip’s parent. */
+  declare clippingSelector?: string;
   declare externalTrigger: boolean;
   declare interactive: boolean;
 
   private static observer?: ResizeObserver;
   private static observed = new WeakMap<Element, Tooltip>();
   private static pending = new Set<Tooltip>();
-  private observedTrigger?: HTMLElement;
+  private observedTargets: HTMLElement[] = [];
   private detailsAvailable = false;
   private timer?: ReturnType<typeof setTimeout>;
   private listeners?: AbortController;
@@ -199,28 +201,37 @@ export class Tooltip extends LitElement {
     return this.visibleText !== undefined && this.visibleText !== this.description;
   }
 
+  private get clippingTargets() {
+    const adjacent = this.clippingSelector ? this.parentElement?.querySelector<HTMLElement>(this.clippingSelector) : null;
+    return [this.trigger, adjacent].filter((target): target is HTMLElement => Boolean(target));
+  }
+
   private observeTrigger = () => {
     if (!this.isConnected || !this.textValue) return;
-    const target = this.shortened ? undefined : this.trigger;
-    if (target !== this.observedTrigger) {
+    const targets = this.shortened ? [] : this.clippingTargets;
+    if (targets.length !== this.observedTargets.length ||
+        targets.some((target, index) => target !== this.observedTargets[index])) {
       this.unobserveTrigger();
-      if (target && typeof ResizeObserver !== 'undefined') {
+      if (targets.length && typeof ResizeObserver !== 'undefined') {
         Tooltip.observer ??= new ResizeObserver(entries => {
           for (const { target } of entries) Tooltip.observed.get(target)?.queueMeasurement();
         });
-        this.observedTrigger = target;
-        Tooltip.observed.set(target, this);
-        Tooltip.observer.observe(target);
+        this.observedTargets = targets;
+        for (const target of targets) {
+          Tooltip.observed.set(target, this);
+          Tooltip.observer.observe(target);
+        }
       }
     }
     this.queueMeasurement();
   };
 
   private unobserveTrigger() {
-    if (!this.observedTrigger) return;
-    Tooltip.observer?.unobserve(this.observedTrigger);
-    Tooltip.observed.delete(this.observedTrigger);
-    this.observedTrigger = undefined;
+    for (const target of this.observedTargets) {
+      Tooltip.observer?.unobserve(target);
+      Tooltip.observed.delete(target);
+    }
+    this.observedTargets = [];
   }
 
   private queueMeasurement() {
@@ -241,9 +252,8 @@ export class Tooltip extends LitElement {
   }
 
   private hasHiddenText() {
-    const trigger = this.trigger;
-    return Boolean(this.description && trigger &&
-      (this.shortened || trigger.scrollWidth > trigger.clientWidth));
+    return Boolean(this.description && this.trigger && (this.shortened ||
+      this.clippingTargets.some(target => target.scrollWidth > target.clientWidth)));
   }
 
   private measure() {

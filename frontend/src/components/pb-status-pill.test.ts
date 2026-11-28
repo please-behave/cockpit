@@ -53,3 +53,10 @@ test('uses a pointer cursor and prevents label text selection', () => {
   const styles = StatusPill.styles.cssText;
   expect(styles).toMatch(/\.pill \{[^}]*cursor: pointer;[^}]*user-select: none;/);
 });
+
+// Verifies REQ-0016.
+test('keeps the outcome and icon together beside a long identity', () => {
+  const styles = StatusPill.styles.cssText;
+  expect(styles).toMatch(/:host\s*{\s*flex-shrink: 0;/);
+  expect(styles).toMatch(/\.pill\s*{[^}]*white-space: nowrap;/);
+});

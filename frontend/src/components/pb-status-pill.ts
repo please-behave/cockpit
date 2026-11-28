@@ -29,6 +29,8 @@ export class StatusPill extends LitElement {
 
   static override styles = css`
     @layer components {
+      :host { flex-shrink: 0; }
+
       .pill {
         cursor: pointer;
         user-select: none;
@@ -41,7 +43,7 @@ export class StatusPill extends LitElement {
         gap: var(--space-1);
         color: var(--text-muted);
         font-weight: var(--weight-semibold);
-        overflow-wrap: anywhere;
+        white-space: nowrap;
       }
 
       .passed { color: var(--status-passed); }

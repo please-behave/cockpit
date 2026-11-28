@@ -23,7 +23,12 @@ description: >-
   "Please Behave Dashboard", "Attestations", "Releases", "Deployments", and
   "Rules" on the raised surface. At desktop widths and default zoom the header
   is at most 3rem high. The logo is at least 32 CSS pixels high.
-  Segments wrap when space is constrained and stay free of underlines in every state.
+  The segments and header actions stay on one row at 320 CSS pixels and above.
+  At narrow widths the dashboard segment shows only the logo symbol with its
+  full accessible name. At the narrowest widths the sign-out link uses a
+  symbol with the accessible name "Sign out". At the narrowest widths with
+  coarse pointers the Attestations segment uses its symbol and keeps its
+  accessible name. Navigation segments stay free of underlines in every state.
   A compact toolbar directly below the header reserves a row on every view and
   provides space for view-specific controls and the refresh status of REQ-0020.
   At narrow widths the header uses tighter spacing and the reserved toolbar
@@ -41,8 +46,7 @@ description: >-
   to assistive technology and receives focus after navigation; detail pages show
   their headline.
   The theme control and sign-out link appear as separate actions at the end
-  of the header, alongside the dashboard segment when the other segments
-  wrap to the following row.
+  of the header.
   Text links in content and tables are underlined. In both themes, link text
   contrasts with the page, raised, hover, badge, and panel surfaces. Primary
   and muted text contrast with hover, badge, and panel surfaces. Badge borders

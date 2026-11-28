@@ -77,7 +77,7 @@ test('distinguishes a second line from mixed font sizes and zero-width fragments
   expect(spansLines([])).toBe(false);
 });
 
-test('measures through shadow roots and accounts for nested vertical clipping', () => {
+test('measures nested scroll overflow through shadow roots and accounts for vertical clipping', () => {
   const page = document.implementation.createHTMLDocument();
   const root = page.createElement('div');
   const shadow = root.attachShadow({ mode: 'open' });
@@ -89,7 +89,9 @@ test('measures through shadow roots and accounts for nested vertical clipping', 
   scroll.append(first, second);
   first.textContent = 'Wrapped text';
   second.textContent = 'Clipped text';
-  scroll.style.overflowY = 'auto';
+  const truncated = page.createElement('div');
+  shadow.append(truncated);
+  Object.defineProperties(truncated, { clientWidth: { value: 20 }, scrollWidth: { value: 1000 } });
   Object.defineProperties(page.documentElement, {
     clientHeight: { value: 900 },
     clientWidth: { value: 320 },
@@ -98,6 +100,8 @@ test('measures through shadow roots and accounts for nested vertical clipping', 
   Object.defineProperties(scroll, {
     clientTop: { value: 2 },
     clientHeight: { value: 50 },
+    clientWidth: { value: 320 },
+    scrollWidth: { value: 610 },
   });
   Object.defineProperty(page, 'defaultView', { value: window });
   vi.spyOn(scroll, 'getBoundingClientRect').mockReturnValue(rect(20, 75));
@@ -106,6 +110,7 @@ test('measures through shadow roots and accounts for nested vertical clipping', 
   vi.spyOn(window, 'getComputedStyle').mockImplementation(element => ({
     display: 'block', visibility: 'visible', position: 'static',
     overflowY: element === scroll ? 'auto' : 'visible',
+    overflowX: element === scroll ? 'auto' : element === truncated ? 'hidden' : 'visible',
   }) as CSSStyleDeclaration);
   vi.spyOn(page, 'createRange').mockImplementation(() => {
     let text: Node;
@@ -119,8 +124,10 @@ test('measures through shadow roots and accounts for nested vertical clipping', 
     const entries = queryDeep(root, 'div > div');
     expect(entries).toEqual([first, second]);
     expect(measure(page, entries)).toEqual({
-      visible: 1, header: 0, toolbar: 0, wrapped: 1, overflow: 4,
+      visible: 1, header: 0, toolbar: 0, wrapped: 1, overflow: 290,
     });
+    scroll.remove();
+    expect(measure(page, []).overflow).toBe(4);
   } finally {
     vi.restoreAllMocks();
   }

@@ -13,10 +13,10 @@ import { CockpitView } from './cockpit-view';
 const pageSize = 100;
 
 const columns: DataTableColumn[] = [
-  { label: 'Reported', mode: 'content', sorted: 'descending' },
-  { label: 'Repository', mode: 'fill', part: 'repository' },
-  { label: 'Commit', mode: 'content' },
+  { label: 'Repository', mode: 'fill', part: 'identity' },
   { label: 'Overall', mode: 'content' },
+  { label: 'Reported', mode: 'content', sorted: 'descending' },
+  { label: 'Commit', mode: 'content' },
 ];
 
 function withoutDuplicates(summaries: readonly Summary[], known = new Set<string>()): Summary[] {
@@ -39,8 +39,6 @@ export class HistoryView extends CockpitView<Summary[]> {
     @layer components {
       /* Prepending refreshed rows keeps the page at the same scroll offset. */
       :host { overflow-anchor: none; }
-
-      pb-data-table::part(repository) { min-inline-size: 16ch; }
 
       .sentinel {
         block-size: 1px;
@@ -182,11 +180,11 @@ export class HistoryView extends CockpitView<Summary[]> {
     const rows = this.loaded.map(summary => ({
       key: summary.id,
       cells: [
+        repositoryReference(summary.repository),
+        html`<pb-status-pill .status=${summary.overall}></pb-status-pill>`,
         html`<pb-relative-time .href=${`/attestations/${encodeURIComponent(summary.id)}`}
           .value=${summary.received_at}></pb-relative-time>`,
-        repositoryReference(summary.repository),
         html`<pb-commit-link .repository=${summary.repository} .commit=${summary.commit}></pb-commit-link>`,
-        html`<pb-status-pill .status=${summary.overall}></pb-status-pill>`,
       ],
     }));
     const count = `${this.loaded.length} ${this.loaded.length === 1 ? 'attestation' : 'attestations'}`;

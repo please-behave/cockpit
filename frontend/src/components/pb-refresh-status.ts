@@ -71,7 +71,6 @@ export class RefreshStatus extends LitElement {
       .ring circle {
         fill: none;
         stroke: var(--accent-fill);
-        stroke-width: 2;
         stroke-dasharray: 100;
         stroke-dashoffset: 100;
         animation: fill var(--ring-duration, 0s) linear var(--ring-delay, 0s) 1 forwards;
@@ -196,7 +195,7 @@ export class RefreshStatus extends LitElement {
             aria-disabled=${this.busy ? 'true' : 'false'} @click=${this.refresh}>
             ${keyed(this.cycleStart, html`
               <svg class="ring" viewBox="0 0 32 32" aria-hidden="true">
-                <circle cx="16" cy="16" r="15" pathLength="100"/>
+                <circle cx="16" cy="16" r="11" stroke-width="2" pathLength="100"/>
               </svg>`)}
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${refreshIcon}</svg>

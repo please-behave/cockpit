@@ -45,11 +45,11 @@ async function valueIn(template: ReturnType<typeof html>, column: number) {
 
 test.each([
   ['release repository', releaseTable([release], 'Releases'), 0, repository],
-  ['release version', releaseTable([release], 'Releases'), 1, release.version],
+  ['release version', releaseTable([release], 'Releases'), 2, release.version],
   ['release history version', releaseTable([release], 'Release history'), 0, release.version],
   ['deployment repository', groupedDeploymentTable([{ key: 'production', label: 'production', rows: [deployment] }], 'target'), 0, repository],
-  ['deployment version link', repositoryDeploymentTable([deployment]), 1, release.version],
-  ['unrecorded deployment version', repositoryDeploymentTable([{ ...deployment, state: 'release_not_recorded', commit: null }]), 1, release.version],
+  ['deployment version link', repositoryDeploymentTable([deployment]), 2, release.version],
+  ['unrecorded deployment version', repositoryDeploymentTable([{ ...deployment, state: 'release_not_recorded', commit: null }]), 2, release.version],
   ['deployment target', repositoryDeploymentTable([deployment]), 0, 'github.com/acme/infra · production'],
 ] as const)('%s reveals the full text only while clipped', async (_name, template, column, full) => {
   vi.stubGlobal('ResizeObserver', class {
@@ -88,17 +88,30 @@ test.each([
 });
 
 test.each([
-  ['release history', (commit: string) => releaseTable([{ ...release, commit }], 'Release history')],
-  ['deployment', (commit: string) => repositoryDeploymentTable([{ ...deployment, version: null, reported_commit: commit, commit }])],
-] as const)('%s shows a commit popup only if characters are omitted', async (_name, table) => {
-  const shortened = await valueIn(table(fullCommit), 1);
+  ['release history', 1, (commit: string) => releaseTable([{ ...release, commit }], 'Release history')],
+  ['deployment', 2, (commit: string) => repositoryDeploymentTable([{ ...deployment, version: null, reported_commit: commit, commit }])],
+] as const)('%s shows a commit popup only if characters are omitted', async (_name, column, table) => {
+  const shortened = await valueIn(table(fullCommit), column);
   expect(shortened.trigger.getAttribute('aria-describedby')).toBe(shortened.popup.id);
   shortened.trigger.focus();
   expect(shortened.popup.hidden).toBe(false);
   expect(shortened.popup.textContent?.trim()).toBe(fullCommit);
 
-  const complete = await valueIn(table(shortCommit), 1);
+  const complete = await valueIn(table(shortCommit), column);
   expect(complete.trigger.tabIndex).toBe(-1);
   expect(complete.trigger.getAttribute('aria-describedby')).toBeNull();
   expect(complete.popup.hidden).toBe(true);
+});
+
+test('shows the full repository when only the organization is clipped', async () => {
+  const { tooltip, trigger, popup } = await valueIn(releaseTable([release], 'Releases'), 0);
+  const owner = tooltip.parentElement!.querySelector('.repository-owner')!;
+  vi.spyOn(trigger, 'clientWidth', 'get').mockReturnValue(50);
+  vi.spyOn(trigger, 'scrollWidth', 'get').mockReturnValue(50);
+  vi.spyOn(owner, 'clientWidth', 'get').mockReturnValue(12);
+  vi.spyOn(owner, 'scrollWidth', 'get').mockReturnValue(30);
+
+  trigger.focus();
+  expect(popup.hidden).toBe(false);
+  expect(popup.textContent?.trim()).toBe(repository);
 });

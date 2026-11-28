@@ -20,6 +20,7 @@ description: >-
   value only when the displayed text is shortened or clipped. The shared
   tooltip checks clipping when the value renders and when its size changes.
   A plain text value becomes focusable only while its popup is available.
+  The outcome symbol and label stay together on one line at every width.
 rationale: >-
   Viewers can read reported outcomes regardless of color perception and can
   recognize values introduced by newer producers.

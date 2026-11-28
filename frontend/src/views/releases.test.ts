@@ -54,7 +54,7 @@ test('lists the latest releases across pages with attention first and escapes st
   await table.updateComplete;
   expect(table.shadowRoot!.querySelector('caption.assistive')?.textContent).toBe('Releases');
   expect([...table.shadowRoot!.querySelectorAll('thead th')].map(cell => cell.textContent?.trim()))
-    .toEqual(['Repository', 'Newest version', 'Reported', 'Evidence', 'Completed Rule Sets']);
+    .toEqual(['Repository', 'Evidence', 'Newest version', 'Reported', 'Completed Rule Sets']);
   const rows = [...table.shadowRoot!.querySelectorAll('tbody tr')];
   expect(rows).toHaveLength(110);
   const names = rows.map(row => row.querySelector('th a')!.getAttribute('aria-label')!);

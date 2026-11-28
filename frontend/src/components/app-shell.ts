@@ -5,6 +5,7 @@ import { controlStyles } from '../styles/controls';
 import { linkStyles } from '../styles/links';
 import type { RefreshState } from '../views/cockpit-view';
 import type { Route } from '../views/router';
+import './pb-icon';
 import './pb-nav-tab';
 import './pb-refresh-status';
 import './pb-theme-toggle';
@@ -35,7 +36,7 @@ export class CockpitAppShell extends LitElement {
 
       .bar, nav, .actions {
         display: flex;
-        flex-wrap: wrap;
+        white-space: nowrap;
       }
 
       nav {
@@ -47,10 +48,7 @@ export class CockpitAppShell extends LitElement {
         display: contents;
       }
 
-      pb-nav-tab {
-        flex: 1 0 auto;
-        max-inline-size: 100%;
-      }
+      pb-nav-tab { flex: 1 0 auto; }
 
       .tab-label {
         display: grid;
@@ -94,48 +92,57 @@ export class CockpitAppShell extends LitElement {
         padding-inline: var(--space-2);
       }
 
-      @media (max-width: 44rem) {
-        .bar {
-          --nav-padding-inline: var(--space-1);
-          display: grid;
-          grid-template-columns: minmax(0, 1fr) auto;
-          font-size: var(--type-data);
-        }
+      .sign-out {
+        box-sizing: border-box;
+        min-block-size: var(--target-min-size);
+        padding: var(--space-1) var(--control-padding-inline);
+      }
 
-        nav { flex-wrap: nowrap; }
-        .sections {
-          display: flex;
-          flex: 1 0 auto;
-        }
+      .sign-out pb-icon, .compact-nav-icon { display: none; }
 
-        .brand {
-          flex-shrink: 1;
-          min-inline-size: 0;
-          font-size: inherit;
-          overflow-wrap: anywhere;
+      @media (max-width: 52rem) {
+        .brand .tab-label {
+          position: absolute;
+          inline-size: 1px;
+          block-size: 1px;
+          overflow: hidden;
+          clip-path: inset(50%);
+        }
+      }
+
+      @media (pointer: coarse) and (max-width: 23rem) {
+        .compact-nav-icon { display: inline-block; }
+
+        .compact-nav-icon + .tab-label {
+          position: absolute;
+          inline-size: 1px;
+          block-size: 1px;
+          overflow: hidden;
+          clip-path: inset(50%);
         }
       }
 
       @media (max-width: 34rem) {
-        nav {
-          display: grid;
-          grid-area: 1 / 1 / 3 / -1;
-          grid-template-columns: subgrid;
+        .bar {
+          --nav-padding-inline: 0px;
+          font-size: var(--type-meta);
         }
 
-        .sections {
-          grid-column: 1 / -1;
-          grid-row: 2;
-          flex-wrap: wrap;
-        }
         .actions {
-          grid-area: 1 / 2;
-          align-content: center;
+          gap: 0;
+          padding: 0;
         }
-      }
 
-      .sign-out {
-        padding: var(--space-1) var(--control-padding-inline);
+        .brand { flex: none; }
+
+        .sign-out {
+          display: grid;
+          place-items: center;
+          padding: 0;
+        }
+
+        .sign-out span { display: none; }
+        .sign-out pb-icon { display: inline-block; }
       }
 
       .sign-out:hover {
@@ -306,6 +313,7 @@ export class CockpitAppShell extends LitElement {
             </pb-nav-tab>
             <div class="sections">
               <pb-nav-tab href="/attestations" .active=${this.currentView === 'history' || this.currentView === 'detail'}>
+                <pb-icon class="compact-nav-icon" name="attestation"></pb-icon>
                 ${this.navLabel('Attestations')}
               </pb-nav-tab>
               <pb-nav-tab href="/releases" .active=${['releases', 'repository', 'release'].includes(this.currentView)}>
@@ -321,7 +329,7 @@ export class CockpitAppShell extends LitElement {
           </nav>
           <div class="actions">
             <pb-theme-toggle></pb-theme-toggle>
-            <a class="sign-out" href="/sign-out">Sign out</a>
+            <a class="sign-out" href="/sign-out" aria-label="Sign out"><span>Sign out</span><pb-icon name="sign-out"></pb-icon></a>
           </div>
         </div>
       </header>

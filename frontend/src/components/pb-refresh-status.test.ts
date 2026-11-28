@@ -157,3 +157,14 @@ test('moves the ring in steps with reduced motion and uses no other animation on
   const reduced = css.slice(css.indexOf('prefers-reduced-motion'));
   expect(reduced).toMatch(/\.ring circle\s*{\s*animation-timing-function: steps\(\d+\)/);
 });
+
+// Verifies REQ-0020.
+test('insets the entire progress stroke from each edge of the refresh button', async () => {
+  const svg = ring(await mount(new Date()));
+  const [, , width, height] = svg.getAttribute('viewBox')!.split(' ').map(Number);
+  const circle = svg.querySelector('circle')!;
+  const x = Number(circle.getAttribute('cx'));
+  const y = Number(circle.getAttribute('cy'));
+  const outerRadius = Number(circle.getAttribute('r')) + Number(circle.getAttribute('stroke-width')) / 2;
+  expect(Math.min(x, y, width - x, height - y) - outerRadius).toBeGreaterThanOrEqual(3);
+});

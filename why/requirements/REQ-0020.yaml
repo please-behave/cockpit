@@ -27,8 +27,9 @@ description: >-
   in the browser's local storage under one key and falls back to the default
   when storage is missing or fails. A ring around the refresh icon fills slowly
   in the accent color towards the next refresh and empties after it, at every
-  interval. It is decorative, uses no other animation and advances in steps
-  when reduced motion is requested. Nothing else blinks or moves because of
+  interval. The ring leaves a visible gap to the button edge and is legible
+  in both themes and forced colors. It is decorative, uses no other animation
+  and advances in steps when reduced motion is requested. Nothing else blinks or moves because of
   the interval. A refresh replaces content in place and keeps keyboard
   focus, scroll position, the list's sort order and loaded pages, and the
   dashboard's active status filter. Repository rows and chips are identified

@@ -46,7 +46,8 @@ description: >-
   warning or unknown, ordered across the overview by health severity, then
   by canonical repository name and platform. Each row
   shows the shared outcome indicator, a middle dot, the repository reference
-  under REQ-0017, and one reason. Unknown health
+  under REQ-0017, and one reason. The outcome stays fully visible beside
+  the one-line repository reference, which truncates as needed. Unknown health
   explains that the evidence status is unknown. Never integrated repositories
   show that state. Otherwise a reported FAIL or ERROR takes precedence over
   an overdue step and supplies the outcome shown before the repository.
