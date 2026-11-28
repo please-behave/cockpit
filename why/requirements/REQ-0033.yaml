@@ -6,7 +6,8 @@ description: >-
   canonical name in the repository query parameter. The page shows the
   shortened name of REQ-0017 and the full canonical name. Its Completed
   Rule Sets section lists the repository's completed sets from CON-0006,
-  using their bound versions' display names and linking each to REQ-0029.
+  as chips labeled "Name · major.minor" using their bound versions'
+  display names and linking each to REQ-0029.
   It explains when there are no completed sets. Its Releases
   section lists that repository's releases under REQ-0030 through CON-0011.
   Existing /releases/repository addresses open the same repository page.

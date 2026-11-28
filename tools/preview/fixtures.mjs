@@ -288,6 +288,7 @@ const fixtureBindings = [baselineSet, securitySet, markupSet,
 });
 details.get(history[0].id).rule_sets = fixtureBindings;
 details.get(history[1].id).rule_sets = [];
+details.get(history[6].id).rule_sets = fixtureBindings.filter(binding => binding.id === securitySet.id);
 
 const ruleVersionKey = ({ source, path, id, version }) => JSON.stringify([source, path, id, version]);
 const memberships = new Map();

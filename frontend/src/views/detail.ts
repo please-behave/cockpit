@@ -9,7 +9,6 @@ import '../components/pb-commit-link';
 import type { DataTableColumn, DataTableGroup, DataTableRow } from '../components/pb-data-table';
 import '../components/pb-data-table';
 import '../components/pb-fact-strip';
-import '../components/pb-rule-set-chip';
 import { shortName } from '../components/pb-short-name';
 import '../components/pb-status-pill';
 import '../components/pb-time';
@@ -83,10 +82,12 @@ function versionKey({ source, path, id, version }: RuleIdentity & { version?: st
 function resultGroups({ attestation, sets }: Detail): ResultGroup[] {
   const byMember = new Map<string, Set<ResultGroup>>();
   const groups = sets.map(({ binding, registration }) => {
+    const description = teaser(binding.description);
+    const link = html`<a data-route href=${ruleSetPath(binding, binding.version)}
+      aria-description=${ifDefined(description)}>${registration?.name || binding.id} <span class="muted">· ${binding.version}</span></a>`;
     const group: ResultGroup = {
       key: versionKey(binding),
-      heading: html`<pb-rule-set-chip wrap .label=${`${registration?.name || binding.id} · ${binding.version}`}
-        .description=${teaser(binding.description)} .href=${ruleSetPath(binding, binding.version)}></pb-rule-set-chip>`,
+      heading: description ? html`<pb-tooltip external-trigger .description=${description}>${link}</pb-tooltip>` : link,
       rows: [],
     };
     for (const member of registration?.members ?? []) {
@@ -129,11 +130,17 @@ export class DetailView extends CockpitView<Detail> {
       }
 
       pb-data-table {
-        --rule-set-chip-inline-size: max-content;
+        container-type: inline-size;
+      }
+
+      pb-data-table::part(group-heading) {
+        /* Let the result cells size the columns independently of the heading link. */
+        contain: inline-size;
+        max-inline-size: calc(100cqi - 2 * var(--control-padding-inline));
       }
 
       pb-data-table::part(rule-name) {
-        min-inline-size: 12ch;
+        min-inline-size: min(16rem, 100cqi);
       }
 
     }

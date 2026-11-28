@@ -66,13 +66,13 @@ async function detail(app: CockpitApp) {
 test('opens a Rule Set from Rules, escapes registered text, and shows exact member and compliance versions', async () => {
   const { app, fetch } = open('/rules');
   const link = () => app.shadowRoot?.querySelector('pb-rules')?.shadowRoot?.querySelector<HTMLAnchorElement>('summary a');
-  await vi.waitFor(() => expect(link()?.textContent).toBe(markup));
+  await vi.waitFor(() => expect(link()?.textContent).toBe(`${markup} · 1.10`));
   expect(link()!.getAttribute('href')).toBe(ruleSetPath(identity));
   link()!.click();
   const view = await detail(app);
   expect(app.shadowRoot!.querySelector('pb-app-shell')!.shadowRoot!
     .querySelector('pb-nav-tab[href="/rules"]')!.shadowRoot!.querySelector('a')!.getAttribute('aria-current')).toBe('page');
-  expect(view.querySelector('h1')?.textContent).toBe(markup);
+  expect(view.querySelector('h1')?.textContent).toBe(`${markup} · 1.10`);
   expect(view.querySelector('img')).toBeNull();
   const knowledge = view.querySelector('pb-key-value')!.shadowRoot!;
   expect(knowledge.querySelector('img')).toBeNull();
@@ -106,7 +106,7 @@ test('opens a Rule Set from Rules, escapes registered text, and shows exact memb
   const requests = fetch.mock.calls.length;
   select.value = '1.2';
   select.dispatchEvent(new Event('change'));
-  await vi.waitFor(() => expect(view.querySelector('h1')?.textContent).toBe(identity.id));
+  await vi.waitFor(() => expect(view.querySelector('h1')?.textContent).toBe(`${identity.id} · 1.2`));
   expect(window.location.search).toBe(`?${query}&version=1.2`);
   expect(window.history.length).toBe(length);
   expect(fetch).toHaveBeenCalledTimes(requests);

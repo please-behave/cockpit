@@ -12,8 +12,11 @@ description: >-
   width. The commit uses the same link target rules as the dashboard and
   attestation history. The full repository name links to its page under REQ-0033.
   It follows REQ-0015 and shows a table of results with their kinds, statuses
-  and verification. A header row links to each bound Rule Set version in
-  reported binding order. The view reads CON-0009 for the bound versions
+  and verification. In reported binding order, each Rule Set group has a
+  header row whose heading links to the bound version. The heading reads
+  "Name · major.minor" with a muted version and no capsule. The full label
+  remains available to assistive technology and wraps within the header.
+  The view reads CON-0009 for the bound versions
   and matches results by source, path, rule ID and version. Results appear in
   every matching group in reported order by default. Viewers can sort the
   results within each group by rule, kind, status or verification under
@@ -29,9 +32,9 @@ description: >-
   local rule ID, or the run-scoped result ID when no rule identity was
   reported. The result row shows the rule label on one line where it fits.
   Its reported version and a short teaser of the description from CON-0002
-  appear in a popup. Bound Rule Set chips show a popup when a binding has
-  a description and show the version in the chip label. Teasers are plain
-  text and end with an ellipsis when shortened. Popups open on hover,
+  appear in a popup. Bound Rule Set heading links show a popup when a binding
+  has a description. Teasers are plain text and end with an ellipsis when
+  shortened. Popups open on hover,
   keyboard focus and tap, stay open while hovered or while focus is inside,
   and leave the detail links reachable. A link at the top returns to the
   dashboard or the attestations page, whichever the viewer opened the detail

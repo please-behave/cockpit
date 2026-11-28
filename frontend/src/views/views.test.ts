@@ -5,7 +5,6 @@ import type { DataTable } from '../components/pb-data-table';
 import type { ErrorState } from '../components/pb-error-state';
 import type { FactStrip } from '../components/pb-fact-strip';
 import type { CockpitTime } from '../components/pb-time';
-import type { RuleSetChip } from '../components/pb-rule-set-chip';
 import type { StatusPill } from '../components/pb-status-pill';
 import type { Tooltip } from '../components/pb-tooltip';
 import { DetailView } from './detail';
@@ -242,6 +241,7 @@ test('groups results by the exact bound versions, preserving both binding and re
   const first = { ...binding, path: 'sets/first & policy', id: 'first', description: 'First <b>set</b>.' };
   const second = { ...binding, path: 'sets/second', id: 'second', version: '2.0' };
   const missing = { ...binding, path: 'sets/missing', id: 'missing' };
+  const longName = 'A long name with an unbroken segment ' + 'LongRuleSetName'.repeat(12);
   const rule = { source, path: 'rules/license', id: 'license', version: '1.0' };
   const sibling = { ...rule, path: 'rules/build' };
   const makeResult = (name: string, rule?: Attestation['results'][number]['rule']): Attestation['results'][number] =>
@@ -265,7 +265,7 @@ test('groups results by the exact bound versions, preserving both binding and re
   setVersions.mockImplementation(async query => {
     switch (query.get('id')) {
       case 'first': return [makeSet(first, '<b>First</b>', [rule, sibling]), makeSet({ ...first, version: '2.0' }, 'Latest', [])];
-      case 'second': return [makeSet(second, 'Second', [rule])];
+      case 'second': return [makeSet(second, longName, [rule])];
       default: throw new ApiError('rule_set_not_found');
     }
   });
@@ -276,13 +276,13 @@ test('groups results by the exact bound versions, preserving both binding and re
   const groups = [...table.querySelectorAll('tbody')];
   const headers = [...table.querySelectorAll('th[scope="rowgroup"]')];
   expect(headers.map(header => header.getAttribute('colspan'))).toEqual(['4', '4', '4', '4', '4']);
-  const chips = [...table.querySelectorAll<RuleSetChip>('pb-rule-set-chip')];
-  await Promise.all(chips.map(chip => chip.updateComplete));
-  const links = chips.map(chip => chip.shadowRoot!.querySelector('a')!);
-  expect(links.map(link => link.textContent)).toEqual(['Second · 2.0', '<b>First</b> · 1.0', 'missing · 1.0']);
-  expect(chips[1].shadowRoot!.querySelector('b')).toBeNull();
+  const links = [...table.querySelectorAll<HTMLAnchorElement>('th[scope="rowgroup"] a')];
+  expect(table.querySelector('pb-rule-set-chip')).toBeNull();
+  expect(links.map(link => link.textContent)).toEqual([`${longName} · 2.0`, '<b>First</b> · 1.0', 'missing · 1.0']);
+  expect(links.map(link => link.querySelector('.muted')?.textContent)).toEqual(['· 2.0', '· 1.0', '· 1.0']);
+  expect(links[1].querySelector('b')).toBeNull();
   expect(links.map(link => link.getAttribute('aria-description'))).toEqual([null, 'First <b>set</b>.', null]);
-  expect(links.map(link => link.closest('pb-tooltip')?.hasAttribute('text-value'))).toEqual([true, false, true]);
+  expect(links.map(link => link.closest('pb-tooltip')?.hasAttribute('text-value'))).toEqual([undefined, false, undefined]);
   const setPopup = await popupFor(links[1]);
   expect(setPopup.textContent?.trim()).toBe('First <b>set</b>.');
   expect(setPopup.querySelector('b')).toBeNull();

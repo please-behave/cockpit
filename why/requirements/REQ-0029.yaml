@@ -3,9 +3,10 @@ name: Registered Rule Set Detail
 area: registry
 description: >-
   The Rules view links each registered Rule Set to its detail page. The page
-  reads CON-0009 and uses the selected version's display name or set ID as its
-  headline and shows its description when present. It defaults to the newest
-  version and, when several are registered, offers a native Version dropdown
+  reads CON-0009 and uses "Name · major.minor" as its headline, using the set
+  ID when the selected version has no display name. It shows the description
+  when present and defaults to the newest version. When several versions are
+  registered, it offers a native Version dropdown
   in descending numeric order that marks the newest as Latest. The version
   query parameter selects the version on open. Selecting a version replaces
   the current history entry. An unavailable version prompts a notice and

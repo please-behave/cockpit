@@ -3,7 +3,7 @@ import { registeredVersions, type RegisteredVersion } from '../api/client';
 import { repositoryUrl } from '../commit-link';
 import '../components/pb-badge';
 import '../components/pb-fact-strip';
-import '../components/pb-rule-set-chip';
+import { ruleSetLabel } from '../components/pb-rule-set-chip';
 import { shortName } from '../components/pb-short-name';
 import '../components/pb-time';
 import '../components/pb-tooltip';
@@ -191,7 +191,7 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
       <dl class="memberships definitions">
         <dt>Part of</dt>
         <dd>${sets.length > 0 ? sets.map(set => html`
-          <pb-rule-set-chip .label=${`${set.name || set.id} · ${set.version}`}
+          <pb-rule-set-chip .label=${ruleSetLabel(set.name || set.id, set.version)}
             .href=${ruleSetPath(set, set.version)}></pb-rule-set-chip>
         `) : html`<pb-badge>${repository
           ? html`<pb-tooltip text-value external-trigger .description=${version.source}

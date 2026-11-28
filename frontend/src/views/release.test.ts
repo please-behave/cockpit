@@ -53,7 +53,7 @@ test('shows a complete release with its commit, sender, evidence link and Rule S
   const link = root.querySelector('pb-widget.evidence')?.shadowRoot?.querySelector('pb-section')?.shadowRoot?.querySelector('a[href^="/attestations/"]');
   expect(link?.textContent).toBe('View attestation');
   expect([...root.querySelectorAll<RuleSetChip>('pb-rule-set-chip')].map(chip => chip.label))
-    .toEqual(['Repository baseline · 1.0', expect.stringContaining('Security and release readiness')]);
+    .toEqual(['Repository baseline · 1.0', expect.stringMatching(/^Security and release readiness .+ · 2\.0$/)]);
   expect(root.querySelector('.non-passing')).toBeNull();
 });
 

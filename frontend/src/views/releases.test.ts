@@ -81,8 +81,8 @@ test('lists the latest releases across pages with attention first and escapes st
   expect(summary.shadowRoot?.querySelector('button')?.textContent).toBe('2 Rule Sets');
   const chips = [...summary.shadowRoot!.querySelectorAll<RuleSetChip>('pb-rule-set-chip')];
   expect(chips.map(chip => chip.label)).toEqual([
-    expect.stringMatching(/^Repository baseline · v/),
-    expect.stringMatching(/Security and release readiness.* · v/),
+    expect.stringMatching(/^Repository baseline · [0-9]+\.[0-9]+$/),
+    expect.stringMatching(/Security and release readiness.* · [0-9]+\.[0-9]+$/),
   ]);
   expect(chips.map(chip => chip.href)).toEqual(summary.sets.map(set => ruleSetPath(set, set.version)));
   const recorded = latest.querySelector<RelativeTime>('pb-relative-time')!;

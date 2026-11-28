@@ -156,7 +156,7 @@ test('shows reported evidence, waiting details and completed Rule Sets when pres
   const chips = [...preview.querySelectorAll<RuleSetChip>('pb-rule-set-chip')];
   const sets = completed.find(item => item.repository === entry.repository)!.sets;
   expect(chips.map(chip => [chip.label, chip.href])).toEqual(
-    sets.map(set => [`${set.name} · v${set.version}`, ruleSetPath(set, set.version)]),
+    sets.map(set => [`${set.name} · ${set.version}`, ruleSetPath(set, set.version)]),
   );
   expect(preview.querySelector('pb-rule-set-summary')).toBeNull();
   for (const chip of chips) {

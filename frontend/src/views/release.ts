@@ -2,7 +2,7 @@ import { css, html, nothing, type CSSResult } from 'lit';
 import { getRelease, type AuthMethod, type ReleaseDetail } from '../api/client';
 import '../components/pb-commit-link';
 import '../components/pb-key-value';
-import '../components/pb-rule-set-chip';
+import { ruleSetLabel } from '../components/pb-rule-set-chip';
 import '../components/pb-status-pill';
 import '../components/pb-time';
 import '../components/pb-widget';
@@ -26,7 +26,7 @@ function ruleSets({ rule_sets }: NonNullable<ReleaseDetail['evidence']>) {
   return html`<ul class="rule-sets" role="list">${rule_sets.map(set => html`
     <li>
       <pb-widget heading-level="3">
-        <pb-rule-set-chip slot="heading" .label=${`${set.name || set.id} · ${set.version}`}
+        <pb-rule-set-chip slot="heading" .label=${ruleSetLabel(set.name || set.id, set.version)}
           .href=${ruleSetPath(set, set.version)}></pb-rule-set-chip>
         <pb-status-pill slot="metadata" .status=${set.complete ? 'Complete' : 'Incomplete'}></pb-status-pill>
         ${set.registered ? nothing : html`<p>Version is unregistered.</p>`}

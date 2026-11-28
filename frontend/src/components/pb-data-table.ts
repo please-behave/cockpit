@@ -302,7 +302,7 @@ export class DataTable<Row extends DataTableRow = DataTableRow> extends LitEleme
           ${this.groups === undefined ? html`<tbody>${rows(this.rows)}</tbody>`
             : repeat(this.groups, group => group.key, group => html`
               <tbody>
-                <tr><th scope="rowgroup" colspan=${columns.length}>${group.heading}</th></tr>
+                <tr><th scope="rowgroup" colspan=${columns.length}><div part="group-heading">${group.heading}</div></th></tr>
                 ${rows(group.rows)}
               </tbody>
             `)}

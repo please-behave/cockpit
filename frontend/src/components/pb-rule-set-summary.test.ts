@@ -70,7 +70,7 @@ test('shows the count and links each escaped name to its bound version', async (
   const { links, trigger } = await controls(summary);
   expect(trigger.textContent).toBe('2 Rule Sets');
   expect(links.map(link => [link.textContent, link.getAttribute('href')])).toEqual(
-    [baseline, security].map(set => [`${set.name} · v${set.version}`, ruleSetPath(set, set.version)]),
+    [baseline, security].map(set => [`${set.name} · ${set.version}`, ruleSetPath(set, set.version)]),
   );
   expect(links[1].querySelector('img')).toBeNull();
 });

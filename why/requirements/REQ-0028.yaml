@@ -7,9 +7,9 @@ description: >-
   The Repository map preview in REQ-0019 shows one direct link per set for
   the repository. The preview stays open while the pointer or keyboard focus
   is on the trigger or preview. It closes on Escape or when both are left,
-  with no time-based dismissal. Each linked chip names the
-  bound version, makes the full name available, and links to that version
-  on the Rule Set detail page of REQ-0029. Names render as escaped text.
+  with no time-based dismissal. Each linked chip labels the bound version
+  as "Name · major.minor", makes the full label available, and links to that
+  version on the Rule Set detail page of REQ-0029. Names render as escaped text.
   Repositories without completed sets show no Rule Set chips. The chips
   use the shared filled Rule Set tokens in both themes and system
   colors in forced-colors mode, and follow REQ-0015.

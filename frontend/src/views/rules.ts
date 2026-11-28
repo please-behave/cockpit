@@ -8,6 +8,7 @@ import {
 import '../components/pb-data-table';
 import type { DataTableColumn } from '../components/pb-data-table';
 import '../components/pb-empty-state';
+import { ruleSetLabel } from '../components/pb-rule-set-chip';
 import '../components/pb-status-pill';
 import { CockpitView } from './cockpit-view';
 import { rulePath, ruleSetPath } from './router';
@@ -216,11 +217,10 @@ export class RulesView extends CockpitView<Registry> {
       <details class=${setGroup ? 'disclosure set' : 'disclosure local'} ?open=${open}>
         <summary>
           <strong>${setGroup
-            ? html`<a data-route href=${ruleSetPath(setGroup.set)}>${group.label}</a>`
+            ? html`<a data-route href=${ruleSetPath(setGroup.set)}>${ruleSetLabel(group.label, setGroup.set.version)}</a>`
             : group.label}</strong>
           ${setGroup ? html`
             <span class="facts">
-              <span>Version ${setGroup.set.version}</span>
               <span>${countLabel(setGroup.set.member_count, 'rule', 'rules')}</span>
               <span>${countLabel(setGroup.repositories.length, 'repository', 'repositories')}</span>
               ${setGroup.incomplete ? html`<pb-status-pill status="Repository not compliant"></pb-status-pill>` : nothing}

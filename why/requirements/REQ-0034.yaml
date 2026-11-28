@@ -20,9 +20,10 @@ description: >-
   the ledger's outcome, "No evidence" for a known commit without evidence, or
   "release not recorded" for an unresolved version, each with text and an icon.
   A Rule Set summary shows the number of completed Rule Sets and opens a preview
-  with a linked chip for each set's bound version. Viewers can group by target
-  (the default) or repository and combine filters for target, repository and evidence
-  status. A status line reports the number of matching deployments. Group header
+  with a linked "Name · major.minor" chip for each set's bound version.
+  Viewers can group by target (the default) or repository and combine filters
+  for target, repository and evidence status. A status line reports the number
+  of matching deployments. Group header
   rows show the worst visible status and its count. Reported errors,
   failures and entries without evidence appear before passing entries.
   The view follows REQ-0004, REQ-0015 and REQ-0016.

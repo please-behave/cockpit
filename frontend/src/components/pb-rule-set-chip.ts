@@ -1,6 +1,9 @@
 import { css, html, LitElement } from 'lit';
-import { ifDefined } from 'lit/directives/if-defined.js';
 import './pb-tooltip';
+
+export function ruleSetLabel(name: string, version: string) {
+  return `${name} · ${version}`;
+}
 
 export const ruleSetChipStyles = css`
   @layer components {
@@ -41,7 +44,6 @@ export class RuleSetChip extends LitElement {
   static override properties = {
     label: { type: String },
     href: { type: String },
-    description: { type: String },
     wrap: { type: Boolean, reflect: true },
   };
 
@@ -49,7 +51,6 @@ export class RuleSetChip extends LitElement {
     @layer components {
       :host {
         display: block;
-        inline-size: var(--rule-set-chip-inline-size, auto);
         max-inline-size: min(100%, 16rem);
       }
 
@@ -64,7 +65,6 @@ export class RuleSetChip extends LitElement {
 
   declare label: string;
   declare href: string;
-  declare description?: string;
   declare wrap: boolean;
 
   constructor() {
@@ -75,10 +75,9 @@ export class RuleSetChip extends LitElement {
   }
 
   override render() {
-    const chip = html`<a class="chip" data-route href=${this.href}
-      aria-description=${ifDefined(this.description)}>${this.label}</a>`;
-    return html`<pb-tooltip external-trigger ?text-value=${this.description === undefined}
-      .description=${this.description ?? this.label}>${chip}</pb-tooltip>`;
+    return html`<pb-tooltip external-trigger text-value .description=${this.label}>
+      <a class="chip" data-route href=${this.href}>${this.label}</a>
+    </pb-tooltip>`;
   }
 }
 

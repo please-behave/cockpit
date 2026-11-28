@@ -7,7 +7,7 @@ import '../components/pb-commit-link';
 import type { DataTableColumn } from '../components/pb-data-table';
 import '../components/pb-data-table';
 import '../components/pb-empty-state';
-import '../components/pb-rule-set-chip';
+import { ruleSetLabel } from '../components/pb-rule-set-chip';
 import { shortName } from '../components/pb-short-name';
 import '../components/pb-status-pill';
 import '../components/pb-time';
@@ -116,7 +116,8 @@ export class RepositoryView extends CockpitView<RepositoryData> {
 
   private ruleSets(sets: CompletedRuleSet[]) {
     return sets.length ? html`<ul class="sets" role="list">${sets.map(set => html`
-      <li><pb-rule-set-chip .label=${set.name} .href=${ruleSetPath(set, set.version)}></pb-rule-set-chip></li>
+      <li><pb-rule-set-chip .label=${ruleSetLabel(set.name, set.version)}
+        .href=${ruleSetPath(set, set.version)}></pb-rule-set-chip></li>
     `)}</ul>` : html`<p>No completed Rule Sets.</p>`;
   }
 

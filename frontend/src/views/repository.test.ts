@@ -92,7 +92,8 @@ test('lists only this repository’s completed sets with links to their bound ve
   const completed = respond('/v0/repositories/completed-rule-sets')!.body as RepositoryRuleSets[];
   const sets = completed.find(entry => entry.repository === repository)!.sets;
   expect(chips).toHaveLength(3);
-  expect(chips.map(chip => [chip.label, chip.href])).toEqual(sets.map(set => [set.name, ruleSetPath(set, set.version)]));
+  expect(chips.map(chip => [chip.label, chip.href]))
+    .toEqual(sets.map(set => [`${set.name} · ${set.version}`, ruleSetPath(set, set.version)]));
 });
 
 test('shows each current target with its release or commit and reported evidence', async () => {

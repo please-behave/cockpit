@@ -14,6 +14,8 @@ const baseline = {
   version: '2.0', member_count: 3, description: markup, scan,
 };
 const release = { ...baseline, id: 'release', name: 'Release', member_count: 1, description: undefined };
+const baselineLabel = `${baseline.name} · 2.0`;
+const releaseLabel = 'Release · 2.0';
 const review: RegisteredRule = {
   source, path: 'rules/review', id: 'shared-id', name: 'Shared review', version: '3.0',
   kind: 'review', rule_sets: [baseline, release], owner: markup, description: markup, scan,
@@ -142,10 +144,10 @@ test('refreshes the registry and compliance together while preserving order and 
 test('shows set facts and keeps same-name local rules in distinct collapsed groups', async () => {
   const { view, fetch } = mount();
   const root = await loaded(view);
-  expect(labels(root)).toEqual([baseline.name, release.name, local[0].source, local[1].source]);
+  expect(labels(root)).toEqual([baselineLabel, releaseLabel, local[0].source, local[1].source]);
   const [baselineGroup, releaseGroup, cli, gateway] = groups(root);
   expect(baselineGroup.className).toBe('disclosure set');
-  expect(baselineGroup.querySelector('summary')?.textContent).toMatch(/Version 2\.0\s+3 rules\s+2 repositories/);
+  expect(baselineGroup.querySelector('summary')?.textContent).toMatch(/· 2\.0\s+3 rules\s+2 repositories/);
   expect(releaseGroup.querySelector('summary')?.textContent).toMatch(/1 rule\s+0 repositories/);
   expect(baselineGroup.querySelector('summary pb-status-pill')).toHaveProperty('status', 'Repository not compliant');
   expect(releaseGroup.querySelector('summary pb-status-pill')).toBeNull();
@@ -183,12 +185,12 @@ test('matches names, local IDs and repositories and combines the labeled native 
     .toEqual(['Search rules', 'Kind', 'Scope']);
   search.focus();
   await filter(view, search, ' bAsELine SHARED-ID ');
-  expect(labels(root)).toEqual([baseline.name]);
+  expect(labels(root)).toEqual([baselineLabel]);
   expect(groups(root)[0].open).toBe(true);
   expect(ruleNames(groups(root)[0])).toEqual(['shared-id']);
   expect(root.activeElement).toBe(search);
   await filter(view, search, 'needs-work');
-  expect(labels(root)).toEqual([baseline.name]);
+  expect(labels(root)).toEqual([baselineLabel]);
   await filter(view, kind, 'review');
   expect(ruleNames(groups(root)[0])).toEqual(['shared-id']);
   await filter(view, scope, 'local');
@@ -200,7 +202,7 @@ test('matches names, local IDs and repositories and combines the labeled native 
   await filter(view, scope, 'set');
   expect(labels(root)).toEqual([]);
   await filter(view, search, '');
-  expect(labels(root)).toEqual([baseline.name]);
+  expect(labels(root)).toEqual([baselineLabel]);
   expect(fetch).toHaveBeenCalledTimes(4);
 });
 
@@ -227,7 +229,7 @@ test('continues both registries independently and searches across page and rende
   await view.updateComplete;
   expect(root.querySelectorAll('.local')).toHaveLength(40);
   await filter(view, root.querySelector('input')!, 'zebra');
-  expect(labels(root)).toEqual(['Zebra set', laterRule.source]);
+  expect(labels(root)).toEqual([`Zebra set · ${laterSet.version}`, laterRule.source]);
   expect(groups(root).every(group => group.open)).toBe(true);
   const calls = fetch.mock.calls.map(([path]) => new URL(path, window.location.origin));
   for (const [path, page] of [['/v0/rules', pageOneRules], ['/v0/rule-sets', pageOneSets]] as const) {

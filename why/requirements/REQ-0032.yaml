@@ -10,9 +10,9 @@ description: >-
   level in text with an icon: the sender is self-asserted and the key is not
   bound to the repository. The page shows the release's evidence as
   reported: the overall status with a link to the attestation detail, and
-  each Rule Set bound at check as a chip that links to its registered
-  version, together with the text Complete or Incomplete. An incomplete Rule
-  Set names its non-passing rules, each with its status and a link to the
+  each Rule Set bound at check as a chip labeled "Name · major.minor" that
+  links to its registered version, with the text Complete or Incomplete.
+  An incomplete Rule Set names its non-passing rules, each with its status and a link to the
   registered rule version, and states when its version is unregistered. A
   release without evidence says so explicitly as No evidence. The page does
   not repeat the attestation's result list. Its repository name and return link

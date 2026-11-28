@@ -6,6 +6,7 @@ import '../components/pb-badge';
 import type { DataTableColumn } from '../components/pb-data-table';
 import '../components/pb-data-table';
 import '../components/pb-key-value';
+import { ruleSetLabel } from '../components/pb-rule-set-chip';
 import '../components/pb-section';
 import '../components/pb-status-pill';
 import '../components/pb-time';
@@ -159,7 +160,7 @@ export class RuleSetView extends CockpitView<RuleSetDetail> {
 
   protected override heading(data?: RuleSetDetail) {
     const selected = selectedVersion(data?.versions, this.requestedVersion);
-    return selected ? selected.name || selected.id : 'Registered Rule Set';
+    return selected ? ruleSetLabel(selected.name || selected.id, selected.version) : 'Registered Rule Set';
   }
 
   protected override content(data?: RuleSetDetail) {
