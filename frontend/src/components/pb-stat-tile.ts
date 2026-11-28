@@ -24,43 +24,37 @@ export class StatTile extends LitElement {
 
       .tile {
         box-sizing: border-box;
-        display: flex;
-        flex-wrap: wrap;
-        align-items: baseline;
-        gap: var(--space-1) var(--space-2);
+        display: grid;
+        align-content: center;
         min-block-size: var(--target-min-size);
-        padding: var(--control-padding-block) var(--control-padding-inline);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-control);
-        background: var(--surface-raised);
+        padding: var(--control-padding-block) var(--space-1);
+        cursor: pointer;
         font-size: var(--type-data);
         line-height: var(--line-data);
+        text-decoration: none;
       }
 
-      a.tile { cursor: pointer; }
-      a:hover { background: var(--surface-hover); }
+      .outcome {
+        display: flex;
+        align-items: baseline;
+        gap: var(--space-1);
+        white-space: nowrap;
+      }
+      .tile:hover .outcome-label, .tile[aria-current] .outcome-label {
+        text-decoration: underline;
+      }
 
-      @media (forced-colors: active) {
-        a:hover:not(:focus-visible) {
-          outline: 1px solid var(--border);
-          outline-offset: -1px;
-        }
-      }
-      .empty { color: var(--text-muted); }
-      .active {
-        border-color: currentColor;
-        border-inline-start-width: 3px;
-      }
       .active-label {
-        flex-basis: 100%;
+        color: var(--text-muted);
         font-size: var(--type-meta);
       }
 
       .count { font-weight: var(--weight-semibold); }
-      .passed { color: var(--status-passed); }
       .failed { color: var(--status-failed); }
       .warning { color: var(--status-warning); }
       .not-run { color: var(--status-not-run); }
+      .muted { color: var(--text-muted); }
+      .muted .count { font-weight: inherit; }
     }
   `];
 
@@ -81,14 +75,17 @@ export class StatTile extends LitElement {
     const matching = this.repositories.filter(entry => repositoryHealth(entry) === this.status);
     const count = matching.length;
     const label = outcomeLabel(status.outcome);
+    const muted = count === 0 || this.status === 'passed';
     const content = html`
-      <pb-icon class=${count ? this.status : nothing} name=${status.icon}></pb-icon>
-      <span class="count">${count}</span> <span>${label}</span>
+      <span class="outcome ${muted ? 'muted' : this.status}">
+        <pb-icon name=${status.icon}></pb-icon>
+        <span class="outcome-label"><span class="count">${count}</span> ${label}</span>
+      </span>
       ${this.active ? html`<span class="active-label">Current filter</span>` : nothing}
     `;
     const name = `${count} ${label}`;
     const link = html`
-      <a class="tile ${count === 0 ? 'empty' : ''} ${this.active ? 'active' : ''}"
+      <a class="tile"
         data-route href=${this.href ?? `/?status=${this.status}`}
         aria-label=${name} aria-current=${this.active ? 'true' : nothing}
         aria-describedby=${count ? 'preview' : nothing}>${content}</a>

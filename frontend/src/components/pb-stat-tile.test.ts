@@ -33,7 +33,16 @@ test.each([
   expect(link.hasAttribute('aria-current')).toBe(false);
   expect(link.querySelector('pb-icon')?.getAttribute('name')).toBe(symbol);
   expect(link.querySelector('.count')?.textContent).toBe(count);
-  expect(link.querySelector('.count + span')?.textContent).toBe(label);
+  expect(link.querySelector('.outcome-label')?.textContent).toBe(`${count} ${label}`);
+  const outcome = link.querySelector('.outcome')!;
+  expect(outcome.classList.contains('muted')).toBe(status === 'passed');
+  expect(outcome.classList.contains(status)).toBe(status !== 'passed');
+});
+
+test('leaves count links unframed and uses muted text for subdued outcomes', () => {
+  const styles = StatTile.styles.at(-1)!.cssText;
+  expect(styles).not.toMatch(/\b(?:border(?:-[\w-]+)?|background(?:-[\w-]+)?|box-shadow)\s*:/);
+  expect(styles).toMatch(/\.muted\s*\{\s*color:\s*var\(--text-muted\)/);
 });
 
 test('exposes the current filter and shows the first three names on keyboard focus', async () => {
@@ -62,7 +71,7 @@ test.each([
 ] as const)('links the muted zero %s tile without a preview', async (status, label, name, fixture) => {
   const data = respond(`${fixtureTargets.repositoryOverview}?preview=${fixture}`)!.body as RepositoryOverview;
   const root = await mount(status, true, data.repositories);
-  const link = root.querySelector('a.empty')!;
+  const link = root.querySelector('a:has(.outcome.muted)')!;
   expect(link.hasAttribute('data-route')).toBe(true);
   expect(link.getAttribute('href')).toBe(`/?status=${status}`);
   expect(link.getAttribute('aria-label')).toBe(name);

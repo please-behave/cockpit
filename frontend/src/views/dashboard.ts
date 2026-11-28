@@ -40,18 +40,23 @@ export class DashboardView extends CockpitView<DashboardData> {
         gap: var(--space-4);
       }
 
-      .status-tiles {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr);
-        inline-size: fit-content;
-        max-inline-size: 100%;
-        gap: var(--space-2);
+      .status-counts {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: start;
+        gap: var(--space-1) var(--space-2);
         margin: 0;
         padding: 0;
         list-style: none;
       }
 
-      .sync-stale { color: var(--status-warning); }
+      .sync-stale {
+        display: flex;
+        align-items: baseline;
+        gap: var(--space-2);
+        padding: var(--space-1) var(--space-2);
+        border-inline-start: var(--space-1) solid var(--status-warning);
+      }
 
       @media (min-width: 56rem) {
         .widgets { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -110,11 +115,15 @@ export class DashboardView extends CockpitView<DashboardData> {
   private syncStatus({ completed_at, stale }: RepositoryOverview['heartbeat']) {
     if (!completed_at) return html`<div class="meta sync">The repository list has not been synced yet.</div>`;
 
-    return html`<div class="meta sync">
-      Repository list synced <pb-relative-time .value=${completed_at}></pb-relative-time>${stale ? html`
-        <span class="sync-stale"><pb-icon name="warning"></pb-icon> stale</span>
-        <div>Statuses may be outdated</div>
-      ` : nothing}
+    const age = html`Repository list synced <pb-relative-time .value=${completed_at}></pb-relative-time>`;
+    if (!stale) return html`<div class="meta sync">${age}</div>`;
+
+    return html`<div class="sync sync-stale">
+      <pb-icon name="warning"></pb-icon>
+      <div>
+        <strong>Statuses may be outdated</strong>
+        <div class="meta">${age} · stale</div>
+      </div>
     </div>`;
   }
 
@@ -124,13 +133,16 @@ export class DashboardView extends CockpitView<DashboardData> {
     const requested = new URLSearchParams(this.search).get('status');
     const filter = statuses.find(status => status === requested);
     const clearFilter = filter ? { href: this.filterPath(), label: 'Clear status filter' } : undefined;
+    const sync = this.syncStatus(data.heartbeat);
+    const hasStaleSync = data.heartbeat.stale && Boolean(data.heartbeat.completed_at);
     const health = html`<pb-widget heading="Repository health" prominent>
-      ${repositories.length ? html`<ul class="status-tiles" role="list">
+      ${hasStaleSync ? sync : nothing}
+      ${repositories.length ? html`<ul class="status-counts" role="list">
         ${statuses.map(status => html`<li><pb-stat-tile .status=${status}
           .repositories=${repositories} .active=${status === filter}
           .href=${this.filterPath(status)}></pb-stat-tile></li>`)}
       </ul>` : nothing}
-      ${this.syncStatus(data.heartbeat)}
+      ${hasStaleSync ? nothing : sync}
     </pb-widget>`;
 
     if (repositories.length === 0) {

@@ -4,9 +4,10 @@ area: operations
 description: >-
   The dashboard answers which repositories need attention and why, and
   provides a link to each repository in the ledger overview (CON-0014).
-  The Repository health widget presents four compact status rows in a single
-  column. At desktop widths Repository health and Needs attention stack beside
-  a second column containing Recent activity and the Repository map. At
+  The Repository health widget presents the four status counts in one compact
+  row that wraps as space runs out. At desktop widths Repository health and
+  Needs attention stack beside a second column containing Recent activity
+  and the Repository map. At
   narrow widths Repository health, Needs attention, Recent activity and the
   map appear in that order in a single column. At every width the Repository
   health widget uses the palette's blue accent surface for a stronger
@@ -16,9 +17,10 @@ description: >-
   The widget shows the oldest covering sync completion from the ledger as
   "Repository list synced" followed by the relative time. The exact local
   time is available in a tooltip and accessible description. When the
-  heartbeat is stale, the widget shows a warning symbol, the word "stale"
-  and the note "Statuses may be outdated". Without a completed heartbeat it
-  says "The repository list has not been synced yet." The toolbar contains
+  heartbeat is stale, a notice above the counts shows a warning symbol, the
+  text "Statuses may be outdated" and the sync age marked "stale". Without a
+  completed heartbeat the widget says "The repository list has not been
+  synced yet." The toolbar contains
   the refresh control described in REQ-0020. The dashboard follows REQ-0015
   in both themes and forced colors, with every status conveyed in text.
 
@@ -31,14 +33,16 @@ description: >-
   includes repositories without attestations and the ledger excludes archived
   repositories.
 
-  Each status tile shows a symbol and the count for its health group
-  across the full overview as "N Fail", "N Warn", "N Not run" or "N Pass". Every tile links to the dashboard with
+  Each unframed count shows an outcome symbol and the count for its health group
+  across the full overview as "N Fail", "N Warn", "N Not run" or "N Pass".
+  Zero counts and Pass use muted text and symbols. Every count has visible
+  keyboard focus and links to the dashboard with
   status=failed, status=warning, status=not-run (unknown) or status=passed
   in the query. Its accessible name conveys the count and status. For
   nonzero counts, hover, keyboard focus and the first touch tap show the
   first three matching repository names in input order and "and N more"
   when more remain. The preview is also the link's accessible description.
-  The next tap follows the link. A zero tile stays muted, uses the same
+  The next tap follows the link. A zero count uses the same
   pointer cursor and hover and focus styles as the other tiles, and
   offers no preview.
 
@@ -60,8 +64,9 @@ description: >-
   lists grouped by the owner segment of the repository identifier. When the
   overview has multiple organizations, each visible section has a heading
   below the map heading showing its organization and counts by health across
-  the full overview in the same form as the health tiles. A single organization has no heading. A missing owner
-  is shown as "No organization" when section headings are present. Sections
+  the full overview with the same count wording as the health widget. A
+  single organization has no heading. A missing owner is shown as
+  "No organization" when section headings are present. Sections
   are ordered by their worst health in the overview, then organization
   name. Within a section, chips are ordered by health severity, shortened
   repository name and platform. Text is compared by lower-cased code points,

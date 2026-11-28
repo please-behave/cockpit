@@ -125,8 +125,10 @@ test('counts the overview and composes the widgets in reading order', async () =
   const health = columns[0].firstElementChild!;
   expect(health.getAttribute('heading')).toBe('Repository health');
   expect(health.hasAttribute('prominent')).toBe(true);
-  expect(health.querySelectorAll('ul > li > pb-stat-tile')).toHaveLength(4);
-  const counts = tiles(view).map(tile => tile.shadowRoot!.querySelector('.tile')!.textContent!.trim().replace(/\s+/g, ' '));
+  const row = health.querySelector('ul.status-counts[role="list"]')!;
+  expect(row.querySelectorAll(':scope > li > pb-stat-tile')).toHaveLength(4);
+  expect(DashboardView.styles.at(-1)!.cssText).toMatch(/\.status-counts\s*\{[^}]*display:\s*flex;[^}]*flex-wrap:\s*wrap;/);
+  const counts = tiles(view).map(tile => tile.shadowRoot!.querySelector('a')!.getAttribute('aria-label'));
   expect(counts).toEqual(['4 Fail', '1 Warn', '3 Not run', '3 Pass']);
   expect(names(view)).toHaveLength(fixtures.repositories.length);
   expect(names(view)).toHaveLength(new Set(names(view)).size);
@@ -233,7 +235,7 @@ test.each([
   expect(map(view).link).toEqual({ href: `/?preview=${fixture}`, label: 'Clear status filter' });
   const active = tiles(view).find(tile => tile.active)!;
   expect(active.status).toBe(status);
-  expect(active.shadowRoot!.querySelector('a.empty[aria-current="true"]')?.getAttribute('href'))
+  expect(active.shadowRoot!.querySelector('a[aria-current="true"]')?.getAttribute('href'))
     .toBe(`/?preview=${fixture}&status=${status}`);
 });
 
@@ -250,9 +252,11 @@ test.each([
   const view = await mount();
   const sync = view.shadowRoot!.querySelector('pb-widget[heading="Repository health"] .sync')!;
   expect(sync.textContent).toContain('Repository list synced');
-  expect(sync.textContent?.includes('Statuses may be outdated')).toBe(stale);
-  expect(sync.querySelector('.sync-stale')?.textContent?.trim()).toBe(stale ? 'stale' : undefined);
+  expect(sync.classList.contains('sync-stale')).toBe(stale);
+  expect(sync.querySelector('strong')?.textContent).toBe(stale ? 'Statuses may be outdated' : undefined);
+  expect(sync.textContent?.includes('· stale')).toBe(stale);
   expect(sync.querySelector('pb-icon[name="warning"]') !== null).toBe(stale);
+  expect((stale ? sync.nextElementSibling : sync.previousElementSibling)?.matches('ul.status-counts')).toBe(true);
 
   const time = sync.querySelector<RelativeTime>('pb-relative-time')!;
   await time.updateComplete;
