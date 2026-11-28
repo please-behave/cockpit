@@ -6,7 +6,7 @@ description: >-
   ledger reports verified or mismatch, the Cockpit links the registered name
   to that identity's rule detail and brings the version into view. It renders
   the name as text, falls back to the local ID when the name is absent or empty,
-  and displays the version in the popup described by REQ-0010. The link uses
+  and appends the version as "Name · major.minor" as described by REQ-0010. The link uses
   the complete identity and preserves the reported verification and outcome.
 rationale: >-
   Viewers can inspect the registered definition associated with the result.

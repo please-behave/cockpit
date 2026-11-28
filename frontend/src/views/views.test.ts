@@ -4,7 +4,7 @@ import type { CommitLink } from '../components/pb-commit-link';
 import type { DataTable } from '../components/pb-data-table';
 import type { ErrorState } from '../components/pb-error-state';
 import type { FactStrip } from '../components/pb-fact-strip';
-import type { CockpitTime } from '../components/pb-time';
+import type { RelativeTime } from '../components/pb-relative-time';
 import type { StatusPill } from '../components/pb-status-pill';
 import type { Tooltip } from '../components/pb-tooltip';
 import { DetailView } from './detail';
@@ -111,10 +111,11 @@ test.each(['light', 'dark'])('detail presents reported results and verification 
   await strip.updateComplete;
   const facts = strip.shadowRoot!;
   expect([...facts.querySelectorAll('dt')].map(term => term.textContent))
-    .toEqual(['Overall', 'Commit', 'Reported', 'Attestation ID', 'Canonical name']);
+    .toEqual(['Overall', 'Commit', 'Reported', 'Attestation ID', 'Repository']);
   const [overall, commitValue, reported, id, canonicalName] = facts.querySelectorAll('dd');
   expect(id.textContent).toBe(value.id);
-  expect(canonicalName.textContent).toBe(repository);
+  expect(canonicalName.querySelector('.repository-reference')?.textContent?.replace(/\s+/g, ''))
+    .toBe(repository.replace(/\s+/g, ''));
   expect(canonicalName.querySelector('a')?.getAttribute('href'))
     .toBe(`/repositories/detail?${new URLSearchParams({ repository })}`);
   const commit = commitValue.querySelector<CommitLink>('pb-commit-link')!;
@@ -123,10 +124,10 @@ test.each(['light', 'dark'])('detail presents reported results and verification 
   expect(commit.shadowRoot!.querySelector('a')).toBeNull();
   const pill = overall.querySelector<StatusPill>('pb-status-pill')!;
   await pill.updateComplete;
-  expect(pill.shadowRoot!.querySelector('.pill span:last-child')?.textContent).toBe('FAIL');
+  expect(pill.shadowRoot!.querySelector('.pill span:last-child')?.textContent).toBe('Fail');
   expect(pill.shadowRoot!.querySelector('pb-icon')?.getAttribute('name')).toBe('cross');
   await expectExplanation(overall, 'The run reported a blocking failure, so it did not pass.');
-  expect(reported.querySelector<CockpitTime>('pb-time')?.value).toBe(receipt);
+  expect(reported.querySelector<RelativeTime>('pb-relative-time')?.value).toBe(receipt);
   expect(facts.querySelector('img, script')).toBeNull();
 
   const table = await tableRoot(view);
@@ -147,14 +148,14 @@ test.each(['light', 'dark'])('detail presents reported results and verification 
     'FAIL', 'NOT_RUN', 'PASS', 'WARN', 'PASS',
   ]);
   expect(rows.map(row => row.cells[0].textContent?.trim()))
-    .toEqual([registeredName, 'a/rule', 'Earlier review', 'review', 'review']);
+    .toEqual([`${registeredName} · 1.2`, 'a/rule', 'Earlier review · 2.0', 'review · 3.0', 'review · 1.0']);
   expect(rows.map(row => row.cells[0].querySelector('a')?.textContent))
-    .toEqual([registeredName, undefined, 'Earlier review', undefined, 'review']);
+    .toEqual([`${registeredName} · 1.2`, undefined, 'Earlier review · 2.0', undefined, 'review · 1.0']);
   const triggers = rows.map(row => row.cells[0].querySelector<HTMLElement>('[aria-description]'));
   const popups = await Promise.all(triggers.map(trigger => trigger && popupFor(trigger)));
   expect(popups.map(popup => popup?.textContent?.trim())).toEqual([
-    'Version 1.2 · Check <img src=x> output.', undefined,
-    `Version 2.0 · ${'✅'.repeat(158)}😀…`, 'Version 3.0', 'Version 1.0',
+    'Check <img src=x> output.', undefined,
+    `${'✅'.repeat(158)}😀…`, undefined, undefined,
   ]);
   expect(popups[0]?.querySelector('img')).toBeNull();
   const ruleLink = triggers[0]!;
@@ -311,7 +312,8 @@ test('groups results by the exact bound versions, preserving both binding and re
   expect(headers.slice(3).map(header => header.textContent)).toEqual(['Local rules', 'Unassigned']);
   expect(groups.map(group => [...group.querySelectorAll('th[scope="row"]')].map(cell =>
     cell.querySelector('a')?.textContent ?? cell.textContent))).toEqual([
-    ['License'], ['Build', 'License'], [], ['Local'], ['Wrong path', 'Wrong version', 'Run identifier'],
+    ['License · 1.0'], ['Build · 1.0', 'License · 1.0'], [], ['Local · 1.0'],
+    ['Wrong path · 1.0', 'Wrong version · 3.0', 'Run identifier'],
   ]);
 });
 

@@ -31,8 +31,8 @@ description: >-
   includes repositories without attestations and the ledger excludes archived
   repositories.
 
-  Each status tile shows a symbol, count and text label for its health group
-  across the full overview. Every tile links to the dashboard with
+  Each status tile shows a symbol and the count for its health group
+  across the full overview as "N Fail", "N Warn", "N Not run" or "N Pass". Every tile links to the dashboard with
   status=failed, status=warning, status=not-run (unknown) or status=passed
   in the query. Its accessible name conveys the count and status. For
   nonzero counts, hover, keyboard focus and the first touch tap show the
@@ -45,13 +45,13 @@ description: >-
   The Needs attention widget shows every repository whose health is failed,
   warning or unknown, ordered across the overview by health severity, then
   by canonical repository name and platform. Each row
-  shows the health symbol and text label, the shortened repository name
-  linked to its repository page (REQ-0033), its organization as muted text
-  when available, and one reason. Unknown health
+  shows the shared outcome indicator, a middle dot, the repository reference
+  under REQ-0017, and one reason. Unknown health
   explains that the evidence status is unknown. Never integrated repositories
   show that state. Otherwise a reported FAIL or ERROR takes precedence over
-  an overdue step and shows the verdict, shortened commit and relative ledger
-  receipt time labeled "Reported". Overdue health without a failing verdict
+  an overdue step and supplies the outcome shown before the repository.
+  The reason shows the shortened commit and relative ledger receipt time
+  labeled "Reported", separated by a middle dot. Overdue health without a failing verdict
   shows the reached and total configured steps. When no repository needs
   attention, the widget shows an all-clear message and the number checked.
 
@@ -59,7 +59,7 @@ description: >-
   lists grouped by the owner segment of the repository identifier. When the
   overview has multiple organizations, each visible section has a heading
   below the map heading showing its organization and counts by health across
-  the full overview. A single organization has no heading. A missing owner
+  the full overview in the same form as the health tiles. A single organization has no heading. A missing owner
   is shown as "No organization" when section headings are present. Sections
   are ordered by their worst health in the overview, then organization
   name. Within a section, chips are ordered by health severity, shortened
@@ -69,14 +69,13 @@ description: >-
   An absent or unrecognized value shows every repository. The current filter
   is visible and exposed to assistive
   technology. The map offers a link to clear it and explains when no
-  repository matches. Each chip links to the repository page, shows the
-  shortened name and a distinct health symbol, and names the full repository
-  and health to assistive technology. Hover, keyboard focus and the first
+  repository matches. Each chip shows the shared outcome indicator and the
+  repository reference under REQ-0017. Hover, keyboard focus and the first
   touch tap open the preview. Its controls are keyboard accessible. A second
   tap follows the repository link, as in REQ-0017.
 
-  The preview names the full repository, owner, health, state and verdict
-  where applicable. It labels unmanaged repositories "Not managed" and
+  The preview shows the canonical name, the state and the check outcome when it differs
+  from the chip's health label. It labels unmanaged repositories "Not managed" and
   shows "No evidence" when there is no check verdict. When present, check
   evidence shows the shortened commit and relative ledger receipt time
   labeled "Reported". A pending or overdue head shows its shortened commit,
@@ -94,11 +93,11 @@ description: >-
   releases (CON-0010) and deployments (CON-0013) by ledger receipt time,
   newest first, into at most ten entries. Entries with the same receipt time
   appear in the order attestation, release, deployment and then by
-  identifier. Each entry shows the kind as symbol and text, the shortened
-  repository linked to its repository page (REQ-0033), the key fact (the
-  verdict of an attestation, the version of a release or the target name of
-  a deployment) and the relative receipt time with the exact localized time
-  available as an accessible description. An empty feed says so. When a read
+  identifier. Each entry shows the kind as symbol and text, a middle dot, the repository
+  reference under REQ-0017, and a key fact. The key fact is the shared outcome
+  indicator for an attestation, the version of a release or the target name of
+  a deployment. A middle dot separates the fact from the relative receipt
+  time labeled "Reported", with the exact localized time in the popup. An empty feed says so. When a read
   fails, the widget keeps the entries last received for that kind and names
   the kinds it could not read.
 

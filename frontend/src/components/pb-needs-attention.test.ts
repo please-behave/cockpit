@@ -33,26 +33,27 @@ test('lists every non-passed repository by severity then name with linked names 
   expect(frame.shadowRoot!.querySelector('h2')?.textContent).toBe('Needs attention');
   const rows = [...root.querySelectorAll('li')];
   const expected = [
-    [fixture('gadget'), 'failed', 'cross'],
-    [fixture('no-records'), 'failed', 'cross'],
-    [fixture('overdue-final'), 'failed', 'cross'],
-    [failedCheck, 'failed', 'cross'],
-    [fixture('widget'), 'warning', 'warning'],
-    [longName, 'unknown', 'circle'],
-    [fixture('never-synced'), 'unknown', 'circle'],
-    [fixture('stale-sync'), 'unknown', 'circle'],
-    [fixture('elsewhere'), 'unknown', 'circle'],
+    [fixture('gadget'), 'Error', 'error'],
+    [fixture('no-records'), 'Fail', 'cross'],
+    [fixture('overdue-final'), 'Fail', 'cross'],
+    [failedCheck, 'Fail', 'cross'],
+    [fixture('widget'), 'Warn', 'warning'],
+    [longName, 'Not run', 'circle'],
+    [fixture('never-synced'), 'Not run', 'circle'],
+    [fixture('stale-sync'), 'Not run', 'circle'],
+    [fixture('elsewhere'), 'Not run', 'circle'],
   ] as const;
   expect(rows).toHaveLength(expected.length);
   expected.forEach(([{ repository }, label, icon], index) => {
     const row = rows[index];
-    const link = row.querySelector('.repository')!;
+    const link = row.querySelector('.repository-name')!;
     expect(link.getAttribute('href')).toBe(repositoryPath(repository));
     expect(link.getAttribute('aria-label')).toBe(repository);
     expect(link.textContent).toBe(repository.split('/').at(-1));
-    expect(text(row.querySelector('.organization.meta'))).toBe(repository.split('/').at(-2));
-    expect(text(row.querySelector('.status'))).toBe(label);
-    expect(row.querySelector('pb-icon')?.getAttribute('name')).toBe(icon);
+    expect(text(row.querySelector('.repository-prefix'))).toBe(repository.split('/').at(-2) + '/');
+    const outcome = row.querySelector('pb-status-pill')?.shadowRoot;
+    expect(text(outcome?.querySelector('.pill span') ?? null)).toBe(label);
+    expect(outcome?.querySelector('pb-icon')?.getAttribute('name')).toBe(icon);
   });
 });
 
@@ -61,8 +62,9 @@ test.each([[failedCheck, 'FAIL'], [fixture('gadget'), 'ERROR']] as const)(
   async (entry, verdict) => {
     const root = await mount([entry]);
     const reason = root.querySelector('.reason')!;
-    expect(reason.querySelector('pb-status-pill')).toHaveProperty('status', verdict);
-    expect(text(reason)).toBe('· · Reported');
+    expect(root.querySelector('.title pb-status-pill')).toHaveProperty('status', verdict);
+    expect(reason.querySelector('pb-status-pill')).toBeNull();
+    expect(text(reason)).toBe('· Reported');
     const commit = reason.querySelector<CommitLink>('pb-commit-link')!;
     const time = reason.querySelector<RelativeTime>('pb-relative-time')!;
     await Promise.all([commit.updateComplete, time.updateComplete]);
@@ -88,7 +90,8 @@ test('uses failing evidence before the overdue reason, and unknown health before
   const unknown = { ...fixture('stale-sync'), latest_check: failedCheck.latest_check };
   const root = await mount([unknown, overdue]);
   const [failure, missing] = root.querySelectorAll('.reason');
-  expect(failure.querySelector('pb-status-pill')).toHaveProperty('status', 'FAIL');
+  expect(failure.parentElement?.querySelector('.title pb-status-pill')).toHaveProperty('status', 'FAIL');
+  expect(failure.querySelector('pb-commit-link')).not.toBeNull();
   expect(text(missing)).toBe('Evidence status unknown');
 });
 
@@ -106,7 +109,7 @@ test.each([
 test('renders markup in the organization and repository name as text', async () => {
   const entry = { ...longName, repository: 'github.com/<img src=owner>/<img src=x>' };
   const root = await mount([entry]);
-  expect(root.querySelector('.repository')?.textContent).toBe('<img src=x>');
-  expect(root.querySelector('.organization')?.textContent).toBe('<img src=owner>');
+  expect(root.querySelector('.repository-name')?.textContent).toBe('<img src=x>');
+  expect(root.querySelector('.repository-prefix')?.textContent).toBe('<img src=owner>/');
   expect(root.querySelector('img')).toBeNull();
 });

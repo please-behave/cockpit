@@ -1,8 +1,8 @@
 import { css, html, LitElement } from 'lit';
 import './pb-tooltip';
 
-export function ruleSetLabel(name: string, version: string) {
-  return `${name} · ${version}`;
+export function versionedName(name: string, version?: string) {
+  return version ? `${name} · ${version}` : name;
 }
 
 export const ruleSetChipStyles = css`

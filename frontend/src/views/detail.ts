@@ -11,13 +11,15 @@ import '../components/pb-data-table';
 import '../components/pb-fact-strip';
 import { shortName } from '../components/pb-short-name';
 import '../components/pb-status-pill';
-import '../components/pb-time';
+import '../components/pb-relative-time';
+import { repositoryReference, repositoryReferenceStyles } from '../components/repository-reference';
+import { versionedName } from '../components/pb-rule-set-chip';
 import '../components/pb-tooltip';
 import {
   explainValue, kindExplanations, overallExplanations, statusExplanations, verificationExplanations,
 } from '../components/value-explanations';
 import { CockpitView } from './cockpit-view';
-import { followHistoryBack, repositoryPath, rulePath, ruleSetPath } from './router';
+import { followHistoryBack, rulePath, ruleSetPath } from './router';
 
 type Result = Attestation['results'][number];
 type ResultRow = DataTableRow & { result: Result };
@@ -43,7 +45,8 @@ function hasRegisteredVersion(result: Result) {
 }
 
 function ruleLabel(result: Result) {
-  return hasRegisteredVersion(result) && result.name ? result.name : result.rule?.id ?? result.id;
+  const name = hasRegisteredVersion(result) && result.name ? result.name : result.rule?.id ?? result.id;
+  return versionedName(name, result.rule?.version);
 }
 
 const teaserLimit = 160;
@@ -59,13 +62,11 @@ function ruleCell(result: Result) {
   const label = ruleLabel(result);
   const { rule } = result;
   if (!rule?.version) return label;
-  const version = `Version ${rule.version}`;
   const description = teaser(result.description);
-  const popup = description ? `${version} · ${description}` : version;
-  return html`<pb-tooltip external-trigger .description=${popup}>${hasRegisteredVersion(result)
-    ? html`<a data-route href=${rulePath(rule, rule.version)} aria-description=${popup}>${label}</a>`
-    : html`<span tabindex="0" aria-description=${popup}>${label}</span>`
-  }</pb-tooltip>`;
+  const value = hasRegisteredVersion(result)
+    ? html`<a data-route href=${rulePath(rule, rule.version)} aria-description=${ifDefined(description)}>${label}</a>`
+    : description ? html`<span tabindex="0" aria-description=${description}>${label}</span>` : label;
+  return description ? html`<pb-tooltip external-trigger .description=${description}>${value}</pb-tooltip>` : value;
 }
 
 type ResultGroup = DataTableGroup<ResultRow> & { rows: ResultRow[] };
@@ -123,7 +124,7 @@ function resultGroups({ attestation, sets }: Detail): ResultGroup[] {
 
 export class DetailView extends CockpitView<Detail> {
   static override properties = { attestationId: { attribute: false }, origin: { attribute: false } };
-  static override styles = [CockpitView.styles as CSSResult, css`
+  static override styles = [repositoryReferenceStyles, CockpitView.styles as CSSResult, css`
     @layer components {
       pb-fact-strip {
         margin-block-end: var(--space-6);
@@ -198,9 +199,9 @@ export class DetailView extends CockpitView<Detail> {
       ) },
       { term: 'Commit', description: html`<pb-commit-link full .repository=${attestation.repository}
         .commit=${attestation.commit}></pb-commit-link>` },
-      { term: 'Reported', description: html`<pb-time .value=${attestation.received_at}></pb-time>` },
+      { term: 'Reported', description: html`<pb-relative-time .value=${attestation.received_at}></pb-relative-time>` },
       { term: 'Attestation ID', description: html`<code>${attestation.id}</code>` },
-      { term: 'Canonical name', description: html`<a data-route href=${repositoryPath(attestation.repository)}>${attestation.repository}</a>` },
+      { term: 'Repository', description: repositoryReference(attestation.repository) },
     ];
     return html`
       <pb-fact-strip .items=${items}></pb-fact-strip>

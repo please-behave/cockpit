@@ -8,7 +8,7 @@ import {
 import '../components/pb-data-table';
 import type { DataTableColumn } from '../components/pb-data-table';
 import '../components/pb-empty-state';
-import { ruleSetLabel } from '../components/pb-rule-set-chip';
+import { versionedName } from '../components/pb-rule-set-chip';
 import '../components/pb-status-pill';
 import { CockpitView } from './cockpit-view';
 import { rulePath, ruleSetPath } from './router';
@@ -207,7 +207,7 @@ export class RulesView extends CockpitView<Registry> {
       return {
         key: href,
         cells: [
-          html`<a data-route href=${href}>${rule.name || rule.id}</a>`,
+          html`<a data-route href=${href}>${versionedName(rule.name || rule.id, rule.version)}</a>`,
           rule.owner ?? '—',
           rule.description ?? '',
         ],
@@ -217,7 +217,7 @@ export class RulesView extends CockpitView<Registry> {
       <details class=${setGroup ? 'disclosure set' : 'disclosure local'} ?open=${open}>
         <summary>
           <strong>${setGroup
-            ? html`<a data-route href=${ruleSetPath(setGroup.set)}>${ruleSetLabel(group.label, setGroup.set.version)}</a>`
+            ? html`<a data-route href=${ruleSetPath(setGroup.set)}>${versionedName(group.label, setGroup.set.version)}</a>`
             : group.label}</strong>
           ${setGroup ? html`
             <span class="facts">

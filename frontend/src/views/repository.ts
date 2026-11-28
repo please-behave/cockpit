@@ -7,10 +7,10 @@ import '../components/pb-commit-link';
 import type { DataTableColumn } from '../components/pb-data-table';
 import '../components/pb-data-table';
 import '../components/pb-empty-state';
-import { ruleSetLabel } from '../components/pb-rule-set-chip';
+import { versionedName } from '../components/pb-rule-set-chip';
 import { shortName } from '../components/pb-short-name';
 import '../components/pb-status-pill';
-import '../components/pb-time';
+import '../components/pb-relative-time';
 import { CockpitView } from './cockpit-view';
 import { compareEvidence, deploymentTableStyles, repositoryDeploymentTable, targetLabel } from './deployment-table';
 import { releaseTable } from './releases';
@@ -46,8 +46,8 @@ function attestationRow(summary: Summary) {
     summary,
     cells: [
       summary.execution_points.join(', ') || 'No execution points',
-      html`<pb-time .href=${`/attestations/${encodeURIComponent(summary.id)}`}
-        .value=${summary.received_at}></pb-time>`,
+      html`<pb-relative-time .href=${`/attestations/${encodeURIComponent(summary.id)}`}
+        .value=${summary.received_at}></pb-relative-time>`,
       html`<pb-commit-link .repository=${summary.repository} .commit=${summary.commit}></pb-commit-link>`,
       html`<pb-status-pill .status=${summary.overall}></pb-status-pill>`,
     ] as const,
@@ -116,7 +116,7 @@ export class RepositoryView extends CockpitView<RepositoryData> {
 
   private ruleSets(sets: CompletedRuleSet[]) {
     return sets.length ? html`<ul class="sets" role="list">${sets.map(set => html`
-      <li><pb-rule-set-chip .label=${ruleSetLabel(set.name, set.version)}
+      <li><pb-rule-set-chip .label=${versionedName(set.name, set.version)}
         .href=${ruleSetPath(set, set.version)}></pb-rule-set-chip></li>
     `)}</ul>` : html`<p>No completed Rule Sets.</p>`;
   }

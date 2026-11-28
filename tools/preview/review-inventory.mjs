@@ -160,8 +160,12 @@ export async function inventory(document) {
         const radius = [css.borderTopLeftRadius, css.borderTopRightRadius, css.borderBottomRightRadius,
           css.borderBottomLeftRadius];
         const corners = new Set(radius).size === 1 ? radius[0] : radius.join(' / ');
+        const reference = role === 'Repository' && element.closest('.repository-reference');
+        const text = reference
+          ? `${label(reference.querySelector('.repository-prefix'))}${label(element)}`
+          : label(element);
         add(category, `${role} · radius ${corners} · border ${border(css)} · background ${css.backgroundColor} · weight ${css.fontWeight}`,
-          label(element));
+          text);
       }
       collectFormats(element, add);
       if (element.matches(controls) || element.hasAttribute('title')

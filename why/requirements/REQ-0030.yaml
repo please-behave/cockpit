@@ -5,18 +5,18 @@ description: >-
   The Releases tab shows a table with one row per repository with a recorded
   release. The visually hidden Releases caption names both the table and its
   scroll region for assistive technology. Each row shows the repository, its
-  newest recorded version, the ledger receipt time, the reported evidence
+  newest recorded version, the ledger receipt time labeled "Reported", the evidence
   status and the completed Rule Set summary. Repositories with no evidence or a FAIL or ERROR outcome appear
   first. Within each group, the initial order is by repository name. The
   repository name opens the repository page of REQ-0033, which shows a release
   history table in descending ledger receipt order. Each version opens the
   release detail page of REQ-0032. History rows show the version, the first
-  seven characters of the commit, the receipt time, the evidence status and the
-  completed Rule Set summary. Repository and version links expose their full
-  labels in a tooltip when clipped. A shortened commit exposes its full value
+  seven characters of the commit, the "Reported" time, the evidence status and
+  the completed Rule Set summary. The repository reference follows REQ-0017.
+  Version links expose their full labels in a tooltip when clipped. A shortened commit exposes its full value
   in an accessible tooltip. Both views show relative receipt times with the localized exact
   time in an accessible tooltip and explain when no release has been recorded.
-  The evidence status shows the reported outcome or “No evidence” as compact
+  The evidence status uses the outcome wording of REQ-0016 as compact
   text with an icon. The Rule Set summary gives the count of completed Rule
   Sets when present. Its pointer- and keyboard-accessible preview shows a
   chip styled with the shared Rule Set tokens for each completed Rule Set.

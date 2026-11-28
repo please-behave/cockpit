@@ -106,8 +106,8 @@ test('opens a registered rule and shows the newest version and switches to an ol
   expect(rows).toHaveLength(2);
   expect(rows[0].querySelector('td:last-child')?.textContent).toBe(markup);
   expect(rows.map(row => row.querySelector('[part="rule-owner"]')?.textContent)).toEqual([ownerMarkup, '—']);
-  expect(rows[1].querySelector('a')?.textContent).toBe('unnamed');
-  expect(rows[0].querySelector('a')?.textContent).toBe(markup);
+  expect(rows[1].querySelector('a')?.textContent).toBe('unnamed · 1.10');
+  expect(rows[0].querySelector('a')?.textContent).toBe(`${markup} · 1.10`);
   expect(table.querySelector('b, img, [onerror]')).toBeNull();
   rows[0].querySelector('a')!.click();
   await app.updateComplete;
@@ -115,7 +115,7 @@ test('opens a registered rule and shows the newest version and switches to an ol
   const detail = app.shadowRoot!.querySelector<RuleView>('pb-rule')!;
   const root = detail.shadowRoot!;
   await vi.waitFor(() => expect(root.querySelectorAll('article')).toHaveLength(1));
-  expect(root.querySelector('h1')?.textContent).toBe(markup);
+  expect(root.querySelector('h1')?.textContent).toBe(`${markup} · 1.10`);
   expect(root.querySelector('h1')?.classList.contains('assistive')).toBe(false);
   expect([...root.children].slice(0, 4).map(element => element.localName))
     .toEqual(['h1', 'p', 'pb-fact-strip', 'dl']);
@@ -165,8 +165,8 @@ test('opens a registered rule and shows the newest version and switches to an ol
 
   expect(new URLSearchParams(window.location.search).get('version')).toBe('1.2');
   expect(root.activeElement).toBe(select);
-  expect(root.querySelector('h1')?.textContent).toBe('Original check');
-  expect(document.title).toBe('Original check | Please Behave');
+  expect(root.querySelector('h1')?.textContent).toBe('Original check · 1.2');
+  expect(document.title).toBe('Original check · 1.2 | Please Behave');
   expect(root.querySelectorAll('article')).toHaveLength(1);
   expect(widget.shadowRoot?.querySelector('h2')?.textContent).toBe('Version 1.2');
   expect(widget.hasAttribute('accent')).toBe(false);
@@ -193,7 +193,7 @@ test('uses the local ID and omits absent optional fields for an unnamed check', 
   const app = open(`/rules/detail?${new URLSearchParams(identity)}`);
   await app.updateComplete;
   const root = app.shadowRoot!.querySelector<RuleView>('pb-rule')!.shadowRoot!;
-  await vi.waitFor(() => expect(root.querySelector('h1')?.textContent).toBe(identity.id));
+  await vi.waitFor(() => expect(root.querySelector('h1')?.textContent).toBe(`${identity.id} · 1.2`));
   expect(root.querySelector('.introduction')).toBeNull();
   expect(root.querySelector('select')).toBeNull();
   expect([...root.querySelectorAll('article dt')].map(term => term.textContent)).not.toContain('Owner');
@@ -215,7 +215,7 @@ test('deep links to the selected version without changing the ledger query', asy
     const root = app.shadowRoot!.querySelector<RuleView>('pb-rule')!.shadowRoot!;
     await vi.waitFor(() => expect(root.activeElement?.shadowRoot?.activeElement?.textContent).toBe('Version 1.2'));
     expect(scrollIntoView).toHaveBeenCalledOnce();
-    expect(root.querySelector('h1')?.textContent).toBe('Original check');
+    expect(root.querySelector('h1')?.textContent).toBe('Original check · 1.2');
     expect(root.querySelectorAll('article')).toHaveLength(1);
     expect(root.querySelector('select')?.value).toBe('1.2');
     expect(fetch.mock.calls[0][0]).not.toContain('version=');

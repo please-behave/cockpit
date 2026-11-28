@@ -4,11 +4,13 @@ area: attestations
 description: >-
   The attestations page lists every attestation the ledger holds, one row per
   attestation, loaded through CON-0003 and shown newest first as the ledger
-  returns them. A row shows the localized ledger receipt time by DEC-0022
-  in the "Reported" column as a link to the attestation, the shortened repository
-  name as a link to the repository page of REQ-0033, the first seven characters
-  of the commit and the overall status. The repository link exposes the full
-  value when shortened or clipped, as specified in REQ-0016.
+  returns them. The Reported column shows a descending sort indicator and
+  exposes that direction through aria-sort. A row links the relative receipt
+  time to the attestation in that column and offers the exact local time in
+  a popup. It shows the repository as organization/repository, with the
+  repository segment opening the page of REQ-0033, then the first seven
+  characters of the commit and the overall outcome using REQ-0016.
+  The repository link exposes the canonical value when shortened or clipped.
   A tooltip and assistive technology
   expose the full value of a shortened commit. The commit links to github.com
   by the rule of DEC-0011. The columns never wrap and long values are

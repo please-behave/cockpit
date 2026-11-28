@@ -18,6 +18,8 @@ description: >-
   the button, preserves the row set and group membership, and preserves the
   initial order of equal values in either direction. Tables displaying
   paged or limited results in ledger order have no sort controls.
+  A column may expose a sort applied by the data source with a visible
+  direction indicator and aria-sort on its header.
 rationale: >-
   Short values stay readable on narrow screens while long values give way.
 decisions:

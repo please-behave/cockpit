@@ -1,7 +1,7 @@
 import { css, html, LitElement, nothing } from 'lit';
 import type { CompletedRuleSet } from '../api/client';
 import { ruleSetPath } from '../views/router';
-import { ruleSetChipStyles, ruleSetLabel } from './pb-rule-set-chip';
+import { ruleSetChipStyles, versionedName } from './pb-rule-set-chip';
 import './pb-tooltip';
 
 export const ruleSetListStyles = css`
@@ -19,7 +19,7 @@ export const ruleSetListStyles = css`
 
 export function completedRuleSetChips(sets: readonly CompletedRuleSet[]) {
   return sets.length ? html`<ul class="rule-sets" role="list">
-    ${sets.map(set => html`<li><pb-rule-set-chip wrap .label=${ruleSetLabel(set.name, set.version)}
+    ${sets.map(set => html`<li><pb-rule-set-chip wrap .label=${versionedName(set.name, set.version)}
       .href=${ruleSetPath(set, set.version)}></pb-rule-set-chip></li>`)}
   </ul>` : nothing;
 }

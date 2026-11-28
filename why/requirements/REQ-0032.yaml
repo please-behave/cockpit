@@ -5,15 +5,16 @@ description: >-
   Each release version links to a directly linkable detail page that reads
   CON-0012 and shows the version as its headline. The page shows the
   version, repository, full commit with a link to the commit when the
-  repository host is known, the ledger receipt time and the sender with its
-  authentication method. For an API key, the page states the weaker trust
+  repository host is known, the ledger receipt time labeled "Reported" and
+  the sender with its authentication method. The repository reference follows
+  REQ-0017. Reported shows a relative time with the exact local time in a popup. For an API key, the page states the weaker trust
   level in text with an icon: the sender is self-asserted and the key is not
   bound to the repository. The page shows the release's evidence as
   reported: the overall status with a link to the attestation detail, and
   each Rule Set bound at check as a chip labeled "Name · major.minor" that
   links to its registered version, with the text Complete or Incomplete.
   An incomplete Rule Set names its non-passing rules, each with its status and a link to the
-  registered rule version, and states when its version is unregistered. A
+  registered rule version labeled "Name · major.minor", and states when its version is unregistered. A
   release without evidence says so explicitly as No evidence. The page does
   not repeat the attestation's result list. Its repository name and return link
   open the repository page of REQ-0033. It explains an unknown release,

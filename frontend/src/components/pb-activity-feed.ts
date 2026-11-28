@@ -1,12 +1,11 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
-import { activityKindLabels, type ActivityEntry, type ActivityKind } from '../activity';
 import { linkStyles } from '../styles/links';
-import { repositoryPath } from '../views/router';
-import { shortName } from './pb-short-name';
+import { activityKindLabels, type ActivityEntry, type ActivityKind } from '../activity';
 import './pb-icon';
 import './pb-relative-time';
-import './pb-tooltip';
+import { repositoryReference, repositoryReferenceStyles } from './repository-reference';
+import './pb-status-pill';
 import './pb-widget';
 
 function kindList(kinds: readonly ActivityKind[]) {
@@ -17,7 +16,7 @@ function kindList(kinds: readonly ActivityKind[]) {
 export class ActivityFeed extends LitElement {
   static override properties = { entries: { attribute: false }, failed: { attribute: false } };
 
-  static override styles = [linkStyles, css`
+  static override styles = [linkStyles, repositoryReferenceStyles, css`
     @layer components {
       ul {
         display: grid;
@@ -39,21 +38,12 @@ export class ActivityFeed extends LitElement {
         gap: var(--space-2);
       }
 
-      .title pb-tooltip { min-inline-size: 0; }
-
       .kind {
         display: inline-flex;
         flex: none;
         align-items: baseline;
         gap: var(--space-1);
         font-weight: var(--weight-semibold);
-      }
-
-      .repository {
-        vertical-align: middle;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
       }
 
       p { margin: 0; }
@@ -86,14 +76,11 @@ export class ActivityFeed extends LitElement {
               return html`
                 <li>
                   <div class="title">
-                    <span class="kind"><pb-icon name=${icon}></pb-icon> ${label}</span>
-                    <pb-tooltip text-value external-trigger .description=${repository}
-                      .visibleText=${shortName(repository)}>
-                      <a class="repository" data-route href=${repositoryPath(repository)}
-                        aria-label=${repository}>${shortName(repository)}</a>
-                    </pb-tooltip>
+                    <span class="kind"><pb-icon name=${icon}></pb-icon> ${label}</span> ·
+                    ${repositoryReference(repository)}
                   </div>
-                  <p class="fact">${fact} · <pb-relative-time .value=${receivedAt}></pb-relative-time></p>
+                  <p class="fact">${kind === 'attestation' ? html`<pb-status-pill .status=${fact}></pb-status-pill>` : fact}
+                    · Reported <pb-relative-time .value=${receivedAt}></pb-relative-time></p>
                 </li>
               `;
             })}

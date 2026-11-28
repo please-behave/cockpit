@@ -31,7 +31,7 @@ async function mountChip(name: string) {
   const { chips } = await mount();
   const chip = chips.find(chip => chip.entry === fixture(name))!;
   const root = chip.shadowRoot!;
-  const link = root.querySelector<HTMLAnchorElement>('.chip')!;
+  const link = root.querySelector<HTMLAnchorElement>('.repository-name')!;
   const tooltip = root.querySelector<Tooltip>('pb-tooltip')!;
   await tooltip.updateComplete;
   const popup = tooltip.shadowRoot!.querySelector<HTMLElement>('[popover]')!;
@@ -61,7 +61,7 @@ test('groups the map by worst health, with a heading and counts for each organiz
   ]);
   expect(root.querySelector('h3 img')).toBeNull();
   expect([...root.querySelectorAll('.counts span')].slice(0, 4).map(span => span.textContent)).toEqual([
-    '3 failed', '1 warning', '3 unknown', '3 passed',
+    '3 Fail', '1 Warn', '3 Not run', '3 Pass',
   ]);
   expect(chips.map(chip => chip.entry!.repository)).toEqual([
     'github.com/acme/gadget',
@@ -104,24 +104,25 @@ test('omits the organization heading for an overview with one organization', asy
 });
 
 test.each([
-  ['gadget', 'cross', 'failed', 'Current', 'ERROR'],
-  ['no-records', 'cross', 'failed', 'Never integrated', 'No evidence'],
-  ['overdue-final', 'cross', 'failed', 'Overdue (step 4 of 4)', 'PASS'],
-  ['widget', 'warning', 'warning', 'Overdue (step 1 of 4)', 'PASS'],
-  ['never-synced', 'circle', 'unknown', 'Unknown', 'No evidence'],
-  ['elsewhere', 'circle', 'unknown', 'Unknown · Not managed', 'PASS'],
-  ['pending', 'check', 'passed', 'Pending', 'PASS'],
-  ['return-navigation', 'check', 'passed', 'Current', 'PASS'],
+  ['gadget', 'cross', 'Fail', 'Current', 'ERROR'],
+  ['no-records', 'cross', 'Fail', 'Never integrated', 'No evidence'],
+  ['overdue-final', 'cross', 'Fail', 'Overdue (step 4 of 4)', 'PASS'],
+  ['widget', 'warning', 'Warn', 'Overdue (step 1 of 4)', 'PASS'],
+  ['never-synced', 'circle', 'Not run', 'Unknown', 'No evidence'],
+  ['elsewhere', 'circle', 'Not run', 'Unknown · Not managed', 'PASS'],
+  ['pending', 'check', 'Pass', 'Pending', undefined],
+  ['return-navigation', 'check', 'Pass', 'Current', undefined],
 ])('shows the health symbol, accessible name and preview state for %s', async (name, icon, health, state, verdict) => {
-  const { link, preview } = await mountChip(name);
+  const { chip, link, preview } = await mountChip(name);
   const { repository } = fixture(name);
-  expect(link.querySelector('pb-icon')?.getAttribute('name')).toBe(icon);
-  expect(link.querySelector('.short')?.textContent).toBe(name);
-  expect(link.getAttribute('aria-label')).toBe(`${repository}, ${health}`);
+  const outcome = chip.shadowRoot!.querySelector('.chip > pb-status-pill')?.shadowRoot;
+  expect(outcome?.querySelector('pb-icon')?.getAttribute('name')).toBe(icon);
+  expect(outcome?.querySelector('.pill span')?.textContent).toBe(health);
+  expect(link.textContent).toBe(name);
+  expect(chip.shadowRoot!.querySelector('.repository-prefix')?.textContent).toBe('acme/');
+  expect(link.getAttribute('aria-label')).toBe(repository);
   expect(link.getAttribute('href')).toBe(repositoryPath(repository));
   expect(preview.querySelector('.preview-name')?.textContent).toBe(repository);
-  expect(preview.querySelector('.owner')?.textContent).toBe('acme');
-  expect(preview.querySelector('.health')?.textContent?.trim()).toBe(health);
   expect(preview.textContent).toContain(state);
   expect(preview.querySelector<StatusPill>('pb-status-pill')?.status).toBe(verdict);
 });
@@ -227,7 +228,7 @@ test('renders fixture markup as text in the chip and preview', async () => {
   const { chips } = await mount();
   const chip = chips.find(chip => chip.entry!.repository.startsWith('<b>'))!;
   const root = chip.shadowRoot!;
-  expect(root.querySelector('.short')?.textContent).toContain('<img');
+  expect(root.querySelector('.repository-name')?.textContent).toContain('<img');
   expect(root.querySelector('.preview-name')?.textContent).toBe(chip.entry!.repository);
   expect(root.querySelector('img')).toBeNull();
 });

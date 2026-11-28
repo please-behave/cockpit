@@ -5,12 +5,13 @@ description: >-
   The detail view loads the selected attestation through CON-0002 and shows
   the shortened repository name as defined in REQ-0017 as its headline.
   Below it, a fact strip shows the overall status, full reported commit,
-  ledger receipt time, attestation ID and full repository name, in that order.
+  ledger receipt time, attestation ID and repository reference, in that order.
   Their labels are "Overall", "Commit", "Reported", "Attestation ID" and
-  "Canonical name". Each label sits above its value. The facts sit side by
+  "Repository". Reported shows the relative time with the exact local
+  time in a popup. Each label sits above its value. The facts sit side by
   side and wrap on narrow screens, and long values wrap within the available
   width. The commit uses the same link target rules as the dashboard and
-  attestation history. The full repository name links to its page under REQ-0033.
+  attestation history. The repository reference follows REQ-0017.
   It follows REQ-0015 and shows a table of results with their kinds, statuses
   and verification. In reported binding order, each Rule Set group has a
   header row whose heading links to the bound version. The heading reads
@@ -30,9 +31,10 @@ description: >-
   every value in CON-0002. Results with a registered
   version show the link described by REQ-0027. Other results show the plain
   local rule ID, or the run-scoped result ID when no rule identity was
-  reported. The result row shows the rule label on one line where it fits.
-  Its reported version and a short teaser of the description from CON-0002
-  appear in a popup. Bound Rule Set heading links show a popup when a binding
+  reported. The result row shows the rule label on one line where it fits,
+  with the reported version appended as "Name · major.minor" when available.
+  A short teaser of the description from CON-0002 appears in a popup when
+  available. Bound Rule Set heading links show a popup when a binding
   has a description. Teasers are plain text and end with an ellipsis when
   shortened. Popups open on hover,
   keyboard focus and tap, stay open while hovered or while focus is inside,

@@ -1,4 +1,5 @@
 import { css, html, LitElement } from 'lit';
+import { linkStyles } from '../styles/links';
 import { describeTime } from './pb-time';
 import './pb-tooltip';
 
@@ -17,18 +18,19 @@ export function relativeTime(then: Date, now: Date, duration = false): string {
 }
 
 export class RelativeTime extends LitElement {
-  static override properties = { value: { type: String }, duration: { type: Boolean } };
+  static override properties = { value: { type: String }, duration: { type: Boolean }, href: { type: String } };
 
-  static override styles = css`
+  static override styles = [linkStyles, css`
     @layer components {
       :host {
         overflow-wrap: anywhere;
       }
     }
-  `;
+  `];
 
   declare value: string;
   declare duration: boolean;
+  declare href?: string;
   private timer?: number;
 
   constructor() {
@@ -49,10 +51,16 @@ export class RelativeTime extends LitElement {
 
   override render() {
     const date = new Date(this.value);
-    if (Number.isNaN(date.getTime())) return html`<span>${this.value}</span>`;
+    if (Number.isNaN(date.getTime())) {
+      return this.href ? html`<a data-route href=${this.href}>${this.value}</a>` : html`<span>${this.value}</span>`;
+    }
 
-    return html`<pb-tooltip .description=${describeTime(date, this.value)}><time
-      datetime=${this.value}>${relativeTime(date, new Date(), this.duration)}</time></pb-tooltip>`;
+    const time = html`<time datetime=${this.value}>${relativeTime(date, new Date(), this.duration)}</time>`;
+    const description = describeTime(date, this.value);
+    return this.href
+      ? html`<pb-tooltip external-trigger .description=${description}>
+          <a data-route href=${this.href} aria-description=${description}>${time}</a></pb-tooltip>`
+      : html`<pb-tooltip .description=${description}>${time}</pb-tooltip>`;
   }
 }
 

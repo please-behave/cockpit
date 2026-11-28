@@ -20,7 +20,8 @@ description: >-
   execution-point combination in that repository, including a row for attestations without
   execution points when present. It shows up to 100 recent attestations through
   CON-0003, filtered by the exact canonical name and in ledger order. The rows
-  show execution points, the reported time, commit and overall status, and the
+  show execution points, the relative time labeled "Reported" with exact local
+  time in a popup, commit and overall status, and the
   reported time links to the attestation detail. Each section explains when
   no records exist. Long names wrap within the available width or show their
   full value in a tooltip. All sections follow REQ-0004, REQ-0015 and REQ-0016. The attestation tables

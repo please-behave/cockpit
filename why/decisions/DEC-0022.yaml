@@ -5,8 +5,9 @@ context: >-
   time zone for display. Repeating the zone in every timestamp takes space
   in tables and detail views.
 decision: >-
-  Display absolute timestamps in the browser's locale and local time zone
-  with a medium date and medium time. Keep relative and elapsed time labels.
+  Display ledger receipt times as relative times labeled "Reported". When a
+  view specifies an absolute timestamp, use a medium date and medium time
+  in the browser's locale and time zone. Keep elapsed time labels.
   Make the exact local time, including seconds and its time zone label,
   and the UTC value available in a tooltip and as an accessible description.
   Preserve the original timestamp in the time element's datetime attribute.

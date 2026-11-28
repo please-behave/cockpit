@@ -3,6 +3,7 @@ import { repeat } from 'lit/directives/repeat.js';
 import { linkStyles } from '../styles/links';
 import { textStyles } from '../styles/text';
 import './pb-icon';
+import { repositoryReferenceStyles } from './repository-reference';
 
 export interface DataTableRow {
   /** Unique within the table and stable across updates. */
@@ -27,6 +28,8 @@ export interface DataTableColumn<Row extends DataTableRow = DataTableRow> {
   mode?: 'content' | 'fill';
   /** Only opt in when the table contains the complete data set. */
   compare?: (left: Row, right: Row) => number;
+  /** Marks a column already sorted by the data source. */
+  sorted?: Sort['direction'];
 }
 
 type Sort = { index: number; direction: 'ascending' | 'descending' };
@@ -45,6 +48,7 @@ export class DataTable<Row extends DataTableRow = DataTableRow> extends LitEleme
   static override styles = css`
     ${linkStyles}
     ${textStyles}
+    ${repositoryReferenceStyles}
 
     @layer components {
       :host {
@@ -289,14 +293,14 @@ export class DataTable<Row extends DataTableRow = DataTableRow> extends LitEleme
         <table>
           <caption id="caption" class=${this.hideCaption ? 'assistive' : nothing}>${this.label}</caption>
           <thead>
-              <tr>${columns.map(({ label, mode, part, compare }, index) => {
-                const direction = compare && this.sort?.index === index ? this.sort.direction : undefined;
+              <tr>${columns.map(({ label, mode, part, compare, sorted }, index) => {
+                const direction = compare && this.sort?.index === index ? this.sort.direction : sorted;
                 return html`
                   <th scope="col" class=${mode ?? nothing} part=${part ?? nothing}
                     aria-sort=${direction ?? nothing}>${compare
                       ? html`<button type="button" @click=${() => this.sortBy(index)}>${label}<pb-icon
                           name=${direction ? `sort-${direction}` : 'sort'}></pb-icon></button>`
-                      : label}</th>`;
+                      : html`${label}${direction ? html` <pb-icon name=${`sort-${direction}`}></pb-icon>` : nothing}`}</th>`;
               })}</tr>
           </thead>
           ${this.groups === undefined ? html`<tbody>${rows(this.rows)}</tbody>`

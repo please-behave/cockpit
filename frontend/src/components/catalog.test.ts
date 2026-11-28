@@ -59,7 +59,7 @@ test('renders the component catalog and keeps long, markup-like values inert', a
   const roots = (tag: string) => [...document.body.querySelectorAll(tag)].map(element => element.shadowRoot!);
   const [pass, fail, error, warn, notRun, unknown] = roots('pb-status-pill');
   expect([pass, fail, error, warn, notRun, unknown].map(root => root.querySelector('.pill span:last-child')?.textContent))
-    .toEqual(['PASS', 'FAIL', 'ERROR', 'WARN', 'NOT_RUN', longValue]);
+    .toEqual(['Pass', 'Fail', 'Error', 'Warn', 'Not run', longValue]);
   const [withRowHeader, plainTable, noRows] = roots('pb-data-table');
   expect(withRowHeader.querySelector('caption')?.textContent).toBe(longValue);
   expect(withRowHeader.querySelector('thead th')?.textContent).toBe(longValue);

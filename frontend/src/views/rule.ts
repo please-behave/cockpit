@@ -3,7 +3,7 @@ import { registeredVersions, type RegisteredVersion } from '../api/client';
 import { repositoryUrl } from '../commit-link';
 import '../components/pb-badge';
 import '../components/pb-fact-strip';
-import { ruleSetLabel } from '../components/pb-rule-set-chip';
+import { versionedName } from '../components/pb-rule-set-chip';
 import { shortName } from '../components/pb-short-name';
 import '../components/pb-time';
 import '../components/pb-tooltip';
@@ -129,7 +129,7 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
 
   protected override heading(versions?: RegisteredVersion[]) {
     const selected = selectedVersion(versions, this.requestedVersion);
-    return selected ? selected.name || selected.id : 'Registered rule';
+    return selected ? versionedName(selected.name || selected.id, selected.version) : 'Registered rule';
   }
 
   protected override updated() {
@@ -191,7 +191,7 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
       <dl class="memberships definitions">
         <dt>Part of</dt>
         <dd>${sets.length > 0 ? sets.map(set => html`
-          <pb-rule-set-chip .label=${ruleSetLabel(set.name || set.id, set.version)}
+          <pb-rule-set-chip .label=${versionedName(set.name || set.id, set.version)}
             .href=${ruleSetPath(set, set.version)}></pb-rule-set-chip>
         `) : html`<pb-badge>${repository
           ? html`<pb-tooltip text-value external-trigger .description=${version.source}
@@ -216,7 +216,7 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
         ${latest ? html`<pb-badge slot="metadata">Latest</pb-badge>` : nothing}
         <article>
           <dl class="definitions">
-            ${version.name ? html`<div><dt>Name</dt><dd class="plain-text">${version.name}</dd></div>` : nothing}
+            ${version.name ? html`<div><dt>Name</dt><dd class="plain-text">${versionedName(version.name, version.version)}</dd></div>` : nothing}
             <div><dt>Kind</dt><dd><pb-badge tone=${version.kind}>${version.kind}</pb-badge></dd></div>
             <div><dt>Registered</dt><dd><pb-time .value=${version.registered_at}></pb-time></dd></div>
             ${version.owner !== undefined ? html`<div><dt>Owner</dt><dd class="plain-text">${version.owner}</dd></div>` : nothing}

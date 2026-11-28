@@ -54,10 +54,10 @@ test('lists the latest releases across pages with attention first and escapes st
   await table.updateComplete;
   expect(table.shadowRoot!.querySelector('caption.assistive')?.textContent).toBe('Releases');
   expect([...table.shadowRoot!.querySelectorAll('thead th')].map(cell => cell.textContent?.trim()))
-    .toEqual(['Repository', 'Newest version', 'Recorded', 'Evidence', 'Completed Rule Sets']);
+    .toEqual(['Repository', 'Newest version', 'Reported', 'Evidence', 'Completed Rule Sets']);
   const rows = [...table.shadowRoot!.querySelectorAll('tbody tr')];
   expect(rows).toHaveLength(110);
-  const names = rows.map(row => row.querySelector('th a')!.textContent!);
+  const names = rows.map(row => row.querySelector('th a')!.getAttribute('aria-label')!);
   expect(names.slice(0, 4)).toEqual([
     'github.com/acme/evidence-error', 'github.com/acme/failing-evidence', 'github.com/acme/missing-evidence',
     expect.stringMatching(/^github.com\/.{100,}/),
@@ -74,6 +74,8 @@ test('lists the latest releases across pages with attention first and escapes st
 
   const latest = rows[names.indexOf(repository)];
   const [deepLink, versionLink] = latest.querySelectorAll<HTMLAnchorElement>('a');
+  expect(deepLink.textContent).toBe('return-navigation');
+  expect(latest.querySelector('.repository-prefix')?.textContent).toBe('acme/');
   expect(versionLink.textContent).toBe('2.0');
   expect(versionLink.getAttribute('href')).toBe(releasePath(repository, '2.0'));
   const summary = latest.querySelector<RuleSetSummary>('pb-rule-set-summary')!;
@@ -130,8 +132,8 @@ test('refreshes both release pages in place and retains the sorted list if a lat
   const view = await loaded(app);
   const table = view.shadowRoot!.querySelector<DataTable>('pb-data-table')!;
   const rows = () => [...table.shadowRoot!.querySelectorAll('tbody tr')];
-  const order = () => rows().map(row => row.querySelector('th a')!.textContent);
-  const displayedVersion = () => rows().find(row => row.querySelector('th a')!.textContent === repository)
+  const order = () => rows().map(row => row.querySelector('th a')!.getAttribute('aria-label'));
+  const displayedVersion = () => rows().find(row => row.querySelector('th a')!.getAttribute('aria-label') === repository)
     ?.querySelector('td a')?.textContent;
   const shell = app.shadowRoot!.querySelector('pb-app-shell')!.shadowRoot!;
   await vi.waitFor(() => expect(rows()).toHaveLength(110));

@@ -4,12 +4,12 @@ import { StatusPill } from './pb-status-pill';
 afterEach(() => document.body.replaceChildren());
 
 const statuses = [
-  ['PASS', 'passed', 'check'],
-  ['FAIL', 'failed', 'cross'],
-  ['ERROR', 'error', 'error'],
-  ['WARN', 'warning', 'warning'],
-  ['NOT_RUN', 'not-run', 'dash'],
-  ['release not recorded', 'not-run', 'circle'],
+  ['PASS', 'passed', 'check', 'Pass'],
+  ['FAIL', 'failed', 'cross', 'Fail'],
+  ['ERROR', 'error', 'error', 'Error'],
+  ['WARN', 'warning', 'warning', 'Warn'],
+  ['NOT_RUN', 'not-run', 'circle', 'Not run'],
+  ['release not recorded', 'not-run', 'circle', 'Release not recorded'],
   ['No evidence', 'not-run', 'dash'],
   ['Verified', 'passed', 'check'],
   ['Unverified', 'warning', 'warning'],
@@ -21,7 +21,7 @@ const statuses = [
 ];
 
 // Verifies REQ-0016.
-test.each(statuses)('renders %s as reported text with its own visual cue', async (status, style, icon) => {
+test.each(statuses)('renders %s with the shared label with its own visual cue', async (status, style, icon, label) => {
   const pill = document.createElement('pb-status-pill') as StatusPill;
   pill.setAttribute('status', status);
   document.body.append(pill);
@@ -32,7 +32,7 @@ test.each(statuses)('renders %s as reported text with its own visual cue', async
   const svg = cue.shadowRoot!.querySelector('svg')!;
   expect(cue.getAttribute('name')).toBe(icon);
   expect(svg.getAttribute('aria-hidden')).toBe('true');
-  expect(rendered.lastElementChild?.textContent).toBe(status);
+  expect(rendered.lastElementChild?.textContent).toBe(label ?? status);
 });
 
 test('offers one unframed presentation as the reported status changes', async () => {
@@ -45,7 +45,7 @@ test('offers one unframed presentation as the reported status changes', async ()
 
   pill.status = 'PASS';
   await pill.updateComplete;
-  expect(pill.shadowRoot!.querySelector('.pill.passed')?.lastElementChild?.textContent).toBe('PASS');
+  expect(pill.shadowRoot!.querySelector('.pill.passed')?.lastElementChild?.textContent).toBe('Pass');
 });
 
 // Verifies REQ-0016.

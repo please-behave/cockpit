@@ -127,7 +127,7 @@ test('counts the overview and composes the widgets in reading order', async () =
   expect(health.hasAttribute('prominent')).toBe(true);
   expect(health.querySelectorAll('ul > li > pb-stat-tile')).toHaveLength(4);
   const counts = tiles(view).map(tile => tile.shadowRoot!.querySelector('.tile')!.textContent!.trim().replace(/\s+/g, ' '));
-  expect(counts).toEqual(['4 failed', '1 warning', '3 unknown', '3 passed']);
+  expect(counts).toEqual(['4 Fail', '1 Warn', '3 Not run', '3 Pass']);
   expect(names(view)).toHaveLength(fixtures.repositories.length);
   expect(names(view)).toHaveLength(new Set(names(view)).size);
   expect(names(view)).not.toContain('github.com/acme/archived');
@@ -214,7 +214,7 @@ test('keeps the organization heading and full counts when the filter hides every
   const root = map(view).shadowRoot!;
   expect([...root.querySelectorAll('h3')].map(heading => heading.textContent)).toEqual(['acme']);
   expect([...root.querySelectorAll('.counts span')].map(span => span.textContent)).toEqual([
-    '3 failed', '1 warning', '3 unknown', '2 passed',
+    '3 Fail', '1 Warn', '3 Not run', '2 Pass',
   ]);
   expect(map(view).link).toEqual({ href: '/', label: 'Clear status filter' });
 });
@@ -303,7 +303,7 @@ test('refreshes every 5 minutes while visible, keeps focus and the active filter
   overview.mockResolvedValue(repositories(...reports));
   const view = await mount('?status=passed');
   const [firstChip] = chips(view);
-  const link = firstChip.shadowRoot!.querySelector<HTMLAnchorElement>('a.chip')!;
+  const link = firstChip.shadowRoot!.querySelector<HTMLAnchorElement>('a.repository-name')!;
   link.focus();
   expect(overview).toHaveBeenCalledTimes(1);
 

@@ -4,14 +4,15 @@ import type { DataTableColumn } from '../components/pb-data-table';
 import '../components/pb-data-table';
 import '../components/pb-empty-state';
 import '../components/pb-relative-time';
+import { repositoryReference } from '../components/repository-reference';
 import '../components/pb-rule-set-summary';
 import '../components/pb-status-pill';
 import '../components/pb-tooltip';
 import { CockpitView } from './cockpit-view';
-import { releasePath, repositoryPath } from './router';
+import { releasePath } from './router';
 
 const evidenceColumns: DataTableColumn[] = [
-  { label: 'Recorded', mode: 'content' },
+  { label: 'Reported', mode: 'content' },
   { label: 'Evidence', mode: 'content' },
   { label: 'Completed Rule Sets', mode: 'content' },
 ];
@@ -38,9 +39,7 @@ function releaseRow(entry: ReleaseSummary, overview: boolean) {
   </pb-tooltip>`;
   const commit = entry.commit.slice(0, 7);
   const identity = overview ? [
-    html`<pb-tooltip text-value external-trigger .description=${entry.repository}>
-      <a data-route href=${repositoryPath(entry.repository)}>${entry.repository}</a>
-    </pb-tooltip>`,
+    repositoryReference(entry.repository),
     version,
   ] : [
     version,

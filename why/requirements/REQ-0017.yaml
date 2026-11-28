@@ -8,8 +8,11 @@ description: >-
   full value. Hover or keyboard focus shows an available tooltip. On touch,
   the first tap opens an available tooltip and the second follows the link.
   A link without a popup follows on the first tap. The attestation detail shows
-  the shortened repository name in its heading and the full name in the
-  "Canonical name" field. Its rules table shows the shortened rule identifier.
+  the shortened repository name in its heading and the reference in the
+  "Repository" field. Repository references in dashboard widgets and
+  evidence views show organization/repository on one line, linking the
+  repository segment and exposing the canonical reference when shortened
+  or clipped. Its rules table uses the labels defined in REQ-0010.
 rationale: >-
   Viewers recognize long names quickly without losing the exact reported
   value.

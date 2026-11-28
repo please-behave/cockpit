@@ -11,7 +11,7 @@ export const repositorySummaryStyles = css`
     .meta.status-allowed { color: var(--status-allowed); }
     .meta.status-warning { color: var(--status-warning); }
 
-    .owner, .meta {
+    .meta {
       color: var(--text-muted);
       font-size: var(--type-meta);
       line-height: var(--line-meta);
@@ -30,8 +30,8 @@ export function repositoryEvidence(entry: RepositoryOverviewEntry) {
   } = entry;
   const managedLabel = entry.managed ? nothing : ' · Not managed';
   return html`
-    ${check ? html`<span class="meta">Reported <pb-commit-link .repository=${repository}
-      .commit=${check.commit}></pb-commit-link> · <pb-relative-time .value=${check.received_at}></pb-relative-time></span>`
+    ${check ? html`<span class="meta"><pb-commit-link .repository=${repository}
+      .commit=${check.commit}></pb-commit-link> · Reported <pb-relative-time .value=${check.received_at}></pb-relative-time></span>`
       : nothing}
     ${head && !head.direct_evidence && pendingSince && (state === 'pending' || state === 'overdue') ? html`
       <span class="meta ${status_token}">${stateLabels[state]}${state === 'overdue'

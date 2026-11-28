@@ -7,7 +7,7 @@ import type { Tooltip } from '../components/pb-tooltip';
 import { groupedDeploymentTable, repositoryDeploymentTable } from './deployment-table';
 import { releaseTable } from './releases';
 
-const repository = 'github.com/acme/project';
+const repository = 'acme/project';
 const fullCommit = 'a'.repeat(40);
 const shortCommit = fullCommit.slice(0, 7);
 const release = {

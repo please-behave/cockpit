@@ -15,7 +15,7 @@ test('maps each kind to its key fact', () => {
     id: '7', repository: 'github.com/acme/d', received_at: '2026-11-23T11:02:00Z', target: { owner: 'o', name: 'production' },
   } as Deployment;
   expect(attestationActivity(attestation)).toEqual({
-    kind: 'attestation', key: 'a1', repository: 'github.com/acme/a', receivedAt: '2026-11-23T11:00:00Z', fact: 'Verdict FAIL',
+    kind: 'attestation', key: 'a1', repository: 'github.com/acme/a', receivedAt: '2026-11-23T11:00:00Z', fact: 'FAIL',
   });
   expect(releaseActivity(release)).toMatchObject({ kind: 'release', repository: 'github.com/acme/r', fact: 'Version 1.2' });
   expect(deploymentActivity(deployment)).toEqual({

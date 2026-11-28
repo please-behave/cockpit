@@ -6,7 +6,7 @@ import '../components/pb-badge';
 import type { DataTableColumn } from '../components/pb-data-table';
 import '../components/pb-data-table';
 import '../components/pb-key-value';
-import { ruleSetLabel } from '../components/pb-rule-set-chip';
+import { versionedName } from '../components/pb-rule-set-chip';
 import '../components/pb-section';
 import '../components/pb-status-pill';
 import '../components/pb-time';
@@ -63,7 +63,7 @@ function knowledgeDocument(knowledge: Record<string, unknown> = {}) {
 }
 
 function memberRow(member: RegisteredRuleSetVersion['members'][number], role: string) {
-  const label = `${member.id} ${member.version}`;
+  const label = versionedName(member.id, member.version);
   return {
     key: JSON.stringify([member.source, member.path, member.id, member.version]),
     label,
@@ -111,7 +111,7 @@ function repositoryList(repositories: RuleSetCompliance[]) {
             ${!binding.registered ? html`<p>Version is unregistered.</p>` : nothing}
             ${!binding.complete && binding.non_passing_members.length ? html`<ul class="non-passing" aria-label="Non-passing rules">
               ${binding.non_passing_members.map(member => html`<li>
-                <a data-route href=${rulePath(member, member.version)}>${member.id} ${member.version}</a>
+                <a data-route href=${rulePath(member, member.version)}>${versionedName(member.id, member.version)}</a>
                 <pb-status-pill .status=${member.status}></pb-status-pill>
               </li>`)}
             </ul>` : nothing}
@@ -160,7 +160,7 @@ export class RuleSetView extends CockpitView<RuleSetDetail> {
 
   protected override heading(data?: RuleSetDetail) {
     const selected = selectedVersion(data?.versions, this.requestedVersion);
-    return selected ? ruleSetLabel(selected.name || selected.id, selected.version) : 'Registered Rule Set';
+    return selected ? versionedName(selected.name || selected.id, selected.version) : 'Registered Rule Set';
   }
 
   protected override content(data?: RuleSetDetail) {

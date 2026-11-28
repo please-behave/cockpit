@@ -23,7 +23,7 @@ export const activityKindLabels: Record<ActivityKind, { icon: IconName; label: s
 };
 
 export function attestationActivity({ id, repository, received_at, overall }: Summary): ActivityEntry {
-  return { kind: 'attestation', key: id, repository, receivedAt: received_at, fact: `Verdict ${overall}` };
+  return { kind: 'attestation', key: id, repository, receivedAt: received_at, fact: overall };
 }
 
 export function releaseActivity({ repository, version, received_at }: ReleaseSummary): ActivityEntry {

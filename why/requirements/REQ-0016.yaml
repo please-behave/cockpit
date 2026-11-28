@@ -3,7 +3,9 @@ name: Accessible Reported Statuses
 area: identity
 description: >-
   The cockpit never relies on color alone to convey an outcome. It displays
-  the status exactly as reported. Each outcome, including verdicts, rule
+  known verdicts and rule statuses as Pass, Warn, Fail, Error or Not run,
+  and missing evidence as No evidence. Outcome counts use the same labels
+  without inflection. Each outcome, including verdicts, rule
   statuses and verification, uses an unframed visible label and an SVG symbol
   in the corresponding status color. PASS, FAIL, ERROR, WARN and NOT_RUN
   each use a distinct symbol. Unrecognized statuses retain their reported

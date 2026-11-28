@@ -6,25 +6,26 @@ description: >-
   target name and canonical subject repository. It reads every page through CON-0013.
   The visually hidden Deployments caption names both the table and its scroll
   region for assistive technology. The table shows one row per deployment.
-  It links the canonical repository to REQ-0033 in the row when grouped by
+  It uses the repository reference of REQ-0017 in the row when grouped by
   target and in the group header when grouped by repository. Each row links a recorded release version to REQ-0032,
   shows an unrecorded version as plain text with
-  "release not recorded", or shows the first seven characters of the reported
+  "Release not recorded", or shows the first seven characters of the reported
   commit for a commit-only deployment. Repository, target, version and commit
   values expose their full text in a tooltip when shortened or clipped, following
   REQ-0016.
   The target identity includes the owner and name, shown in the group header
   when grouped by target and in the row when grouped by repository. Each row
-  shows the ledger receipt time, with the localized exact time in an accessible
-  tooltip. Reported evidence shows
-  the ledger's outcome, "No evidence" for a known commit without evidence, or
-  "release not recorded" for an unresolved version, each with text and an icon.
+  shows relative ledger receipt time labeled "Reported", with the exact local
+  time in an accessible popup. Evidence uses the outcome wording of REQ-0016,
+  including "No evidence" for a known commit without evidence, or
+  "Release not recorded" for an unresolved version, each with text and an icon.
   A Rule Set summary shows the number of completed Rule Sets and opens a preview
   with a linked "Name · major.minor" chip for each set's bound version.
   Viewers can group by target (the default) or repository and combine filters
   for target, repository and evidence status. A status line reports the number
   of matching deployments. Group header
-  rows show the worst visible status and its count. Reported errors,
+  rows show the worst visible status and how many of the deployments in the
+  group have that status, as "N of M deployments". Reported errors,
   failures and entries without evidence appear before passing entries.
   The view follows REQ-0004, REQ-0015 and REQ-0016.
 rationale: >-

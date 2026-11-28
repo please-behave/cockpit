@@ -24,6 +24,7 @@ files:
   - frontend/src/components/pb-key-value.ts
   - frontend/src/components/pb-relative-time.ts
   - frontend/src/components/pb-repo-chip.ts
+  - frontend/src/components/repository-reference.ts
   - frontend/src/components/pb-section.ts
   - frontend/src/components/pb-short-name.ts
   - frontend/src/components/pb-stat-tile.ts

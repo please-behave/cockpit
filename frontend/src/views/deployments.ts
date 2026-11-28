@@ -2,6 +2,7 @@ import { css, html, type CSSResult } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 import { deployments, type Deployment } from '../api/client';
 import '../components/pb-empty-state';
+import { outcomeLabel } from '../components/pb-status-pill';
 import { CockpitView } from './cockpit-view';
 import {
   compareEvidence, deploymentTableStyles, evidenceStatus, groupedDeploymentTable, statuses, targetKey, targetLabel,
@@ -108,7 +109,7 @@ export class DeploymentsView extends CockpitView<Deployment[]> {
         <label>Evidence status
           <select @change=${(event: Event) => this.change(event, 'evidence')}>
             <option value="">All evidence statuses</option>
-            ${statuses.map(status => html`<option value=${status}>${status}</option>`)}
+            ${statuses.map(status => html`<option value=${status}>${outcomeLabel(status)}</option>`)}
           </select>
         </label>
       </div>`;

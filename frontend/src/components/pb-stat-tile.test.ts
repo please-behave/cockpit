@@ -21,10 +21,10 @@ afterEach(() => document.body.replaceChildren());
 
 // Verifies REQ-0015 and REQ-0019.
 test.each([
-  ['failed', 'cross', '4', 'failed', '4 failed repositories'],
-  ['warning', 'warning', '1', 'warning', '1 repository with a warning'],
-  ['not-run', 'circle', '3', 'unknown', '3 unknown repositories'],
-  ['passed', 'check', '3', 'passed', '3 passed repositories'],
+  ['failed', 'cross', '4', 'Fail', '4 Fail'],
+  ['warning', 'warning', '1', 'Warn', '1 Warn'],
+  ['not-run', 'circle', '3', 'Not run', '3 Not run'],
+  ['passed', 'check', '3', 'Pass', '3 Pass'],
 ] as const)('shows the %s group and links to its filter', async (status, symbol, count, label, name) => {
   const root = await mount(status);
   const link = root.querySelector('a')!;
@@ -55,10 +55,10 @@ test('exposes the current filter and shows the first three names on keyboard foc
 });
 
 test.each([
-  ['failed', 'failed', '0 failed repositories', 'dashboard-clear'],
-  ['warning', 'warning', '0 repositories with warnings', 'dashboard-clear'],
-  ['not-run', 'unknown', '0 unknown repositories', 'dashboard-clear'],
-  ['passed', 'passed', '0 passed repositories', 'dashboard-unsynced'],
+  ['failed', 'Fail', '0 Fail', 'dashboard-clear'],
+  ['warning', 'Warn', '0 Warn', 'dashboard-clear'],
+  ['not-run', 'Not run', '0 Not run', 'dashboard-clear'],
+  ['passed', 'Pass', '0 Pass', 'dashboard-unsynced'],
 ] as const)('links the muted zero %s tile without a preview', async (status, label, name, fixture) => {
   const data = respond(`${fixtureTargets.repositoryOverview}?preview=${fixture}`)!.body as RepositoryOverview;
   const root = await mount(status, true, data.repositories);
@@ -78,7 +78,7 @@ test('renders stored repository names as text in both descriptions', async () =>
   const root = await mount('passed', false, [repository]);
   const tooltip = root.querySelector<Tooltip>('pb-tooltip')!;
   await tooltip.updateComplete;
-  expect(root.querySelector('a')?.getAttribute('aria-label')).toBe('1 passed repository');
+  expect(root.querySelector('a')?.getAttribute('aria-label')).toBe('1 Pass');
   expect(root.getElementById('preview')?.textContent).toBe(repository.repository);
   expect(tooltip.shadowRoot!.querySelector('.surface')?.textContent).toBe(repository.repository);
   expect(root.querySelector('img, b')).toBeNull();

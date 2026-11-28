@@ -13,12 +13,13 @@ description: >-
   falls back to the newest. The page shows the selected version's knowledge,
   including purpose, audience, commonality, admission criteria, and reasons
   for its execution points. The Members table links every registered member
-  to that rule's registered version and shows the member's role when known.
+  to that rule's registered version with the label "Name · major.minor" and
+  shows the member's role when known.
   The table can be sorted by rule or role under REQ-0018. Missing or unfamiliar
   knowledge fields do not prevent the detail from rendering. The
   page also shows each current repository binding reported by CON-0008,
   with its bound version, completeness at check and each non-passing rule's
-  status and link to the registered rule version. Completeness and rule status
+  status and a link labeled "Name · major.minor" to the registered rule version. Completeness and rule status
   follow REQ-0016. The bindings remain visible when viewing historical
   versions. The page follows REQ-0015 and renders registered text as escaped
   plain text.

@@ -14,11 +14,11 @@ export function repositoryHealth(entry: RepositoryOverviewEntry): RepositoryHeal
 }
 
 export const healthStatuses = {
-  failed: { label: 'failed', icon: 'cross', rank: 0 },
-  warning: { label: 'warning', icon: 'warning', rank: 1 },
-  'not-run': { label: 'unknown', icon: 'circle', rank: 2 },
-  passed: { label: 'passed', icon: 'check', rank: 3 },
-} satisfies Record<RepositoryHealth, { label: string; icon: IconName; rank: number }>;
+  failed: { outcome: 'FAIL', icon: 'cross', rank: 0 },
+  warning: { outcome: 'WARN', icon: 'warning', rank: 1 },
+  'not-run': { outcome: 'NOT_RUN', icon: 'circle', rank: 2 },
+  passed: { outcome: 'PASS', icon: 'check', rank: 3 },
+} satisfies Record<RepositoryHealth, { outcome: string; icon: IconName; rank: number }>;
 
 export const stateLabels = {
   current: 'Current',

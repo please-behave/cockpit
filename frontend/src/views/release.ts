@@ -2,9 +2,10 @@ import { css, html, nothing, type CSSResult } from 'lit';
 import { getRelease, type AuthMethod, type ReleaseDetail } from '../api/client';
 import '../components/pb-commit-link';
 import '../components/pb-key-value';
-import { ruleSetLabel } from '../components/pb-rule-set-chip';
 import '../components/pb-status-pill';
-import '../components/pb-time';
+import '../components/pb-relative-time';
+import { repositoryReference, repositoryReferenceStyles } from '../components/repository-reference';
+import { versionedName } from '../components/pb-rule-set-chip';
 import '../components/pb-widget';
 import { CockpitView } from './cockpit-view';
 import { repositoryPath, rulePath, ruleSetPath } from './router';
@@ -26,13 +27,13 @@ function ruleSets({ rule_sets }: NonNullable<ReleaseDetail['evidence']>) {
   return html`<ul class="rule-sets" role="list">${rule_sets.map(set => html`
     <li>
       <pb-widget heading-level="3">
-        <pb-rule-set-chip slot="heading" .label=${ruleSetLabel(set.name || set.id, set.version)}
+        <pb-rule-set-chip slot="heading" .label=${versionedName(set.name || set.id, set.version)}
           .href=${ruleSetPath(set, set.version)}></pb-rule-set-chip>
         <pb-status-pill slot="metadata" .status=${set.complete ? 'Complete' : 'Incomplete'}></pb-status-pill>
         ${set.registered ? nothing : html`<p>Version is unregistered.</p>`}
         ${!set.complete && set.non_passing_members.length ? html`<ul class="non-passing" aria-label="Non-passing rules">
           ${set.non_passing_members.map(member => html`<li>
-            <a data-route href=${rulePath(member, member.version)}>${member.id} ${member.version}</a>
+            <a data-route href=${rulePath(member, member.version)}>${versionedName(member.id, member.version)}</a>
             <pb-status-pill .status=${member.status}></pb-status-pill>
           </li>`)}
         </ul>` : nothing}
@@ -58,7 +59,7 @@ function evidence({ evidence }: ReleaseDetail) {
 
 export class ReleaseView extends CockpitView<ReleaseDetail> {
   static override properties = { repository: { attribute: false }, version: { attribute: false } };
-  static override styles = [CockpitView.styles as CSSResult, css`
+  static override styles = [repositoryReferenceStyles, CockpitView.styles as CSSResult, css`
     @layer components {
       :host { overflow-wrap: anywhere; }
       pb-key-value { margin-block-end: var(--space-6); }
@@ -92,10 +93,10 @@ export class ReleaseView extends CockpitView<ReleaseDetail> {
   protected override content(release?: ReleaseDetail) {
     const items = release ? [
       { term: 'Version', description: release.version },
-      { term: 'Repository', description: html`<a data-route href=${repositoryPath(release.repository)}>${release.repository}</a>` },
+      { term: 'Repository', description: repositoryReference(release.repository) },
       { term: 'Commit', description: html`<pb-commit-link full .repository=${release.repository}
         .commit=${release.commit}></pb-commit-link>` },
-      { term: 'Recorded', description: html`<pb-time .value=${release.received_at}></pb-time>` },
+      { term: 'Reported', description: html`<pb-relative-time .value=${release.received_at}></pb-relative-time>` },
       { term: 'Sender', description: sender(release) },
     ] : [];
     return html`

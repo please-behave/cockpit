@@ -3,6 +3,7 @@ import type { RepositoryOverviewEntry } from '../api/client';
 import { healthStatuses, repositoryHealth, type RepositoryHealth } from '../repository-health';
 import { linkStyles } from '../styles/links';
 import './pb-icon';
+import { outcomeLabel } from './pb-status-pill';
 import './pb-tooltip';
 
 const previewLimit = 3;
@@ -79,15 +80,13 @@ export class StatTile extends LitElement {
     const status = healthStatuses[this.status];
     const matching = this.repositories.filter(entry => repositoryHealth(entry) === this.status);
     const count = matching.length;
+    const label = outcomeLabel(status.outcome);
     const content = html`
       <pb-icon class=${count ? this.status : nothing} name=${status.icon}></pb-icon>
-      <span class="count">${count}</span> <span>${status.label}</span>
+      <span class="count">${count}</span> <span>${label}</span>
       ${this.active ? html`<span class="active-label">Current filter</span>` : nothing}
     `;
-    const noun = count === 1 ? 'repository' : 'repositories';
-    const name = this.status === 'warning'
-      ? `${count} ${noun} with ${count === 1 ? 'a warning' : 'warnings'}`
-      : `${count} ${status.label} ${noun}`;
+    const name = `${count} ${label}`;
     const link = html`
       <a class="tile ${count === 0 ? 'empty' : ''} ${this.active ? 'active' : ''}"
         data-route href=${this.href ?? `/?status=${this.status}`}

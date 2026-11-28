@@ -2,14 +2,14 @@ import { css, html, LitElement } from 'lit';
 import type { IconName } from './icons';
 import './pb-icon';
 
-const statuses = new Map<string, { style: string; icon: IconName }>([
-  ['PASS', { style: 'passed', icon: 'check' }],
-  ['FAIL', { style: 'failed', icon: 'cross' }],
-  ['ERROR', { style: 'error', icon: 'error' }],
-  ['WARN', { style: 'warning', icon: 'warning' }],
-  ['release not recorded', { style: 'not-run', icon: 'circle' }],
+const statuses = new Map<string, { style: string; icon: IconName; label?: string }>([
+  ['PASS', { style: 'passed', icon: 'check', label: 'Pass' }],
+  ['FAIL', { style: 'failed', icon: 'cross', label: 'Fail' }],
+  ['ERROR', { style: 'error', icon: 'error', label: 'Error' }],
+  ['WARN', { style: 'warning', icon: 'warning', label: 'Warn' }],
+  ['release not recorded', { style: 'not-run', icon: 'circle', label: 'Release not recorded' }],
   ['No evidence', { style: 'not-run', icon: 'dash' }],
-  ['NOT_RUN', { style: 'not-run', icon: 'dash' }],
+  ['NOT_RUN', { style: 'not-run', icon: 'circle', label: 'Not run' }],
   ['Verified', { style: 'passed', icon: 'check' }],
   ['Unverified', { style: 'warning', icon: 'warning' }],
   ['Complete', { style: 'passed', icon: 'check' }],
@@ -17,6 +17,10 @@ const statuses = new Map<string, { style: string; icon: IconName }>([
   ['Repository not compliant', { style: 'warning', icon: 'warning' }],
   ['API key', { style: 'warning', icon: 'warning' }],
 ]);
+
+export function outcomeLabel(status: string) {
+  return statuses.get(status)?.label ?? status;
+}
 
 export class StatusPill extends LitElement {
   static override properties = {
@@ -60,7 +64,7 @@ export class StatusPill extends LitElement {
     return html`
       <span class="pill ${status?.style ?? 'unknown'}">
         <pb-icon name=${status?.icon ?? 'question'}></pb-icon>
-        <span>${this.status}</span>
+        <span>${outcomeLabel(this.status)}</span>
       </span>
     `;
   }

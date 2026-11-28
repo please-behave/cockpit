@@ -3,10 +3,11 @@ import type { Deployment, DeploymentTarget } from '../api/client';
 import type { DataTableColumn, DataTableGroup } from '../components/pb-data-table';
 import '../components/pb-data-table';
 import '../components/pb-relative-time';
+import { repositoryReference } from '../components/repository-reference';
 import '../components/pb-rule-set-summary';
 import '../components/pb-status-pill';
 import '../components/pb-tooltip';
-import { releasePath, repositoryPath } from './router';
+import { releasePath } from './router';
 
 export const statuses = ['ERROR', 'FAIL', 'release not recorded', 'No evidence', 'PASS'] as const;
 type EvidenceStatus = typeof statuses[number];
@@ -32,7 +33,7 @@ type Identity = 'repository' | 'target';
 
 const facts: DataTableColumn[] = [
   { label: 'Version or commit', mode: 'fill', part: 'deployment-reference' },
-  { label: 'Recorded', mode: 'content' },
+  { label: 'Reported', mode: 'content' },
   { label: 'Evidence', mode: 'content' },
   { label: 'Completed Rule Sets', mode: 'content' },
 ];
@@ -65,10 +66,7 @@ function deploymentRow(entry: Deployment, identity: Identity, key: string = entr
   return {
     key,
     cells: [
-      identity === 'target' ? textWithPreview(targetLabel(entry.target)) : html`
-        <pb-tooltip text-value external-trigger .description=${entry.repository}>
-          <a data-route href=${repositoryPath(entry.repository)}>${entry.repository}</a>
-        </pb-tooltip>`,
+      identity === 'target' ? textWithPreview(targetLabel(entry.target)) : repositoryReference(entry.repository),
       deploymentReference(entry),
       html`<pb-relative-time .value=${entry.received_at}></pb-relative-time>`,
       html`<pb-status-pill .status=${evidenceStatus(entry)}></pb-status-pill>`,
@@ -85,11 +83,11 @@ export function groupedDeploymentTable(groups: DeploymentGroup[], groupBy: Ident
     const status = evidenceStatus(rows[0]);
     const count = rows.filter(row => evidenceStatus(row) === status).length;
     const name = groupBy === 'repository'
-      ? html`<a data-route href=${repositoryPath(label)}>${label}</a>`
+      ? repositoryReference(label)
       : label;
     return {
       key,
-      heading: html`${name} · <pb-status-pill .status=${status}></pb-status-pill> ${count} of ${rows.length}`,
+      heading: html`${name} · <pb-status-pill .status=${status}></pb-status-pill> · ${count} of ${rows.length} ${rows.length === 1 ? 'deployment' : 'deployments'}`,
       rows: rows.map(entry => deploymentRow(entry, identity,
         identity === 'target' ? targetKey(entry.target) : entry.repository)),
     };

@@ -161,7 +161,7 @@ test('shows set facts and keeps same-name local rules in distinct collapsed grou
     const table = group.querySelector<DataTable>('pb-data-table')!;
     await table.updateComplete;
     const link = table.shadowRoot!.querySelector<HTMLAnchorElement>('tbody a')!;
-    expect(link.textContent).toBe('Syntax');
+    expect(link.textContent).toBe(`Syntax · ${local[index].version}`);
     expect(new URL(link.href).searchParams.get('source')).toBe(local[index].source);
   }
   const table = baselineGroup.querySelector<DataTable>('pb-data-table')!;

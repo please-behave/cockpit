@@ -67,19 +67,19 @@ test('shows all pages grouped by target with the worst evidence first', async ()
   const grid = table(root)!.shadowRoot!;
   expect(grid.querySelector('caption.assistive')?.textContent).toBe('Deployments');
   expect([...grid.querySelectorAll('thead th')].map(cell => cell.textContent?.trim()))
-    .toEqual(['Repository', 'Version or commit', 'Recorded', 'Evidence', 'Completed Rule Sets']);
+    .toEqual(['Repository', 'Version or commit', 'Reported', 'Evidence', 'Completed Rule Sets']);
   const groups = [...grid.querySelectorAll('tbody')];
   expect(groups.length).toBeGreaterThan(100);
   const group = groups[0];
   const heading = group.querySelector('th[scope="rowgroup"]')!;
   expect(heading.textContent).toContain(owner + ' · production');
   expect(heading.querySelector('pb-status-pill')).toHaveProperty('status', 'ERROR');
-  expect(heading.textContent).toContain('1 of 4');
+  expect(heading.textContent).toContain('1 of 4 deployments');
   expect([...group.querySelectorAll('td pb-status-pill')].map(pill => (pill as StatusPill).status))
     .toEqual(['ERROR', 'FAIL', 'No evidence', 'PASS']);
   expect(groups.some(group => group.querySelector('th')?.textContent?.includes('github.com/acme/other-infrastructure · production'))).toBe(true);
 
-  expect(rows(root).some(row => row.querySelector('th a')!.textContent!.length > 100)).toBe(true);
+  expect(rows(root).some(row => row.querySelector('th .repository-reference')!.textContent!.trim().length > 100)).toBe(true);
   expect(rows(root).some(row => row.cells[1].textContent!.includes('<img'))).toBe(true);
   expect(grid.querySelector('img')).toBeNull();
   const pass = group.rows[group.rows.length - 1];
@@ -103,12 +103,13 @@ test('shows all pages grouped by target with the worst evidence first', async ()
   expect(missing.querySelector('pb-status-pill')).toHaveProperty('status', 'release not recorded');
   expect(missing.cells[1].querySelector('a')).toBeNull();
   expect(missing.querySelector('pb-rule-set-summary')).toHaveProperty('sets', []);
-  for (const [status, icon] of [
-    ['ERROR', 'error'], ['FAIL', 'cross'], ['release not recorded', 'circle'], ['No evidence', 'dash'], ['PASS', 'check'],
+  for (const [status, icon, label] of [
+    ['ERROR', 'error', 'Error'], ['FAIL', 'cross', 'Fail'], ['release not recorded', 'circle', 'Release not recorded'],
+    ['No evidence', 'dash', 'No evidence'], ['PASS', 'check', 'Pass'],
   ]) {
     const pill = [...grid.querySelectorAll<StatusPill>('td pb-status-pill')].find(pill => pill.status === status)!;
     await pill.updateComplete;
-    expect(pill.shadowRoot?.textContent).toContain(status);
+    expect(pill.shadowRoot?.textContent).toContain(label);
     expect(pill.shadowRoot?.querySelector('pb-icon')?.getAttribute('name')).toBe(icon);
   }
 });
@@ -120,6 +121,9 @@ test('changes grouping and combines labelled filters without losing focus', asyn
   const selects = [...root.querySelectorAll('select')];
   expect(selects.map(control => control.labels?.[0].firstChild?.textContent?.trim()))
     .toEqual(['Group by', 'Target', 'Repository', 'Evidence status']);
+  expect([...selects[3].options].map(option => option.textContent)).toEqual([
+    'All evidence statuses', 'Error', 'Fail', 'Release not recorded', 'No evidence', 'Pass',
+  ]);
   expect(selects[0].value).toBe('target');
 
   async function change(control: HTMLSelectElement, value: string) {
@@ -136,7 +140,8 @@ test('changes grouping and combines labelled filters without losing focus', asyn
   const grid = table(root)!.shadowRoot!;
   expect(grid.querySelector('thead th')?.textContent?.trim()).toBe('Target');
   const heading = grid.querySelector(`th[scope="rowgroup"] a[href="${repositoryPath(repository)}"]`)!;
-  expect(heading.textContent).toBe(repository);
+  expect(heading.textContent).toBe('return-navigation');
+  expect(heading.closest('.repository-reference')?.querySelector('.repository-prefix')?.textContent).toBe('acme/');
   const repositoryGroup = heading.closest('tbody')!;
   expect(repositoryGroup.rows.length).toBeGreaterThan(100);
   expect(repositoryGroup.rows[1].cells[0].textContent?.trim()).toBe(owner + ' · rollback');

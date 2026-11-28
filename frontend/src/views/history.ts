@@ -5,18 +5,16 @@ import '../components/pb-commit-link';
 import '../components/pb-data-table';
 import '../components/pb-empty-state';
 import '../components/pb-error-state';
-import { shortName } from '../components/pb-short-name';
+import '../components/pb-relative-time';
+import { repositoryReference } from '../components/repository-reference';
 import '../components/pb-status-pill';
-import '../components/pb-time';
-import '../components/pb-tooltip';
 import { CockpitView } from './cockpit-view';
-import { repositoryPath } from './router';
 
 const pageSize = 100;
 
 const columns: DataTableColumn[] = [
-  { label: 'Reported', mode: 'content' },
-  { label: 'Repository', mode: 'fill' },
+  { label: 'Reported', mode: 'content', sorted: 'descending' },
+  { label: 'Repository', mode: 'fill', part: 'repository' },
   { label: 'Commit', mode: 'content' },
   { label: 'Overall', mode: 'content' },
 ];
@@ -41,6 +39,8 @@ export class HistoryView extends CockpitView<Summary[]> {
     @layer components {
       /* Prepending refreshed rows keeps the page at the same scroll offset. */
       :host { overflow-anchor: none; }
+
+      pb-data-table::part(repository) { min-inline-size: 16ch; }
 
       .sentinel {
         block-size: 1px;
@@ -182,13 +182,9 @@ export class HistoryView extends CockpitView<Summary[]> {
     const rows = this.loaded.map(summary => ({
       key: summary.id,
       cells: [
-        html`<pb-time .href=${`/attestations/${encodeURIComponent(summary.id)}`}
-          .value=${summary.received_at}></pb-time>`,
-        html`<pb-tooltip text-value external-trigger .description=${summary.repository}
-          .visibleText=${shortName(summary.repository)}>
-          <a data-route href=${repositoryPath(summary.repository)}>
-            <pb-short-name .value=${summary.repository}></pb-short-name></a>
-        </pb-tooltip>`,
+        html`<pb-relative-time .href=${`/attestations/${encodeURIComponent(summary.id)}`}
+          .value=${summary.received_at}></pb-relative-time>`,
+        repositoryReference(summary.repository),
         html`<pb-commit-link .repository=${summary.repository} .commit=${summary.commit}></pb-commit-link>`,
         html`<pb-status-pill .status=${summary.overall}></pb-status-pill>`,
       ],

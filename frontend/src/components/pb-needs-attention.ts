@@ -1,16 +1,13 @@
-import { css, html, LitElement, nothing } from 'lit';
+import { css, html, LitElement } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
+import { linkStyles } from '../styles/links';
 import type { RepositoryOverviewEntry } from '../api/client';
 import { compareBySeverity, healthStatuses, repositoryHealth, stateLabels } from '../repository-health';
-import { linkStyles } from '../styles/links';
 import { textStyles } from '../styles/text';
-import { repositoryPath } from '../views/router';
-import { ownerName, shortName } from './pb-short-name';
 import './pb-commit-link';
-import './pb-icon';
 import './pb-relative-time';
+import { repositoryReference, repositoryReferenceStyles } from './repository-reference';
 import './pb-status-pill';
-import './pb-tooltip';
 import './pb-widget';
 
 function attentionReason(entry: RepositoryOverviewEntry) {
@@ -18,8 +15,7 @@ function attentionReason(entry: RepositoryOverviewEntry) {
   if (state === 'unknown') return 'Evidence status unknown';
   if (state === 'never_integrated') return stateLabels[state];
   if (check?.overall === 'FAIL' || check?.overall === 'ERROR') {
-    return html`<pb-status-pill .status=${check.overall}></pb-status-pill> ·
-      <pb-commit-link .repository=${entry.repository} .commit=${check.commit}></pb-commit-link> · Reported <pb-relative-time
+    return html`<pb-commit-link .repository=${entry.repository} .commit=${check.commit}></pb-commit-link> · Reported <pb-relative-time
       .value=${check.received_at}></pb-relative-time>`;
   }
   return html`${stateLabels.overdue} (step ${entry.overdue_step} of ${entry.overdue_steps})`;
@@ -28,7 +24,7 @@ function attentionReason(entry: RepositoryOverviewEntry) {
 export class NeedsAttention extends LitElement {
   static override properties = { repositories: { attribute: false } };
 
-  static override styles = [linkStyles, textStyles, css`
+  static override styles = [linkStyles, repositoryReferenceStyles, textStyles, css`
     @layer components {
       ul {
         display: grid;
@@ -50,31 +46,8 @@ export class NeedsAttention extends LitElement {
         gap: var(--space-2);
       }
 
-      .title pb-tooltip { min-inline-size: 0; }
-
-      .status {
-        display: inline-flex;
-        flex: none;
-        align-items: baseline;
-        gap: var(--space-1);
-        font-weight: var(--weight-semibold);
-        text-transform: capitalize;
-      }
-
-      .failed { color: var(--status-failed); }
-      .warning { color: var(--status-warning); }
-      .not-run { color: var(--status-not-run); }
-
-      .repository {
-        vertical-align: middle;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
       p { margin: 0; }
 
-      .organization { overflow-wrap: anywhere; }
     }
   `];
 
@@ -94,20 +67,16 @@ export class NeedsAttention extends LitElement {
           <ul role="list">
             ${repeat(attention, entry => JSON.stringify([entry.repository, entry.platform]), entry => {
               const { repository } = entry;
-              const organization = ownerName(repository);
               const health = repositoryHealth(entry);
-              const { icon, label } = healthStatuses[health];
+              const verdict = entry.latest_check?.overall;
+              const outcome = entry.state !== 'unknown' && entry.state !== 'never_integrated'
+                && (verdict === 'ERROR' || verdict === 'FAIL') ? verdict : healthStatuses[health].outcome;
               return html`
                 <li>
                   <div class="title">
-                    <span class="status ${health}"><pb-icon name=${icon}></pb-icon> ${label}</span>
-                    <pb-tooltip text-value external-trigger .description=${repository}
-                      .visibleText=${shortName(repository)}>
-                      <a class="repository" data-route href=${repositoryPath(repository)}
-                        aria-label=${repository}>${shortName(repository)}</a>
-                    </pb-tooltip>
+                    <pb-status-pill .status=${outcome}></pb-status-pill> ·
+                    ${repositoryReference(repository)}
                   </div>
-                  ${organization ? html`<p class="organization meta">${organization}</p>` : nothing}
                   <p class="reason meta">${attentionReason(entry)}</p>
                 </li>
               `;

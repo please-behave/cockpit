@@ -78,6 +78,8 @@ test('pages the history newest first with limit and before', () => {
   expect(next.length).toBeGreaterThan(0);
   expect(next.length).toBeLessThan(100);
   expect(next[0].id < first.at(-1)!.id).toBe(true);
+  const times = [...first, ...next].map(summary => Date.parse(summary.received_at));
+  expect(times).toEqual([...times].sort((left, right) => right - left));
   expect(body<Summary[]>(`${fixtureTargets.history}?limit=3`)).toHaveLength(3);
   expect(respond(`${fixtureTargets.history}?limit=0`)!.status).toBe(400);
 });

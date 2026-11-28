@@ -156,7 +156,7 @@ const newest = [
   overall,
   results,
   commit: sha(digit).replace(/^./, 'a'),
-  minutesAgo: [5, 1, 90, 2000, 30, 0, 3, 45, 10, 25, 15][index],
+  minutesAgo: 5 + index,
 }));
 
 const now = Date.parse('2026-11-23T12:00:00Z');

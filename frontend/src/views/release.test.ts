@@ -44,7 +44,12 @@ test('shows a complete release with its commit, sender, evidence link and Rule S
   expect(root.querySelector('a[href="/repositories/detail?repository=github.com%2Facme%2Freturn-navigation"]')).not.toBeNull();
   const facts = root.querySelector('pb-key-value')!.shadowRoot!;
   const repositoryLink = facts.querySelector('a[href="/repositories/detail?repository=github.com%2Facme%2Freturn-navigation"]');
-  expect(repositoryLink?.textContent).toBe(repository);
+  expect(repositoryLink?.textContent).toBe('return-navigation');
+  expect(repositoryLink?.getAttribute('aria-label')).toBe(repository);
+  const reported = [...facts.querySelectorAll('dt')].find(term => term.textContent === 'Reported');
+  const time = reported?.nextElementSibling?.querySelector('pb-relative-time');
+  expect(time?.shadowRoot?.querySelector('time')?.textContent).toMatch(/ago$|^just now$/);
+  expect(time?.shadowRoot?.querySelector('pb-tooltip')).toHaveProperty('description', expect.stringContaining('(UTC)'));
   expect(facts.textContent).toContain('ci@example.com');
   expect(facts.textContent).toContain('GitHub OIDC');
   expect(facts.querySelector('pb-commit-link')).toHaveProperty('commit', expect.stringMatching(/^[0-9a-f]{40}$/));

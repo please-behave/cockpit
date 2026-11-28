@@ -10,7 +10,7 @@ description: >-
   contentinfo landmarks with a keyboard-accessible skip link. The footer
   follows the main content and reaches the bottom of the viewport on short
   pages. It wraps at 320 CSS pixels and uses muted text in both themes.
-  It shows the repository owner's copyright notice and links the product
+  It names the copyright holder as “© 2026 Christian Pflugradt” and links the product
   name to the Please Behave GitHub organization without an opener or referrer.
   The link makes no external request before activation.
   The shell shows a Back to top button in the bottom corner after the

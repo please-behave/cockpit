@@ -3,9 +3,8 @@ import { ApiError, attestationPage, type Summary } from '../api/client';
 import type { CommitLink } from '../components/pb-commit-link';
 import type { DataTable } from '../components/pb-data-table';
 import type { ErrorState } from '../components/pb-error-state';
-import type { ShortName } from '../components/pb-short-name';
 import type { StatusPill } from '../components/pb-status-pill';
-import type { CockpitTime } from '../components/pb-time';
+import type { RelativeTime } from '../components/pb-relative-time';
 import { HistoryView } from './history';
 
 vi.mock(import('../api/client'), async original => ({
@@ -71,7 +70,7 @@ async function tableRoot(view: HistoryView) {
 }
 
 const hrefs = (view: HistoryView) => [...view.shadowRoot!.querySelectorAll('pb-data-table')]
-  .flatMap(table => [...table.shadowRoot!.querySelectorAll<CockpitTime>('tbody td:first-child pb-time')])
+  .flatMap(table => [...table.shadowRoot!.querySelectorAll<RelativeTime>('tbody td:first-child pb-relative-time')])
   .map(time => time.shadowRoot?.querySelector('a[data-route]')?.getAttribute('href'));
 
 async function rowCount(view: HistoryView) {
@@ -114,15 +113,16 @@ test('shows one row per attestation with its columns, links and tooltips', async
   const view = await mount();
   const root = await tableRoot(view);
   expect(root.querySelector('caption.assistive')?.textContent).toBe('Attestations');
-  expect([...root.querySelectorAll('thead th')].map(cell => cell.textContent))
+  expect([...root.querySelectorAll('thead th')].map(cell => cell.textContent?.trim()))
     .toEqual(['Reported', 'Repository', 'Commit', 'Overall']);
   expect([...root.querySelectorAll('thead th')].map(cell => cell.className)).toEqual(['content', 'fill', 'content', 'content']);
 
   const [first, second] = [...root.querySelectorAll('tbody tr')];
-  const time = first.querySelector<CockpitTime>('pb-time')!;
+  const time = first.querySelector<RelativeTime>('pb-relative-time')!;
   expect(time.value).toBe('2026-11-22T12:00:00Z');
   await time.updateComplete;
   const timestamp = time.shadowRoot!.querySelector('time')!;
+  expect(timestamp.textContent).toMatch(/ago$|^just now$/);
   expect(timestamp.dateTime).toBe(report.received_at);
   expect(timestamp.hasAttribute('title')).toBe(false);
 
@@ -133,7 +133,9 @@ test('shows one row per attestation with its columns, links and tooltips', async
   expect(reported.parentElement).toMatchObject({ localName: 'pb-tooltip', externalTrigger: true, description: exactTime });
   const link = first.querySelector<HTMLAnchorElement>('pb-tooltip > a[data-route]')!;
   expect(link.getAttribute('href')).toBe('/repositories/detail?repository=github.com%2Facme%2Fwidget');
-  expect(link.querySelector<ShortName>('pb-short-name')!.value).toBe('github.com/acme/widget');
+  expect(link.textContent).toBe('widget');
+  expect(link.getAttribute('aria-label')).toBe('github.com/acme/widget');
+  expect(first.querySelector('.repository-prefix')?.textContent).toBe('acme/');
   expect(link.parentElement).toMatchObject({ localName: 'pb-tooltip', description: report.repository });
 
   const commit = first.querySelector<CommitLink>('pb-commit-link')!;
@@ -197,7 +199,11 @@ test('loads follow-up pages with the cursor until a short page ends the list', a
   expect(new Set(hrefs(view)).size).toBe(202);
   expect(hrefs(view)[0]).toBe('/attestations/id-1000');
   expect(hrefs(view).at(-1)).toBe('/attestations/id-0799');
-  expect((await tableRoot(view)).querySelector('thead button, [aria-sort]')).toBeNull();
+  const header = (await tableRoot(view)).querySelector('thead')!;
+  expect(header.querySelector('button')).toBeNull();
+  const sorted = header.querySelector('[aria-sort="descending"]')!;
+  expect(sorted.textContent?.trim()).toBe('Reported');
+  expect(sorted.querySelector('pb-icon')?.getAttribute('name')).toBe('sort-descending');
 });
 
 // Verifies REQ-0022.

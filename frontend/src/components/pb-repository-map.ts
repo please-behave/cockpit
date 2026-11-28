@@ -3,6 +3,7 @@ import { repeat } from 'lit/directives/repeat.js';
 import type { CompletedRuleSet, RepositoryOverviewEntry } from '../api/client';
 import { compareText, healthStatuses, repositoryHealth, type RepositoryHealth } from '../repository-health';
 import './pb-repo-chip';
+import { outcomeLabel } from './pb-status-pill';
 import type { SectionLink } from './pb-section';
 import { ownerName, shortName } from './pb-short-name';
 import './pb-widget';
@@ -107,7 +108,7 @@ export class RepositoryMap extends LitElement {
                   <pb-section>
                     <h3 slot="heading">${group.name || 'No organization'}</h3>
                     <p slot="count" class="counts">
-                      ${statuses.map(status => html`<span>${group.counts[status]} ${healthStatuses[status].label}</span>`)}
+                      ${statuses.map(status => html`<span>${group.counts[status]} ${outcomeLabel(healthStatuses[status].outcome)}</span>`)}
                     </p>
                   </pb-section>
                 ` : nothing}

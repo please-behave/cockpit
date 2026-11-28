@@ -91,7 +91,7 @@ test('opens a Rule Set from Rules, escapes registered text, and shows exact memb
   expect(members.querySelectorAll('thead button')).toHaveLength(2);
   const failing = view.querySelector('.non-passing')!;
   expect(failing.querySelector('a')!.getAttribute('href')).toBe(rulePath(member, '1.1'));
-  expect(failing.querySelector('pb-status-pill')!.shadowRoot?.textContent).toContain('WARN');
+  expect(failing.querySelector('pb-status-pill')!.shadowRoot?.textContent).toContain('Warn');
   const binding = failing.closest('pb-widget')!;
   expect(binding.shadowRoot?.querySelector('h3')?.textContent).toBe(`github.com/team/failing-${markup}`);
   expect(binding.textContent).toContain('Version 1.2');

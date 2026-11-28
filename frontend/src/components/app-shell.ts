@@ -332,7 +332,7 @@ export class CockpitAppShell extends LitElement {
       <main id="main-content" class=${wide ? 'wide' : nothing} tabindex="-1"><slot></slot></main>
       <footer role="contentinfo" class=${wide ? 'wide' : nothing}>
         <a href="https://github.com/please-behave" target="_blank" rel="noopener noreferrer">Please Behave</a>
-        <span>© 2026 Please Behave</span>
+        <span>© 2026 Christian Pflugradt</span>
       </footer>
       ${this.showBackToTop ? html`
         <button class="back-to-top" type="button" @click=${this.backToTop}>Back to top</button>
