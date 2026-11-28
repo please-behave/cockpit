@@ -85,6 +85,8 @@ export class DataTable<Row extends DataTableRow = DataTableRow> extends LitEleme
         vertical-align: top;
       }
 
+      .fill pb-tooltip[text-value]:not([external-trigger]) { vertical-align: top; }
+
       .fill span[tabindex="0"]:focus-visible {
         outline: var(--focus-ring);
         outline-offset: calc(-1 * var(--focus-offset));

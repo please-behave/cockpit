@@ -175,7 +175,7 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
       <pb-fact-strip .items=${facts}></pb-fact-strip>
       <dl class="identity definitions meta">
         <div><dt>Repository</dt><dd>
-          <pb-tooltip hint .description=${version.source}><code>${shortName(version.source)}</code></pb-tooltip>
+          <pb-tooltip text-value hint .description=${version.source} .visibleText=${shortName(version.source)}><code>${shortName(version.source)}</code></pb-tooltip>
         </dd></div>
         <div><dt>Path</dt><dd><code>${version.path}</code></dd></div>
         <div><dt>Rule ID</dt><dd><code>${version.id}</code></dd></div>
@@ -194,7 +194,10 @@ export class RuleView extends CockpitView<RegisteredVersion[]> {
           <pb-rule-set-chip .label=${`${set.name || set.id} · ${set.version}`}
             .href=${ruleSetPath(set, set.version)}></pb-rule-set-chip>
         `) : html`<pb-badge>${repository
-          ? html`<a href=${repository} title=${version.source}>${shortName(version.source)}</a>`
+          ? html`<pb-tooltip text-value external-trigger .description=${version.source}
+            .visibleText=${shortName(version.source)}>
+            <a href=${repository} aria-label=${version.source}>${shortName(version.source)}</a>
+          </pb-tooltip>`
           : version.source}</pb-badge>`}</dd>
       </dl>
     `;

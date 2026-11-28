@@ -43,20 +43,21 @@ const columns: Record<Identity, DataTableColumn[]> = {
 };
 
 function textWithPreview(value: string) {
-  return html`<pb-tooltip external-trigger .description=${value}>
-    <span tabindex="0">${value}</span>
+  return html`<pb-tooltip text-value .description=${value}>
+    <span>${value}</span>
   </pb-tooltip>`;
 }
 
 function deploymentReference(entry: Deployment) {
   if (entry.state === 'release_not_recorded') return textWithPreview(entry.version);
   if (entry.version !== null) {
-    return html`<pb-tooltip external-trigger .description=${entry.version}>
+    return html`<pb-tooltip text-value external-trigger .description=${entry.version}>
       <a data-route href=${releasePath(entry.repository, entry.version)}>${entry.version}</a>
     </pb-tooltip>`;
   }
-  return html`<pb-tooltip .description=${entry.reported_commit}>
-    <code>${entry.reported_commit.slice(0, 7)}</code>
+  const commit = entry.reported_commit.slice(0, 7);
+  return html`<pb-tooltip text-value .description=${entry.reported_commit} .visibleText=${commit}>
+    <code>${commit}</code>
   </pb-tooltip>`;
 }
 
@@ -65,7 +66,7 @@ function deploymentRow(entry: Deployment, identity: Identity, key: string = entr
     key,
     cells: [
       identity === 'target' ? textWithPreview(targetLabel(entry.target)) : html`
-        <pb-tooltip external-trigger .description=${entry.repository}>
+        <pb-tooltip text-value external-trigger .description=${entry.repository}>
           <a data-route href=${repositoryPath(entry.repository)}>${entry.repository}</a>
         </pb-tooltip>`,
       deploymentReference(entry),

@@ -282,7 +282,7 @@ test('groups results by the exact bound versions, preserving both binding and re
   expect(links.map(link => link.textContent)).toEqual(['Second · 2.0', '<b>First</b> · 1.0', 'missing · 1.0']);
   expect(chips[1].shadowRoot!.querySelector('b')).toBeNull();
   expect(links.map(link => link.getAttribute('aria-description'))).toEqual([null, 'First <b>set</b>.', null]);
-  expect(links.map(link => Boolean(link.closest('pb-tooltip')))).toEqual([false, true, false]);
+  expect(links.map(link => link.closest('pb-tooltip')?.hasAttribute('text-value'))).toEqual([true, false, true]);
   const setPopup = await popupFor(links[1]);
   expect(setPopup.textContent?.trim()).toBe('First <b>set</b>.');
   expect(setPopup.querySelector('b')).toBeNull();

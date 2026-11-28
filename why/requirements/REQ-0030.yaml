@@ -12,8 +12,9 @@ description: >-
   history table in descending ledger receipt order. Each version opens the
   release detail page of REQ-0032. History rows show the version, the first
   seven characters of the commit, the receipt time, the evidence status and the
-  completed Rule Set summary. The full commit is available in an accessible
-  tooltip. Both views show relative receipt times with the localized exact
+  completed Rule Set summary. Repository and version links expose their full
+  labels in a tooltip when clipped. A shortened commit exposes its full value
+  in an accessible tooltip. Both views show relative receipt times with the localized exact
   time in an accessible tooltip and explain when no release has been recorded.
   The evidence status shows the reported outcome or “No evidence” as compact
   text with an icon. The Rule Set summary gives the count of completed Rule

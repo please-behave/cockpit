@@ -3,10 +3,11 @@ name: Shortened Names
 area: identity
 description: >-
   Where the cockpit shortens a name, it shows the part after the last slash,
-  or the whole value if there is none. The full repository name is available
-  in a tooltip on its link and as the link's accessible name. Hover or
-  keyboard focus shows the tooltip. On touch, a tap on the shortened name
-  shows it and a second tap follows the link. The attestation detail shows
+  or the whole value if there is none. The full repository name is
+  the link's accessible name. REQ-0016 governs when its tooltip shows the
+  full value. Hover or keyboard focus shows an available tooltip. On touch,
+  the first tap opens an available tooltip and the second follows the link.
+  A link without a popup follows on the first tap. The attestation detail shows
   the shortened repository name in its heading and the full name in the
   "Canonical name" field. Its rules table shows the shortened rule identifier.
 rationale: >-

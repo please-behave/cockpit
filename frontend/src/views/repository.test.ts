@@ -61,7 +61,7 @@ test.each([repositoryPath(repository), '/releases/repository?repository=github.c
     await commit.updateComplete;
     expect(commit.description).toMatch(/^[0-9a-f]{40}$/);
     expect(commit.querySelector('code')?.textContent).toBe(commit.description.slice(0, 7));
-    const descriptionId = commit.shadowRoot?.querySelector('button')?.getAttribute('aria-describedby');
+    const descriptionId = commit.shadowRoot?.querySelector('[aria-describedby]')?.getAttribute('aria-describedby');
     expect(commit.shadowRoot?.getElementById(descriptionId!)?.textContent?.trim()).toBe(commit.description);
     expect(root.querySelector('a[href="/releases"]')).not.toBeNull();
 

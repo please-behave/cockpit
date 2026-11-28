@@ -5,7 +5,7 @@ import '../components/pb-commit-link';
 import '../components/pb-data-table';
 import '../components/pb-empty-state';
 import '../components/pb-error-state';
-import '../components/pb-short-name';
+import { shortName } from '../components/pb-short-name';
 import '../components/pb-status-pill';
 import '../components/pb-time';
 import '../components/pb-tooltip';
@@ -184,7 +184,8 @@ export class HistoryView extends CockpitView<Summary[]> {
       cells: [
         html`<pb-time .href=${`/attestations/${encodeURIComponent(summary.id)}`}
           .value=${summary.received_at}></pb-time>`,
-        html`<pb-tooltip external-trigger .description=${summary.repository}>
+        html`<pb-tooltip text-value external-trigger .description=${summary.repository}
+          .visibleText=${shortName(summary.repository)}>
           <a data-route href=${repositoryPath(summary.repository)}>
             <pb-short-name .value=${summary.repository}></pb-short-name></a>
         </pb-tooltip>`,

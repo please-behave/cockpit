@@ -87,7 +87,8 @@ export class ActivityFeed extends LitElement {
                 <li>
                   <div class="title">
                     <span class="kind"><pb-icon name=${icon}></pb-icon> ${label}</span>
-                    <pb-tooltip external-trigger .description=${repository}>
+                    <pb-tooltip text-value external-trigger .description=${repository}
+                      .visibleText=${shortName(repository)}>
                       <a class="repository" data-route href=${repositoryPath(repository)}
                         aria-label=${repository}>${shortName(repository)}</a>
                     </pb-tooltip>

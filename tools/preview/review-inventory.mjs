@@ -97,7 +97,7 @@ function collectFormats(element, add) {
     const version = text.match(versionNumber)?.[0];
     add('Version formats', `${type} · ${versionFormat(text, version)}`, text);
   } else if (type === 'Release' || (element.localName === 'h1' && host?.matches('pb-release'))
-      || element.matches('[part="deployment-reference"] span[tabindex="0"]')) {
+      || element.matches('[part="deployment-reference"] pb-tooltip[text-value] > span')) {
     const text = label(element);
     const format = /^v\d/i.test(text) && versionNumber.test(text) ? 'v prefix'
       : /^\d/.test(text) && versionNumber.test(text) ? 'number' : 'free text';
@@ -109,7 +109,6 @@ function collectFormats(element, add) {
 }
 
 function overflows(element, style) {
-  if (element.textContent === '') return false;
   return [element, ...rendered(element)].some(node => {
     const { overflowX, overflowY } = style(node);
     return (['hidden', 'clip'].includes(overflowX) && node.scrollWidth > node.clientWidth)
@@ -165,7 +164,10 @@ export async function inventory(document) {
           label(element));
       }
       collectFormats(element, add);
-      if (element.matches(controls) || element.hasAttribute('title')) interactive.push(element);
+      if (element.matches(controls) || element.hasAttribute('title')
+          || (element.matches('.value') && element.getRootNode().host?.matches('pb-tooltip[text-value]'))) {
+        interactive.push(element);
+      }
     }
     return interactive;
   }
@@ -183,7 +185,7 @@ export async function inventory(document) {
       if (node.matches('pb-tooltip')) {
         const target = node.shadowRoot?.firstElementChild;
         const control = node.hasAttribute('external-trigger')
-          ? target?.querySelector('slot')?.assignedElements()[0] : target?.querySelector('button');
+          ? target?.querySelector('slot')?.assignedElements()[0] : target?.querySelector('button, .value');
         if (control === trigger) wrapper = target;
       }
       title ??= node.getAttribute('title') ?? undefined;

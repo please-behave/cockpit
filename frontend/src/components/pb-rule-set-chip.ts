@@ -43,7 +43,6 @@ export class RuleSetChip extends LitElement {
     href: { type: String },
     description: { type: String },
     wrap: { type: Boolean, reflect: true },
-    truncated: { state: true },
   };
 
   static override styles = [ruleSetChipStyles, css`
@@ -67,48 +66,19 @@ export class RuleSetChip extends LitElement {
   declare href: string;
   declare description?: string;
   declare wrap: boolean;
-  protected declare truncated: boolean;
-
-  private observer?: ResizeObserver;
 
   constructor() {
     super();
     this.label = '';
     this.href = '';
     this.wrap = false;
-    this.truncated = false;
-  }
-
-  override connectedCallback() {
-    super.connectedCallback();
-    if (typeof ResizeObserver !== 'undefined') {
-      this.observer ??= new ResizeObserver(() => this.measure());
-      this.observer.observe(this);
-    }
-  }
-
-  override disconnectedCallback() {
-    this.observer?.disconnect();
-    super.disconnectedCallback();
-  }
-
-  protected override updated(changed: Map<PropertyKey, unknown>) {
-    if (changed.has('label') || changed.has('wrap')) queueMicrotask(() => this.measure());
-  }
-
-  private measure() {
-    if (this.wrap) return;
-    const chip = this.renderRoot.querySelector('.chip');
-    if (chip) this.truncated = chip.scrollWidth > chip.clientWidth;
   }
 
   override render() {
     const chip = html`<a class="chip" data-route href=${this.href}
       aria-description=${ifDefined(this.description)}>${this.label}</a>`;
-    const tooltip = this.description ?? (!this.wrap && this.truncated ? this.label : undefined);
-    return tooltip
-      ? html`<pb-tooltip external-trigger .description=${tooltip}>${chip}</pb-tooltip>`
-      : chip;
+    return html`<pb-tooltip external-trigger ?text-value=${this.description === undefined}
+      .description=${this.description ?? this.label}>${chip}</pb-tooltip>`;
   }
 }
 

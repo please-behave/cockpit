@@ -84,7 +84,7 @@ description: >-
   evidence. Pending details use status-allowed, and overdue details use
   status-warning and name the reached and total steps. Commits are shortened
   to seven characters, with the full value available in a tooltip and
-  accessible description. Reported times expose the exact localized time
+  accessible description when characters are omitted. Reported times expose the exact localized time
   the same way. When supplied, the latest release version links to REQ-0032
   and the latest deployment shows its target name and relative ledger receipt
   time. The target links to the deployment if an existing view can address

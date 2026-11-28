@@ -10,7 +10,9 @@ description: >-
   target and in the group header when grouped by repository. Each row links a recorded release version to REQ-0032,
   shows an unrecorded version as plain text with
   "release not recorded", or shows the first seven characters of the reported
-  commit with the full identifier in an accessible tooltip for a commit-only deployment.
+  commit for a commit-only deployment. Repository, target, version and commit
+  values expose their full text in a tooltip when shortened or clipped, following
+  REQ-0016.
   The target identity includes the owner and name, shown in the group header
   when grouped by target and in the row when grouped by repository. Each row
   shows the ledger receipt time, with the localized exact time in an accessible

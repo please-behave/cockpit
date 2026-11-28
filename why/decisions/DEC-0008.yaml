@@ -6,8 +6,8 @@ context: >-
   the full value remains the reported evidence.
 decision: >-
   Show the part of a name after its last slash, or the whole value if there is
-  none. Carry the full value as a tooltip and expose it to assistive
-  technology.
+  none. Expose the full value to assistive technology. Use the shared tooltip
+  to reveal the full value when the displayed text is shortened or clipped.
 rationale: >-
   Viewers read the distinguishing segment without losing access to the exact
   reported value.

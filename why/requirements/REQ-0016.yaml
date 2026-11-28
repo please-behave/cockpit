@@ -13,7 +13,11 @@ description: >-
   and gives its trigger the explanation as an accessible description.
   The tooltip opens on hover, keyboard focus or tap and stays visible while
   the pointer or keyboard focus is within the trigger or popup. Viewers can
-  dismiss it with Escape or a second tap.
+  dismiss it with Escape or a second tap. A popup adds information beyond
+  its visible trigger. A text value or link label gets a popup with its full
+  value only when the displayed text is shortened or clipped. The shared
+  tooltip checks clipping when the value renders and when its size changes.
+  A plain text value becomes focusable only while its popup is available.
 rationale: >-
   Viewers can read reported outcomes regardless of color perception and can
   recognize values introduced by newer producers.

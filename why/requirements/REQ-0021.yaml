@@ -6,8 +6,9 @@ description: >-
   attestation, loaded through CON-0003 and shown newest first as the ledger
   returns them. A row shows the localized ledger receipt time by DEC-0022
   in the "Reported" column as a link to the attestation, the shortened repository
-  name with the full value in a tooltip on its link to the repository page of
-  REQ-0033, the first seven characters of the commit and the overall status.
+  name as a link to the repository page of REQ-0033, the first seven characters
+  of the commit and the overall status. The repository link exposes the full
+  value when shortened or clipped, as specified in REQ-0016.
   A tooltip and assistive technology
   expose the full value of a shortened commit. The commit links to github.com
   by the rule of DEC-0011. The columns never wrap and long values are

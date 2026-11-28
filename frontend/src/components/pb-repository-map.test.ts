@@ -162,7 +162,12 @@ test('shows reported evidence, waiting details and completed Rule Sets when pres
   for (const chip of chips) {
     await chip.updateComplete;
     expect(chip.shadowRoot!.querySelector('a')).not.toBeNull();
-    expect(chip.shadowRoot!.querySelector('pb-tooltip')).toBeNull();
+    const link = chip.shadowRoot!.querySelector('a')!;
+    const tooltip = link.closest<Tooltip>('pb-tooltip')!;
+    await tooltip.updateComplete;
+    link.focus();
+    expect(tooltip.shadowRoot!.querySelector<HTMLElement>('[popover]')?.hidden).toBe(true);
+    link.blur();
   }
 
   const { preview: waiting } = await mountChip('widget');

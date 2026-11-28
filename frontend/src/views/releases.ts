@@ -33,17 +33,18 @@ function needsAttention({ evidence }: ReleaseSummary) {
 }
 
 function releaseRow(entry: ReleaseSummary, overview: boolean) {
-  const version = html`<pb-tooltip external-trigger .description=${entry.version}>
+  const version = html`<pb-tooltip text-value external-trigger .description=${entry.version}>
     <a data-route href=${releasePath(entry.repository, entry.version)}>${entry.version}</a>
   </pb-tooltip>`;
+  const commit = entry.commit.slice(0, 7);
   const identity = overview ? [
-    html`<pb-tooltip external-trigger .description=${entry.repository}>
+    html`<pb-tooltip text-value external-trigger .description=${entry.repository}>
       <a data-route href=${repositoryPath(entry.repository)}>${entry.repository}</a>
     </pb-tooltip>`,
     version,
   ] : [
     version,
-    html`<pb-tooltip .description=${entry.commit}><code>${entry.commit.slice(0, 7)}</code></pb-tooltip>`,
+    html`<pb-tooltip text-value .description=${entry.commit} .visibleText=${commit}><code>${commit}</code></pb-tooltip>`,
   ];
   return {
     key: overview ? entry.repository : entry.version,

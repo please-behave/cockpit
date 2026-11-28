@@ -3,7 +3,7 @@ name: Shared Presentation Components
 purpose: "Provides the reusable pb-* building blocks that views compose."
 scope:
   - "Renders statuses with text and symbol, times, shortened names, commit links, tooltips, tables, sections and states."
-  - "Shortens names and shows the full value on hover, focus and touch."
+  - "Detects shortened and clipped text and reveals its full value on hover, focus and touch."
   - "Bounds table columns and keeps headers visible on scroll."
 out_of_scope:
   - description: "Loading data."

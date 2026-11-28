@@ -3,11 +3,13 @@ import { css, html, LitElement, nothing, type PropertyValues } from 'lit';
 const hoverDelay = 100;
 const viewportGutter = 8;
 
-/** A short description for a label or an existing, already named control. */
+/** An explanation or the complete value of a shortened or clipped label. */
 export class Tooltip extends LitElement {
   static override properties = {
     description: { type: String },
     hint: { type: Boolean },
+    textValue: { type: Boolean, attribute: 'text-value', reflect: true },
+    visibleText: { attribute: false },
     externalTrigger: { type: Boolean, attribute: 'external-trigger', reflect: true },
     interactive: { type: Boolean },
   };
@@ -42,12 +44,24 @@ export class Tooltip extends LitElement {
         user-select: none;
       }
 
-      button:focus-visible {
+      .value {
+        display: inline-block;
+        max-inline-size: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: top;
+      }
+
+      button:focus-visible, .value:focus-visible {
         outline: var(--focus-ring);
         outline-offset: var(--focus-offset);
       }
 
-      button.hint {
+      .value:focus-visible {
+        outline-offset: calc(-1 * var(--focus-offset));
+      }
+
+      .hint:is(button, [tabindex]) {
         border-block-end: 1px dotted var(--text-muted);
         cursor: help;
       }
@@ -117,9 +131,16 @@ export class Tooltip extends LitElement {
 
   declare description: string;
   declare hint: boolean;
+  declare textValue: boolean;
+  declare visibleText?: string;
   declare externalTrigger: boolean;
   declare interactive: boolean;
 
+  private static observer?: ResizeObserver;
+  private static observed = new WeakMap<Element, Tooltip>();
+  private static pending = new Set<Tooltip>();
+  private observedTrigger?: HTMLElement;
+  private detailsAvailable = false;
   private timer?: ReturnType<typeof setTimeout>;
   private listeners?: AbortController;
   private coordinates?: CSSStyleDeclaration;
@@ -131,11 +152,20 @@ export class Tooltip extends LitElement {
     super();
     this.description = '';
     this.hint = false;
+    this.textValue = false;
     this.externalTrigger = false;
     this.interactive = false;
   }
 
+  override connectedCallback() {
+    super.connectedCallback();
+    void this.updateComplete.then(() => {
+      if (this.isConnected) this.observeTrigger();
+    });
+  }
+
   override disconnectedCallback() {
+    this.unobserveTrigger();
     this.pointerOverTrigger = false;
     this.pointerOverPreview = false;
     this.dismiss();
@@ -143,6 +173,8 @@ export class Tooltip extends LitElement {
   }
 
   protected override updated(changed: PropertyValues<this>) {
+    if (this.textValue) this.observeTrigger();
+    else if (changed.has('textValue')) this.unobserveTrigger();
     if (changed.has('description') && !this.popup.hidden) this.place();
   }
 
@@ -150,7 +182,8 @@ export class Tooltip extends LitElement {
     return html`
       <span @pointerenter=${this.enter} @pointermove=${this.move} @pointerleave=${this.leave}
         @focusin=${this.focusTrigger} @focusout=${this.focusLeft} @click=${this.activate}>
-        ${this.externalTrigger ? html`<slot></slot>` : html`
+        ${this.externalTrigger ? html`<slot @slotchange=${this.observeTrigger}></slot>`
+          : this.textValue ? html`<span class=${this.hint ? 'value hint' : 'value'}><slot></slot></span>` : html`
           <button type="button" class=${this.hint ? 'hint' : ''} aria-describedby="description"><slot></slot></button>
         `}
         <span id="description" role=${this.interactive ? 'group' : 'tooltip'} popover="manual" hidden
@@ -160,6 +193,87 @@ export class Tooltip extends LitElement {
         </span>
       </span>
     `;
+  }
+
+  private get shortened() {
+    return this.visibleText !== undefined && this.visibleText !== this.description;
+  }
+
+  private observeTrigger = () => {
+    if (!this.isConnected || !this.textValue) return;
+    const target = this.shortened ? undefined : this.trigger;
+    if (target !== this.observedTrigger) {
+      this.unobserveTrigger();
+      if (target && typeof ResizeObserver !== 'undefined') {
+        Tooltip.observer ??= new ResizeObserver(entries => {
+          for (const { target } of entries) Tooltip.observed.get(target)?.queueMeasurement();
+        });
+        this.observedTrigger = target;
+        Tooltip.observed.set(target, this);
+        Tooltip.observer.observe(target);
+      }
+    }
+    this.queueMeasurement();
+  };
+
+  private unobserveTrigger() {
+    if (!this.observedTrigger) return;
+    Tooltip.observer?.unobserve(this.observedTrigger);
+    Tooltip.observed.delete(this.observedTrigger);
+    this.observedTrigger = undefined;
+  }
+
+  private queueMeasurement() {
+    const pending = Tooltip.pending;
+    if (!pending.size) {
+      queueMicrotask(() => {
+        // Read every label's layout before changing focusability in a large table.
+        const measurements = Array.from(pending, tooltip => [tooltip, tooltip.hasHiddenText()] as const);
+        pending.clear();
+        for (const [tooltip, available] of measurements) {
+          const revealed = available && !tooltip.detailsAvailable;
+          tooltip.updateAvailability(available);
+          if (revealed && tooltip.isConnected) tooltip.showWhenActive();
+        }
+      });
+    }
+    pending.add(this);
+  }
+
+  private hasHiddenText() {
+    const trigger = this.trigger;
+    return Boolean(this.description && trigger &&
+      (this.shortened || trigger.scrollWidth > trigger.clientWidth));
+  }
+
+  private measure() {
+    if (!this.textValue) return true;
+    const available = this.hasHiddenText();
+    this.updateAvailability(available);
+    return available;
+  }
+
+  private updateAvailability(available: boolean) {
+    if (!this.isConnected || !this.textValue) return;
+    const changed = available !== this.detailsAvailable;
+    this.detailsAvailable = available;
+
+    const trigger = this.trigger;
+    if (trigger && !this.externalTrigger) {
+      if (available && trigger.tabIndex !== 0) trigger.tabIndex = 0;
+      if (!available && trigger.hasAttribute('tabindex')) trigger.removeAttribute('tabindex');
+      const descriptionId = available && this.shortened ? 'description' : null;
+      if (trigger.getAttribute('aria-describedby') !== descriptionId) {
+        if (descriptionId) trigger.setAttribute('aria-describedby', descriptionId);
+        else trigger.removeAttribute('aria-describedby');
+      }
+    }
+    if (changed && !available) this.dismiss();
+  }
+
+  private showWhenActive() {
+    if (this.trigger.matches(':focus-visible')) this.open();
+    else if (this.pointerOverTrigger) this.scheduleHover();
   }
 
   private enter(event: PointerEvent) {
@@ -172,7 +286,7 @@ export class Tooltip extends LitElement {
   }
 
   private scheduleHover() {
-    if (!this.popup.hidden || this.timer !== undefined) return;
+    if (!this.measure() || !this.popup.hidden || this.timer !== undefined) return;
     this.listenForDismissal();
     this.timer = setTimeout(() => this.open(), hoverDelay);
   }
@@ -209,7 +323,7 @@ export class Tooltip extends LitElement {
   }
 
   private focusTrigger(event: FocusEvent) {
-    if (!event.composedPath().includes(this.trigger)) return;
+    if (!event.composedPath().includes(this.trigger) || !this.measure()) return;
     if (!this.trigger.matches(':focus-visible')) return;
     if (this.externalTrigger) this.trigger.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
     this.open();
@@ -228,7 +342,7 @@ export class Tooltip extends LitElement {
   }
 
   private activate(event: PointerEvent) {
-    if (!event.composedPath().includes(this.trigger)) return;
+    if (!event.composedPath().includes(this.trigger) || !this.measure()) return;
     if (this.externalTrigger) {
       if (this.interactive && this.trigger instanceof HTMLButtonElement) {
         this.open();
@@ -272,7 +386,7 @@ export class Tooltip extends LitElement {
     clearTimeout(this.timer);
     this.timer = undefined;
     const popup = this.popup;
-    if (!popup.hidden) return;
+    if (!this.measure() || !popup.hidden) return;
     const signal = this.listenForDismissal();
     popup.hidden = false;
     popup.showPopover?.();
@@ -305,7 +419,7 @@ export class Tooltip extends LitElement {
   private get trigger() {
     return this.externalTrigger
       ? this.shadowRoot!.querySelector('slot')!.assignedElements()[0] as HTMLElement
-      : this.shadowRoot!.querySelector('button')!;
+      : this.shadowRoot!.querySelector<HTMLElement>(this.textValue ? '.value' : 'button')!;
   }
 
   private place = () => {
